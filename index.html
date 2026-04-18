@@ -243,7 +243,7 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
 <script>emailjs.init('LVecJZWPqdswbZbga');</script>
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,doc,setDoc,getDoc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,onSnapshot,collection,addDoc,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
 const fbApp=initializeApp(FB);
@@ -375,7 +375,13 @@ window.switchTab=function(name,btn){
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');document.getElementById('pane-'+name).classList.add('on');
   if(name==='overzicht'){vMonth=new Date().getMonth();vYear=new Date().getFullYear();renderOverzicht();}
-  if(name==='verstuur'){window.initVerstuur&&window.initVerstuur();window.updatePreview&&window.updatePreview();}
+  if(name==='verstuur'){
+    // Use requestAnimationFrame to ensure all functions are defined
+    requestAnimationFrame(()=>{
+      if(typeof window.initVerstuur==='function') window.initVerstuur();
+      if(typeof window.updatePreview==='function') window.updatePreview();
+    });
+  }
 }
 
 window.prevMonth=function(){vMonth--;if(vMonth<0){vMonth=11;vYear--}renderOverzicht()}
@@ -412,9 +418,7 @@ window.gotoDate=function(iso){
 
 window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
 
-// ── IMPORT FIRESTORE EXTRAS ───────────────────
-import{collection,addDoc,query,where,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
+// ── VERSTUUR FUNCTIES ───────────────────────────
 const MO_FULL=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 
 // ── INIT VERSTUUR TAB ─────────────────────────
