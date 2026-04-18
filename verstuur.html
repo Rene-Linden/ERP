@@ -374,6 +374,19 @@ async function verstuur() {
 
   if (!regels.length) { toast('Geen registraties voor deze periode', 'bad'); return; }
 
+  // Check if already an approved spec exists for this klant+maand+jaar
+  const bestaandQ = query(collection(db,'specs'),
+    orderBy('verstuurd_datum','desc'));
+  const bestaandSnap = await getDocs(bestaandQ);
+  const alGeaccordeerd = bestaandSnap.docs.some(d => {
+    const data = d.data();
+    return data.klant === klant && data.maand === maand && data.jaar === jaar && data.akkoord === true;
+  });
+  if (alGeaccordeerd) {
+    toast('Er is al een geaccordeerde specificatie voor deze periode', 'bad');
+    return;
+  }
+
   const btn = document.getElementById('sendBtn');
   btn.classList.add('loading'); btn.disabled = true;
 
