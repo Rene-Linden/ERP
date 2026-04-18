@@ -1121,7 +1121,7 @@ async function renderAccordering(){
 }
 
 // ── FACTUREN ──────────────────────────────────
-async function renderFacturen(){
+window.renderFacturen=async function(){
   const kpis = document.getElementById('fact-kpis');
   const el = document.getElementById('fact-table');
 
@@ -1303,7 +1303,7 @@ window.printFactuurAdmin = async function(factuurId) {
 }
 
 // ── OMZET ─────────────────────────────────────
-async function renderOmzet(){
+window.renderOmzet=async function(){
   const jaar = parseInt(document.getElementById('omzetJaar')?.value || new Date().getFullYear());
   const kpis = document.getElementById('omzet-kpis');
   const el = document.getElementById('omzet-table');
