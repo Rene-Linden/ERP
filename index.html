@@ -375,6 +375,7 @@ window.switchTab=function(name,btn){
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');document.getElementById('pane-'+name).classList.add('on');
   if(name==='overzicht'){vMonth=new Date().getMonth();vYear=new Date().getFullYear();renderOverzicht();}
+  if(name==='verstuur'){initVerstuur();updatePreview();}
 }
 
 window.prevMonth=function(){vMonth--;if(vMonth<0){vMonth=11;vYear--}renderOverzicht()}
@@ -607,11 +608,7 @@ async function loadVerstuurHistory(){
 }
 
 // Override switchTab to init verstuur
-const origSwitch=window.switchTab;
-window.switchTab=function(name,btn){
-  origSwitch(name,btn);
-  if(name==='verstuur'){initVerstuur();updatePreview();}
-}
+
 
 init();
 </script>
