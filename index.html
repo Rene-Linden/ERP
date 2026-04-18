@@ -5,266 +5,122 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f8f7f4">
 <title>Dagstaat — Ordinatio Groep</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --cream:#f8f7f4;
-  --white:#ffffff;
-  --ink:#1a1a18;
-  --ink2:#4a4a46;
-  --ink3:#8a8a84;
-  --ink4:#b8b8b2;
-  --line:#e8e7e2;
-  --line2:#d4d3cc;
-  --acc:#2d5a8e;
-  --acc-light:#edf3f9;
-  --acc-mid:#c8daf0;
-  --green:#1e7a4a;
-  --green-light:#eaf5ee;
-  --amber:#b85c00;
-  --amber-light:#fdf3e8;
-  --red:#c0392b;
-  --red-light:#fdf0ee;
+  --cream:#f8f7f4;--white:#fff;--ink:#1a1a18;--ink2:#4a4a46;--ink3:#8a8a84;--ink4:#c8c8c2;
+  --line:#e8e7e2;--line2:#d4d3cc;
+  --acc:#2d5a8e;--acc-l:#edf3f9;--acc-m:#c8daf0;
+  --grn:#1e7a4a;--grn-l:#eaf5ee;
+  --amb:#b85c00;--amb-l:#fdf3e8;
+  --red:#c0392b;--red-l:#fdf0ee;
   --r:12px;--rsm:8px;--rxs:6px;
-  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.06);
   --shadow-sm:0 1px 2px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04);
 }
-html,body{
-  background:var(--cream);
-  color:var(--ink);
-  font-family:'DM Sans',system-ui,sans-serif;
-  min-height:100vh;
-  overscroll-behavior:none;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* ── APP SHELL ── */
+html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
 .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--cream)}
-
-/* ── HEADER ── */
-header{
-  background:var(--white);
-  border-bottom:1px solid var(--line);
-  padding:env(safe-area-inset-top) 0 0;
-  position:sticky;top:0;z-index:100;
-}
+header{background:var(--white);border-bottom:1px solid var(--line);padding:env(safe-area-inset-top) 0 0;position:sticky;top:0;z-index:100}
 .header-inner{padding:16px 20px 0}
 .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .brand{display:flex;align-items:center;gap:10px}
-.brand-icon{
-  width:34px;height:34px;background:var(--acc);border-radius:9px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
+.brand-icon{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center}
 .brand-icon svg{width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.brand-name{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:600;letter-spacing:-.3px;color:var(--ink)}
-.brand-sub{font-size:10px;color:var(--ink3);letter-spacing:.3px;text-transform:uppercase;margin-top:1px}
-.date-badge{
-  background:var(--acc-light);border:1px solid var(--acc-mid);border-radius:20px;
-  padding:5px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--acc);
-}
-
-/* ── TABS ── */
+.brand-name{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
+.brand-sub{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+.sync-pill{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:500;cursor:pointer}
+.sync-pill.synced{background:var(--grn-l);border:1px solid rgba(30,122,74,.2);color:var(--grn)}
+.sync-pill.syncing{background:var(--acc-l);border:1px solid var(--acc-m);color:var(--acc)}
+.sync-pill.offline{background:var(--amb-l);border:1px solid rgba(184,92,0,.2);color:var(--amb)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-pill.syncing .sync-dot{animation:pulse .8s infinite}
 .tabs{display:flex;border-top:1px solid var(--line)}
-.tab{
-  flex:1;padding:11px 0;text-align:center;font-size:13px;font-weight:500;
-  color:var(--ink3);background:transparent;border:none;border-bottom:2px solid transparent;
-  cursor:pointer;transition:all .15s;letter-spacing:-.1px;
-}
+.tab{flex:1;padding:11px 0;text-align:center;font-size:13px;font-weight:500;color:var(--ink3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
 .tab.on{color:var(--acc);border-bottom-color:var(--acc)}
-
-/* ── MAIN ── */
 .main{flex:1;overflow-y:auto;padding-bottom:80px}
 .pane{display:none;padding:20px}
 .pane.on{display:block}
-
-/* ── SECTION LABEL ── */
 .sec{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:10px}
-
-/* ── DATE SELECTOR ── */
 .date-row{display:flex;align-items:center;gap:8px;margin-bottom:16px}
-.date-nav{
-  width:32px;height:32px;background:var(--white);border:1px solid var(--line2);
-  border-radius:var(--rsm);display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:16px;color:var(--ink2);flex-shrink:0;transition:all .15s;
-}
-.date-nav:hover{background:var(--cream);border-color:var(--acc-mid)}
-.date-nav:active{transform:scale(.95)}
-.date-display{
-  flex:1;background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);
-  padding:8px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;
-  transition:border-color .15s;
-}
-.date-display:hover{border-color:var(--acc-mid)}
-.date-display-left{display:flex;align-items:center;gap:8px}
+.date-nav{width:32px;height:32px;background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--ink2);flex-shrink:0;transition:all .15s}
+.date-nav:hover{background:var(--cream);border-color:var(--acc-m)}
+.date-display{flex:1;background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
 .date-day{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--ink);line-height:1}
-.date-info{display:flex;flex-direction:column}
 .date-weekday{font-size:12px;font-weight:500;color:var(--acc)}
 .date-month{font-size:11px;color:var(--ink3)}
 .date-input-hidden{position:absolute;opacity:0;pointer-events:none;width:0;height:0}
 .entries-count{font-size:11px;color:var(--ink3);background:var(--cream);border-radius:20px;padding:2px 8px}
-
-/* ── ENTRY FORM ── */
-.form-card{
-  background:var(--white);border:1px solid var(--line);border-radius:var(--r);
-  padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);
-  animation:slideIn .2s ease;
-}
-@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.form-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);animation:si .2s ease}
+@keyframes si{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 .form-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .form-card-title{font-size:13px;font-weight:600;color:var(--ink)}
-.remove-btn{
-  background:none;border:none;color:var(--ink4);cursor:pointer;
-  width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;
-  font-size:14px;transition:all .15s;
-}
-.remove-btn:hover{background:var(--red-light);color:var(--red)}
-
+.remove-btn{background:none;border:none;color:var(--ink4);cursor:pointer;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+.remove-btn:hover{background:var(--red-l);color:var(--red)}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .field{display:flex;flex-direction:column;gap:4px}
 .field.full{grid-column:1/-1}
-.field.third{grid-column:span 1}
 label{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600}
-input[type=time],input[type=number],select,input[type=text]{
-  background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);
-  color:var(--ink);font-family:'DM Mono',monospace;font-size:15px;padding:9px 11px;
-  width:100%;-webkit-appearance:none;appearance:none;outline:none;
-  transition:border-color .15s,background .15s;
-}
+input[type=time],input[type=number],select{background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);color:var(--ink);font-family:'DM Mono',monospace;font-size:15px;padding:9px 11px;width:100%;-webkit-appearance:none;appearance:none;outline:none;transition:border-color .15s}
 select{font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer}
-input:focus,select:focus{border-color:var(--acc);background:var(--white);box-shadow:0 0 0 3px var(--acc-light)}
+input:focus,select:focus{border-color:var(--acc);background:var(--white);box-shadow:0 0 0 3px var(--acc-l)}
 input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
-
-.netto-row{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--green-light);border-radius:var(--rsm);border:1px solid rgba(30,122,74,.15)}
-.netto-label{font-size:11px;color:var(--green);font-weight:500}
-.netto-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--green)}
-.netto-row.warn{background:var(--amber-light);border-color:rgba(184,92,0,.15)}
-.netto-row.warn .netto-label,.netto-row.warn .netto-val{color:var(--amber)}
-
-.add-entry-btn{
-  width:100%;background:var(--cream);border:1.5px dashed var(--line2);border-radius:var(--rsm);
-  padding:11px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
-  color:var(--ink3);cursor:pointer;transition:all .15s;display:flex;align-items:center;
-  justify-content:center;gap:6px;
-}
-.add-entry-btn:hover{background:var(--acc-light);border-color:var(--acc-mid);color:var(--acc)}
-.add-entry-btn:active{transform:scale(.99)}
-
-/* ── SAVE BTN ── */
-.save-btn{
-  width:100%;background:var(--acc);color:white;border:none;border-radius:var(--rsm);
-  padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
-  cursor:pointer;transition:all .15s;letter-spacing:-.1px;margin-top:12px;
-}
+.netto-row{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--grn-l);border-radius:var(--rsm);border:1px solid rgba(30,122,74,.15)}
+.netto-label{font-size:11px;color:var(--grn);font-weight:500}
+.netto-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--grn)}
+.netto-row.warn{background:var(--amb-l);border-color:rgba(184,92,0,.15)}
+.netto-row.warn .netto-label,.netto-row.warn .netto-val{color:var(--amb)}
+.add-entry-btn{width:100%;background:var(--cream);border:1.5px dashed var(--line2);border-radius:var(--rsm);padding:11px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--ink3);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.add-entry-btn:hover{background:var(--acc-l);border-color:var(--acc-m);color:var(--acc)}
+.save-btn{width:100%;background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:12px;position:relative}
 .save-btn:hover{background:#234d7a}
-.save-btn:active{transform:scale(.99)}
 .save-btn:disabled{opacity:.4;cursor:not-allowed}
-
-/* ── DAY SUMMARY ── */
-.day-total{
-  background:var(--white);border:1px solid var(--line);border-radius:var(--r);
-  padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow-sm);
-}
+.save-btn .spin{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:sp .7s linear infinite;position:absolute;right:16px;top:50%;transform:translateY(-50%)}
+.save-btn.loading .spin{display:block}
+@keyframes sp{to{transform:translateY(-50%) rotate(360deg)}}
+.day-total{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
 .day-total-row{display:flex;align-items:center;justify-content:space-between}
 .day-total-label{font-size:12px;color:var(--ink3);font-weight:500}
 .day-total-val{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--acc)}
 .day-total-sub{font-size:11px;color:var(--ink3);margin-top:2px}
-
-/* ── STATS ── */
 .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
 .stat{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--shadow-sm)}
-.stat-val{font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--ink)}
-.stat-val.blue{color:var(--acc)}
-.stat-val.green{color:var(--green)}
-.stat-val.amber{color:var(--amber)}
+.stat-val{font-family:'Fraunces',serif;font-size:20px;font-weight:600}
+.stat-val.blue{color:var(--acc)}.stat-val.green{color:var(--grn)}.stat-val.amber{color:var(--amb)}
 .stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);margin-top:3px;font-weight:500}
-
-/* ── MONTH NAV ── */
 .month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .month-title{font-family:'Fraunces',serif;font-size:16px;font-weight:600;color:var(--ink)}
-.mnav-btn{
-  width:28px;height:28px;background:var(--white);border:1px solid var(--line2);
-  border-radius:var(--rsm);display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:14px;color:var(--ink2);transition:all .15s;
-}
-.mnav-btn:hover{border-color:var(--acc-mid);color:var(--acc)}
-
-/* ── CLIENT TOTALS ── */
+.mnav-btn{width:28px;height:28px;background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--ink2);transition:all .15s}
+.mnav-btn:hover{border-color:var(--acc-m);color:var(--acc)}
 .client-totals{background:var(--white);border:1px solid var(--line);border-radius:var(--r);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-sm)}
-.client-totals-header{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.client-totals-header{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
 .client-totals-title{font-size:12px;font-weight:600;color:var(--ink);text-transform:uppercase;letter-spacing:.5px}
 .client-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);gap:12px}
 .client-row:last-child{border-bottom:none}
 .client-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .client-name{flex:1;font-size:13px;font-weight:500;color:var(--ink)}
-.client-days{font-size:12px;color:var(--ink3);min-width:50px;text-align:right}
 .client-hours{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--acc);min-width:50px;text-align:right}
+.client-days{font-size:12px;color:var(--ink3);min-width:50px;text-align:right}
 .client-km{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink3);min-width:40px;text-align:right}
-
-/* ── ENTRIES TABLE ── */
 .entries-table{background:var(--white);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)}
 .entries-table-header{display:grid;grid-template-columns:80px 1fr 90px 50px;gap:4px;padding:9px 14px;background:var(--cream);border-bottom:1px solid var(--line)}
 .th{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600}
-.entry-row{display:grid;grid-template-columns:80px 1fr 90px 50px;gap:4px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center;transition:background .1s;cursor:pointer}
+.entry-row{display:grid;grid-template-columns:80px 1fr 90px 50px;gap:4px;padding:10px 14px;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;transition:background .1s}
 .entry-row:last-child{border-bottom:none}
 .entry-row:hover{background:var(--cream)}
-.entry-date-cell{font-size:12px;color:var(--ink2)}
-.entry-date-day{font-weight:600;color:var(--ink)}
-.entry-date-rest{color:var(--ink3)}
-.entry-client-cell{display:flex;flex-direction:column;gap:2px}
-.entry-client-name{font-size:13px;font-weight:500;color:var(--ink)}
-.entry-times-small{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)}
+.entry-date-day{font-weight:600;color:var(--ink);font-size:13px}
 .entry-hours-cell{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--acc);text-align:right}
 .entry-km-cell{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink3);text-align:right}
-.entry-multi{display:flex;flex-direction:column;gap:3px}
-
 .empty-state{text-align:center;padding:48px 20px}
 .empty-icon{font-size:36px;margin-bottom:10px;opacity:.4}
 .empty-text{font-size:14px;color:var(--ink3)}
-
-/* ── EXPORT BAR ── */
-.export-bar{
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:480px;
-  background:rgba(255,255,255,.95);backdrop-filter:blur(12px);
-  border-top:1px solid var(--line);
-  padding:10px 20px;padding-bottom:max(10px,env(safe-area-inset-bottom));
-  display:flex;gap:8px;
-}
-.exp-btn{
-  flex:1;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);
-  padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
-  color:var(--ink2);cursor:pointer;transition:all .15s;
-}
-.exp-btn:hover{background:var(--acc-light);border-color:var(--acc-mid);color:var(--acc)}
-.exp-btn.primary{background:var(--acc);border-color:var(--acc);color:white}
-.exp-btn.primary:hover{background:#234d7a}
-
-/* ── TOAST ── */
-.toast{
-  position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);
-  border-radius:20px;padding:10px 18px;font-size:13px;font-weight:500;
-  transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;
-  white-space:nowrap;max-width:92vw;text-align:center;
-}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);border-radius:20px;padding:10px 18px;font-size:13px;font-weight:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;max-width:92vw;text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.toast.ok{background:var(--green-light);border:1px solid rgba(30,122,74,.25);color:var(--green)}
-.toast.bad{background:var(--red-light);border:1px solid rgba(192,57,43,.25);color:var(--red)}
-.toast.info{background:var(--acc-light);border:1px solid var(--acc-mid);color:var(--acc)}
-
-/* CLIENT COLORS */
-.cc-0{background:#2d5a8e}.cc-1{background:#1e7a4a}.cc-2{background:#b85c00}
-.cc-3{background:#7b3f9e}.cc-4{background:#c0392b}.cc-5{background:#1a7a8a}
-.cc-6{background:#5c6b7a}.cc-7{background:#8a6a1e}
-
-.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
-
-/* DIVIDER */
-.divr{height:1px;background:var(--line);margin:14px 0}
+.toast.ok{background:var(--grn-l);border:1px solid rgba(30,122,74,.25);color:var(--grn)}
+.toast.bad{background:var(--red-l);border:1px solid rgba(192,57,43,.25);color:var(--red)}
+.toast.info{background:var(--acc-l);border:1px solid var(--acc-m);color:var(--acc)}
 </style>
 </head>
 <body>
@@ -281,28 +137,25 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
             <div class="brand-sub">Ordinatio Groep</div>
           </div>
         </div>
-        <div class="date-badge" id="todayBadge">–</div>
+        <div class="sync-pill syncing" id="syncPill" onclick="manualSync()">
+          <div class="sync-dot"></div>
+          <span id="syncText">Verbinden…</span>
+        </div>
       </div>
     </div>
     <div class="tabs">
       <button class="tab on" onclick="switchTab('invoer',this)">Invoer</button>
-      <button class="tab" onclick="switchTab('overzicht',this)" id="tabOverzicht">Overzicht</button>
-      <button class="tab" onclick="switchTab('export',this)">Export</button>
+      <button class="tab" onclick="switchTab('overzicht',this)">Overzicht</button>
     </div>
   </header>
-
   <div class="main">
-
-    <!-- ── INVOER ── -->
     <div class="pane on" id="pane-invoer">
-
-      <!-- Date selector -->
       <div class="date-row">
         <button class="date-nav" onclick="changeDay(-1)">‹</button>
-        <div class="date-display" onclick="document.getElementById('hiddenDate').showPicker?.() || document.getElementById('hiddenDate').click()">
-          <div class="date-display-left">
+        <div class="date-display" onclick="document.getElementById('hiddenDate').showPicker?.()">
+          <div style="display:flex;align-items:center;gap:8px">
             <div class="date-day" id="dispDay">–</div>
-            <div class="date-info">
+            <div>
               <div class="date-weekday" id="dispWeekday">–</div>
               <div class="date-month" id="dispMonth">–</div>
             </div>
@@ -312,502 +165,206 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
         <button class="date-nav" onclick="changeDay(1)">›</button>
       </div>
       <input type="date" id="hiddenDate" class="date-input-hidden" onchange="setDate(this.value)">
-
-      <!-- Day total -->
       <div class="day-total" id="dayTotalCard" style="display:none">
         <div class="day-total-row">
-          <div>
-            <div class="day-total-label">Totaal vandaag</div>
-            <div class="day-total-sub" id="dayTotalSub">–</div>
-          </div>
+          <div><div class="day-total-label">Totaal vandaag</div><div class="day-total-sub" id="dayTotalSub">–</div></div>
           <div class="day-total-val" id="dayTotalVal">0:00</div>
         </div>
       </div>
-
-      <!-- Entry forms -->
       <div id="entryForms"></div>
-
-      <!-- Add block button -->
-      <button class="add-entry-btn" onclick="addBlock()">
-        <span style="font-size:16px;line-height:1">+</span>
-        Tijdblok toevoegen
-      </button>
-
-      <button class="save-btn" id="saveBtn" onclick="saveDay()">Dag opslaan</button>
+      <button class="add-entry-btn" onclick="addBlock()"><span style="font-size:16px;line-height:1">+</span> Tijdblok toevoegen</button>
+      <button class="save-btn" id="saveBtn" onclick="saveDay()">Dag opslaan<div class="spin"></div></button>
     </div>
-
-    <!-- ── OVERZICHT ── -->
     <div class="pane" id="pane-overzicht">
       <div class="month-nav">
         <button class="mnav-btn" onclick="prevMonth()">‹</button>
         <div class="month-title" id="monthTitle">–</div>
         <button class="mnav-btn" onclick="nextMonth()">›</button>
       </div>
-
       <div class="stats-grid">
         <div class="stat"><div class="stat-val blue" id="ov-days">0</div><div class="stat-lbl">Dagen</div></div>
         <div class="stat"><div class="stat-val green" id="ov-hours">0:00</div><div class="stat-lbl">Uren</div></div>
         <div class="stat"><div class="stat-val amber" id="ov-km">0</div><div class="stat-lbl">KM</div></div>
       </div>
-
       <p class="sec">Per opdrachtgever</p>
       <div class="client-totals" id="clientTotals"></div>
-
-      <div class="divr"></div>
-
+      <div style="height:14px"></div>
       <p class="sec">Alle registraties</p>
-      <div class="entries-table" id="entriesTable">
-        <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Geen registraties</div></div>
-      </div>
-    </div>
-
-    <!-- ── EXPORT ── -->
-    <div class="pane" id="pane-export">
-      <p class="sec">App_Data exporteren</p>
-      <div style="background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow-sm)">
-        <p style="font-size:14px;color:var(--ink);line-height:1.6;margin-bottom:12px">
-          Download <strong>App_Data.xlsx</strong> en plak de inhoud in het gelijknamige tabblad van je Excel-dashboard. Daarna voer je de macro <em>ImporteerUitAppData</em> uit.
-        </p>
-        <div id="exportStats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px"></div>
-        <button class="save-btn" onclick="downloadAppData()">Download App_Data.xlsx</button>
-      </div>
-
-      <p class="sec">Data beheer</p>
-      <div style="background:var(--white);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)">
-        <button onclick="exportCSV()" style="width:100%;background:none;border:none;border-bottom:1px solid var(--line);padding:14px 16px;text-align:left;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-          <span>Export als CSV</span><span style="color:var(--ink3)">→</span>
-        </button>
-        <button onclick="importJSON()" style="width:100%;background:none;border:none;border-bottom:1px solid var(--line);padding:14px 16px;text-align:left;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-          <span>Importeer backup (.json)</span><span style="color:var(--ink3)">→</span>
-        </button>
-        <button onclick="exportJSON()" style="width:100%;background:none;border:none;border-bottom:1px solid var(--line);padding:14px 16px;text-align:left;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-          <span>Exporteer backup (.json)</span><span style="color:var(--ink3)">→</span>
-        </button>
-        <button onclick="clearAllConfirm()" style="width:100%;background:none;border:none;padding:14px 16px;text-align:left;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-          <span>Alle data wissen</span><span style="color:var(--red);opacity:.5">→</span>
-        </button>
-      </div>
-      <input type="file" id="jsonImport" accept=".json" style="display:none" onchange="doImportJSON(this.files[0])">
+      <div class="entries-table" id="entriesTable"></div>
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-// ── CONSTANTS ──────────────────────────────────
-const SK = 'dgs_pro_v1';
-const MO = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-const MOS = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
-const DY = ['zo','ma','di','wo','do','vr','za'];
-const DYL = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
-const KLANTEN = ['Intern','Sitech','Dysel','Seeder','HG','Nabuurs'];
-const CLIENT_COLORS = ['#2d5a8e','#1e7a4a','#b85c00','#7b3f9e','#c0392b','#1a7a8a','#5c6b7a','#8a6a1e'];
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,doc,setDoc,getDoc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// ── STATE ──────────────────────────────────────
-// days = { 'YYYY-MM-DD': [ {klant, start, end, brk, km}, ... ] }
-let days = JSON.parse(localStorage.getItem(SK) || '{}');
-let activeDate = todayISO();
-let vMonth = new Date().getMonth();
-let vYear  = new Date().getFullYear();
-let blocks = []; // current form blocks
+const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
+const fbApp=initializeApp(FB);
+const db=getFirestore(fbApp);
 
-// ── HELPERS ───────────────────────────────────
-function todayISO(){
-  const n=new Date();
-  return `${n.getFullYear()}-${p2(n.getMonth()+1)}-${p2(n.getDate())}`;
-}
+const MO=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const MOS=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const DY=['zo','ma','di','wo','do','vr','za'];
+const DYL=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+const KLANTEN=['Intern','Sitech','Dysel','Seeder','HG','Nabuurs'];
+const CC={Intern:'#5c6b7a',Sitech:'#2d5a8e',Dysel:'#1e7a4a',Seeder:'#b85c00',HG:'#7b3f9e',Nabuurs:'#c0392b'};
+
+let days={},activeDate=todayISO(),vMonth=new Date().getMonth(),vYear=new Date().getFullYear(),blocks=[];
+
+function todayISO(){const n=new Date();return`${n.getFullYear()}-${p2(n.getMonth()+1)}-${p2(n.getDate())}`}
 function p2(n){return String(n).padStart(2,'0')}
 function m2s(m){return`${Math.floor(m/60)}:${p2(m%60)}`}
-function timeMins(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m}
-function blockMins(b){const m=timeMins(b.end)-timeMins(b.start)-(parseInt(b.brk)||0);return Math.max(0,m)}
-function isoToDate(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)}
-function clientColor(name){const i=KLANTEN.indexOf(name);return CLIENT_COLORS[i>=0?i:6]}
+function tMins(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m}
+function bMins(b){return Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.brk)||0))}
+function cc(n){return CC[n]||'#8a8a84'}
+function isoD(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)}
 
-function persist(){localStorage.setItem(SK,JSON.stringify(days))}
+function syncStatus(s,t){const p=document.getElementById('syncPill');p.className=`sync-pill ${s}`;document.getElementById('syncText').textContent=t}
 
-// ── INIT ──────────────────────────────────────
-function init(){
-  const now=new Date();
-  document.getElementById('todayBadge').textContent=`${DY[now.getDay()]} ${now.getDate()} ${MOS[now.getMonth()]}`;
-  setDate(activeDate);
-  renderExportStats();
+onSnapshot(doc(db,'dagstaat','data'),(snap)=>{
+  if(snap.exists()){days=snap.data().days||{};renderOverzicht();loadDayBlocks();}
+  syncStatus('synced','Gesynchroniseerd');
+},(err)=>{syncStatus('offline','Offline')});
+
+async function saveToFB(){
+  syncStatus('syncing','Opslaan…');
+  try{await setDoc(doc(db,'dagstaat','data'),{days});syncStatus('synced','Gesynchroniseerd');}
+  catch(e){syncStatus('offline','Offline');showToast('Fout: '+e.message,'bad');}
 }
 
-// ── DATE NAVIGATION ───────────────────────────
-function setDate(iso){
-  activeDate=iso;
-  document.getElementById('hiddenDate').value=iso;
-  const d=isoToDate(iso);
+window.manualSync=async function(){
+  syncStatus('syncing','Synchroniseren…');
+  try{const s=await getDoc(doc(db,'dagstaat','data'));if(s.exists())days=s.data().days||{};renderOverzicht();loadDayBlocks();syncStatus('synced','Gesynchroniseerd');showToast('Gesynchroniseerd ✓','ok');}
+  catch(e){syncStatus('offline','Offline');}
+};
+
+function init(){document.getElementById('hiddenDate').value=activeDate;setDate(activeDate)}
+
+window.setDate=function(iso){
+  activeDate=iso;document.getElementById('hiddenDate').value=iso;
+  const d=isoD(iso);
   document.getElementById('dispDay').textContent=d.getDate();
   document.getElementById('dispWeekday').textContent=DYL[d.getDay()];
   document.getElementById('dispMonth').textContent=`${MO[d.getMonth()]} ${d.getFullYear()}`;
   loadDayBlocks();
 }
 
-function changeDay(delta){
-  const d=isoToDate(activeDate);
-  d.setDate(d.getDate()+delta);
-  setDate(`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`);
-}
+window.changeDay=function(delta){const d=isoD(activeDate);d.setDate(d.getDate()+delta);setDate(`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`)}
 
-// ── LOAD DAY BLOCKS ───────────────────────────
 function loadDayBlocks(){
-  const existing=days[activeDate]||[];
-  blocks=existing.length?existing.map(b=>({...b})):[defaultBlock()];
+  const e=days[activeDate]||[];
+  blocks=e.length?e.map(b=>({...b})):[{klant:'Sitech',start:'08:00',end:'16:30',brk:30,km:0}];
   renderBlocks();
 }
 
-function defaultBlock(){
-  return{klant:'Sitech',start:'08:00',end:'16:30',brk:30,km:0};
-}
-
-// ── RENDER BLOCKS ─────────────────────────────
 function renderBlocks(){
-  const container=document.getElementById('entryForms');
-  container.innerHTML='';
-  blocks.forEach((b,i)=>container.appendChild(makeBlockEl(b,i)));
-  updateDayTotal();
+  const c=document.getElementById('entryForms');c.innerHTML='';
+  blocks.forEach((b,i)=>c.appendChild(mkBlock(b,i)));
+  updateTotal();
   const n=days[activeDate]?.length||0;
   document.getElementById('dispCount').textContent=`${n} blok${n!==1?'ken':''}`;
 }
 
-function makeBlockEl(b,idx){
-  const div=document.createElement('div');
-  div.className='form-card';
-  const mins=blockMins(b);
-  const nettoOk=mins>0;
-  const nettoStr=nettoOk?m2s(mins):'–';
-  const color=clientColor(b.klant);
-
-  div.innerHTML=`
-    <div class="form-card-header">
-      <div style="display:flex;align-items:center;gap:8px">
-        <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
-        <span class="form-card-title">Tijdblok ${idx+1}</span>
-      </div>
-      ${blocks.length>1?`<button class="remove-btn" onclick="removeBlock(${idx})">✕</button>`:''}
+function mkBlock(b,i){
+  const d=document.createElement('div');d.className='form-card';
+  const m=bMins(b);
+  d.innerHTML=`<div class="form-card-header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${cc(b.klant)};flex-shrink:0" id="dot-${i}"></div>
+      <span class="form-card-title">Tijdblok ${i+1}</span>
     </div>
-    <div class="fg">
-      <div class="field full">
-        <label>Opdrachtgever</label>
-        <select onchange="updateBlock(${idx},'klant',this.value)">
-          ${KLANTEN.map(k=>`<option${k===b.klant?' selected':''}>${k}</option>`).join('')}
-        </select>
-      </div>
-      <div class="field">
-        <label>Starttijd</label>
-        <input type="time" value="${b.start}" step="300" onchange="updateBlock(${idx},'start',this.value)">
-      </div>
-      <div class="field">
-        <label>Eindtijd</label>
-        <input type="time" value="${b.end}" step="300" onchange="updateBlock(${idx},'end',this.value)">
-      </div>
-      <div class="field">
-        <label>Pauze (min)</label>
-        <input type="number" value="${b.brk||0}" min="0" max="240" onchange="updateBlock(${idx},'brk',this.value)">
-      </div>
-      <div class="field">
-        <label>KM</label>
-        <input type="number" value="${b.km||''}" min="0" max="9999" placeholder="0" onchange="updateBlock(${idx},'km',this.value)">
-      </div>
+    ${blocks.length>1?`<button class="remove-btn" onclick="removeBlock(${i})">✕</button>`:''}
+  </div>
+  <div class="fg">
+    <div class="field full"><label>Opdrachtgever</label>
+      <select onchange="updBlock(${i},'klant',this.value)">${KLANTEN.map(k=>`<option${k===b.klant?' selected':''}>${k}</option>`).join('')}</select>
     </div>
-    <div class="netto-row${nettoOk?'':' warn'}">
-      <span class="netto-label">Netto uren</span>
-      <span class="netto-val">${nettoStr}</span>
-    </div>`;
-  return div;
+    <div class="field"><label>Starttijd</label><input type="time" value="${b.start}" step="300" onchange="updBlock(${i},'start',this.value)"></div>
+    <div class="field"><label>Eindtijd</label><input type="time" value="${b.end}" step="300" onchange="updBlock(${i},'end',this.value)"></div>
+    <div class="field"><label>Pauze (min)</label><input type="number" value="${b.brk||0}" min="0" max="240" onchange="updBlock(${i},'brk',this.value)"></div>
+    <div class="field"><label>KM</label><input type="number" value="${b.km||''}" min="0" max="9999" placeholder="0" onchange="updBlock(${i},'km',this.value)"></div>
+  </div>
+  <div class="netto-row${m>0?'':' warn'}" id="nr-${i}">
+    <span class="netto-label">Netto uren</span><span class="netto-val">${m>0?m2s(m):'–'}</span>
+  </div>`;
+  return d;
 }
 
-function updateBlock(idx,key,val){
-  if(key==='brk'||key==='km') blocks[idx][key]=parseInt(val)||0;
-  else blocks[idx][key]=val;
-  // Re-render just the netto row
-  const cards=document.querySelectorAll('.form-card');
-  if(cards[idx]){
-    const b=blocks[idx];
-    const mins=blockMins(b);
-    const nr=cards[idx].querySelector('.netto-row');
-    const nv=cards[idx].querySelector('.netto-val');
-    if(nr&&nv){
-      nv.textContent=mins>0?m2s(mins):'–';
-      nr.className=`netto-row${mins>0?'':' warn'}`;
-    }
-    // Update dot color on klant change
-    if(key==='klant'){
-      const dot=cards[idx].querySelector('div[style*="border-radius:50%"]');
-      if(dot)dot.style.background=clientColor(val);
-    }
-  }
-  updateDayTotal();
+window.updBlock=function(i,k,v){
+  if(k==='brk'||k==='km')blocks[i][k]=parseInt(v)||0;else blocks[i][k]=v;
+  const nr=document.getElementById(`nr-${i}`);
+  if(nr){const m=bMins(blocks[i]);nr.className=`netto-row${m>0?'':' warn'}`;nr.querySelector('.netto-val').textContent=m>0?m2s(m):'–';}
+  if(k==='klant'){const dot=document.getElementById(`dot-${i}`);if(dot)dot.style.background=cc(v);}
+  updateTotal();
 }
 
-function addBlock(){
-  blocks.push(defaultBlock());
-  renderBlocks();
-}
+window.addBlock=function(){blocks.push({klant:'Sitech',start:'08:00',end:'16:30',brk:30,km:0});renderBlocks()}
+window.removeBlock=function(i){blocks.splice(i,1);renderBlocks()}
 
-function removeBlock(idx){
-  blocks.splice(idx,1);
-  renderBlocks();
-}
-
-function updateDayTotal(){
-  const total=blocks.reduce((s,b)=>s+blockMins(b),0);
+function updateTotal(){
+  const t=blocks.reduce((s,b)=>s+bMins(b),0);
   const card=document.getElementById('dayTotalCard');
-  const val=document.getElementById('dayTotalVal');
-  const sub=document.getElementById('dayTotalSub');
-  if(total>0){
+  if(t>0){
     card.style.display='block';
-    val.textContent=m2s(total);
-    const clients=[...new Set(blocks.filter(b=>blockMins(b)>0).map(b=>b.klant))];
-    sub.textContent=clients.join(' · ');
-  } else {
-    card.style.display='none';
-  }
+    document.getElementById('dayTotalVal').textContent=m2s(t);
+    document.getElementById('dayTotalSub').textContent=[...new Set(blocks.filter(b=>bMins(b)>0).map(b=>b.klant))].join(' · ');
+  }else{card.style.display='none';}
 }
 
-// ── SAVE DAY ──────────────────────────────────
-function saveDay(){
-  const valid=blocks.filter(b=>b.start&&b.end&&blockMins(b)>0);
-  if(!valid.length){toast('Voer geldige tijden in','bad');return}
-  days[activeDate]=valid.map(b=>({...b,brk:parseInt(b.brk)||0,km:parseInt(b.km)||0}));
-  persist();
+window.saveDay=async function(){
+  const v=blocks.filter(b=>b.start&&b.end&&bMins(b)>0);
+  if(!v.length){showToast('Voer geldige tijden in','bad');return;}
+  const btn=document.getElementById('saveBtn');btn.classList.add('loading');btn.disabled=true;
+  days[activeDate]=v.map(b=>({...b,brk:parseInt(b.brk)||0,km:parseInt(b.km)||0}));
+  await saveToFB();
   const n=days[activeDate].length;
   document.getElementById('dispCount').textContent=`${n} blok${n!==1?'ken':''}`;
-  toast(`${n} blok${n!==1?'ken':''} opgeslagen ✓`,'ok');
-  renderExportStats();
+  btn.classList.remove('loading');btn.disabled=false;
+  showToast(`${n} blok${n!==1?'ken':''} opgeslagen ✓`,'ok');
 }
 
-// ── TAB SWITCH ────────────────────────────────
-function switchTab(name,btn){
+window.switchTab=function(name,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('pane-'+name).classList.add('on');
+  btn.classList.add('on');document.getElementById('pane-'+name).classList.add('on');
   if(name==='overzicht'){vMonth=new Date().getMonth();vYear=new Date().getFullYear();renderOverzicht();}
-  if(name==='export')renderExportStats();
 }
 
-// ── OVERZICHT ─────────────────────────────────
-function prevMonth(){vMonth--;if(vMonth<0){vMonth=11;vYear--}renderOverzicht()}
-function nextMonth(){vMonth++;if(vMonth>11){vMonth=0;vYear++}renderOverzicht()}
+window.prevMonth=function(){vMonth--;if(vMonth<0){vMonth=11;vYear--}renderOverzicht()}
+window.nextMonth=function(){vMonth++;if(vMonth>11){vMonth=0;vYear++}renderOverzicht()}
 
 function renderOverzicht(){
   const pfx=`${vYear}-${p2(vMonth+1)}`;
   document.getElementById('monthTitle').textContent=`${MO[vMonth]} ${vYear}`;
+  const mDays=Object.keys(days).filter(d=>d.startsWith(pfx)).sort();
+  const all=mDays.flatMap(k=>days[k].map(b=>({...b,date:k})));
+  const tMin=all.reduce((s,b)=>s+bMins(b),0);
+  const tKm=all.reduce((s,b)=>s+(b.km||0),0);
+  document.getElementById('ov-days').textContent=mDays.length;
+  document.getElementById('ov-hours').textContent=m2s(tMin);
+  document.getElementById('ov-km').textContent=tKm;
 
-  // Collect all entries for this month
-  const monthDays=Object.keys(days).filter(d=>d.startsWith(pfx)).sort();
-  const allBlocks=monthDays.flatMap(d=>days[d].map(b=>({...b,date:d})));
-
-  // Stats
-  const totalMins=allBlocks.reduce((s,b)=>s+blockMins(b),0);
-  const totalKm=allBlocks.reduce((s,b)=>s+(b.km||0),0);
-  document.getElementById('ov-days').textContent=monthDays.length;
-  document.getElementById('ov-hours').textContent=m2s(totalMins);
-  document.getElementById('ov-km').textContent=totalKm;
-
-  // Client totals
-  const clientMap={};
-  allBlocks.forEach(b=>{
-    if(!clientMap[b.klant])clientMap[b.klant]={mins:0,days:new Set(),km:0};
-    clientMap[b.klant].mins+=blockMins(b);
-    clientMap[b.klant].days.add(b.date);
-    clientMap[b.klant].km+=b.km||0;
-  });
+  const map={};
+  all.forEach(b=>{if(!map[b.klant])map[b.klant]={mins:0,days:new Set(),km:0};map[b.klant].mins+=bMins(b);map[b.klant].days.add(b.date);map[b.klant].km+=b.km||0;});
 
   const ct=document.getElementById('clientTotals');
-  if(!Object.keys(clientMap).length){
-    ct.innerHTML='<div class="empty-state" style="padding:24px"><div class="empty-icon">📊</div><div class="empty-text">Geen data deze maand</div></div>';
-  } else {
-    ct.innerHTML=`
-      <div class="client-totals-header">
-        <span class="client-totals-title">Opdrachtgever</span>
-        <span style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px">Uren · Dagen · KM</span>
-      </div>
-      ${Object.entries(clientMap).sort((a,b)=>b[1].mins-a[1].mins).map(([name,data])=>`
-        <div class="client-row">
-          <div class="client-dot" style="background:${clientColor(name)}"></div>
-          <div class="client-name">${name}</div>
-          <div class="client-hours">${m2s(data.mins)}</div>
-          <div class="client-days">${data.days.size}d</div>
-          <div class="client-km">${data.km?data.km+'km':''}</div>
-        </div>`).join('')}`;
-  }
+  if(!Object.keys(map).length){ct.innerHTML='<div class="empty-state" style="padding:24px"><div class="empty-icon">📊</div><div class="empty-text">Geen data</div></div>';}
+  else{ct.innerHTML=`<div class="client-totals-header"><span class="client-totals-title">Opdrachtgever</span><span style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px">Uren · Dagen · KM</span></div>${Object.entries(map).sort((a,b)=>b[1].mins-a[1].mins).map(([n,d])=>`<div class="client-row"><div class="client-dot" style="background:${cc(n)}"></div><div class="client-name">${n}</div><div class="client-hours">${m2s(d.mins)}</div><div class="client-days">${d.days.size}d</div><div class="client-km">${d.km?d.km+'km':''}</div></div>`).join('')}`;}
 
-  // Entries table
   const et=document.getElementById('entriesTable');
-  if(!monthDays.length){
-    et.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Geen registraties deze maand</div></div>';
-    return;
-  }
-
-  et.innerHTML=`
-    <div class="entries-table-header">
-      <div class="th">Datum</div>
-      <div class="th">Opdrachtgever</div>
-      <div class="th" style="text-align:right">Uren</div>
-      <div class="th" style="text-align:right">KM</div>
-    </div>
-    ${[...monthDays].reverse().map(d=>{
-      const bs=days[d];
-      const dt=isoToDate(d);
-      const totalM=bs.reduce((s,b)=>s+blockMins(b),0);
-      const totalK=bs.reduce((s,b)=>s+(b.km||0),0);
-      return`<div class="entry-row" onclick="goToDate('${d}')">
-        <div>
-          <div class="entry-date-day">${DY[dt.getDay()]} ${dt.getDate()}</div>
-          <div style="font-size:11px;color:var(--ink3)">${MOS[dt.getMonth()]}</div>
-        </div>
-        <div class="entry-client-cell">
-          ${bs.map(b=>`
-            <div style="display:flex;align-items:center;gap:5px">
-              <div style="width:6px;height:6px;border-radius:50%;background:${clientColor(b.klant)};flex-shrink:0"></div>
-              <span style="font-size:12px;font-weight:500;color:var(--ink)">${b.klant}</span>
-              <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${b.start}–${b.end}</span>
-            </div>`).join('')}
-        </div>
-        <div class="entry-hours-cell">${m2s(totalM)}</div>
-        <div class="entry-km-cell">${totalK||''}</div>
-      </div>`;
-    }).join('')}`;
+  if(!mDays.length){et.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Geen registraties</div></div>';return;}
+  et.innerHTML=`<div class="entries-table-header"><div class="th">Datum</div><div class="th">Opdrachtgever</div><div class="th" style="text-align:right">Uren</div><div class="th" style="text-align:right">KM</div></div>${[...mDays].reverse().map(d=>{const bs=days[d];const dt=isoD(d);const tM=bs.reduce((s,b)=>s+bMins(b),0);const tK=bs.reduce((s,b)=>s+(b.km||0),0);return`<div class="entry-row" onclick="gotoDate('${d}')"><div><div class="entry-date-day">${DY[dt.getDay()]} ${dt.getDate()}</div><div style="font-size:11px;color:var(--ink3)">${MOS[dt.getMonth()]}</div></div><div>${bs.map(b=>`<div style="display:flex;align-items:center;gap:5px;margin-bottom:2px"><div style="width:6px;height:6px;border-radius:50%;background:${cc(b.klant)};flex-shrink:0"></div><span style="font-size:12px;font-weight:500">${b.klant}</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${b.start}–${b.end}</span></div>`).join('')}</div><div class="entry-hours-cell">${m2s(tM)}</div><div class="entry-km-cell">${tK||''}</div></div>`;}).join('')}`;
 }
 
-function goToDate(iso){
-  vMonth=parseInt(iso.split('-')[1])-1;
-  vYear=parseInt(iso.split('-')[0]);
-  switchTab('invoer',document.querySelector('.tab'));
-  document.querySelectorAll('.tab').forEach((t,i)=>{if(i===0)t.classList.add('on')});
+window.gotoDate=function(iso){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('on',i===0));
+  document.querySelectorAll('.pane').forEach((p,i)=>p.classList.toggle('on',i===0));
   setDate(iso);
 }
 
-// ── EXPORT STATS ──────────────────────────────
-function renderExportStats(){
-  const allBlocks=Object.values(days).flat();
-  const totalMins=allBlocks.reduce((s,b)=>s+blockMins(b),0);
-  const totalKm=allBlocks.reduce((s,b)=>s+(b.km||0),0);
-  const totalDays=Object.keys(days).length;
-  const el=document.getElementById('exportStats');
-  if(!el)return;
-  el.innerHTML=`
-    <div class="stat"><div class="stat-val blue">${totalDays}</div><div class="stat-lbl">Dagen</div></div>
-    <div class="stat"><div class="stat-val green">${m2s(totalMins)}</div><div class="stat-lbl">Uren</div></div>
-    <div class="stat"><div class="stat-val amber">${totalKm}</div><div class="stat-lbl">KM</div></div>`;
-}
-
-// ── DOWNLOAD APP_DATA ─────────────────────────
-function downloadAppData(){
-  const allDays=Object.keys(days).sort();
-  if(!allDays.length){toast('Geen data om te exporteren','bad');return}
-
-  const wsData=[['Datum','Klant','Starttijd','Eindtijd','Pauze','KM']];
-
-  allDays.forEach(iso=>{
-    days[iso].forEach(b=>{
-      const[y,mo,d]=iso.split('-').map(Number);
-      const serial=dateToSerial(y,mo,d);
-      wsData.push([serial,b.klant,timeFrac(b.start),timeFrac(b.end),(b.brk||0)/(24*60),b.km||0]);
-    });
-  });
-
-  const ws=XLSX.utils.aoa_to_sheet(wsData);
-  const range=XLSX.utils.decode_range(ws['!ref']);
-  for(let R=1;R<=range.e.r;R++){
-    const ca=ws[XLSX.utils.encode_cell({r:R,c:0})];
-    if(ca){ca.t='n';ca.z='DD-MM-YYYY'}
-    ;[2,3,4].forEach(C=>{
-      const ct=ws[XLSX.utils.encode_cell({r:R,c:C})];
-      if(ct){ct.t='n';ct.z='h:mm'}
-    });
-  }
-  ws['!cols']=[{wch:14},{wch:12},{wch:10},{wch:10},{wch:10},{wch:8}];
-
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'App_Data');
-  const buf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`App_Data_${new Date().toISOString().slice(0,10)}.xlsx`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  toast('App_Data.xlsx gedownload ✓','ok');
-}
-
-function dateToSerial(y,m,d){
-  return Math.round((new Date(y,m-1,d)-new Date(1899,11,30))/(86400000));
-}
-function timeFrac(t){
-  if(!t)return 0;
-  const[h,m]=t.split(':').map(Number);
-  return(h*60+m)/(24*60);
-}
-
-// ── CSV EXPORT ────────────────────────────────
-function exportCSV(){
-  const allDays=Object.keys(days).sort();
-  if(!allDays.length){toast('Geen data','bad');return}
-  const hdr='Datum\tOpdrachtgever\tStarttijd\tEindtijd\tPauze (min)\tNetto uren\tKM';
-  const rows=[];
-  allDays.forEach(iso=>{
-    const[y,mo,d]=iso.split('-');
-    days[iso].forEach(b=>{
-      rows.push(`${d}-${mo}-${y}\t${b.klant}\t${b.start}\t${b.end}\t${b.brk||0}\t${(blockMins(b)/60).toFixed(2).replace('.',',')}\t${b.km||0}`);
-    });
-  });
-  const blob=new Blob(['\uFEFF'+hdr+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`dagstaat_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  toast('CSV gedownload ✓','ok');
-}
-
-// ── JSON BACKUP ───────────────────────────────
-function exportJSON(){
-  const blob=new Blob([JSON.stringify(days,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`dagstaat_backup_${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  toast('Backup gedownload ✓','ok');
-}
-
-function importJSON(){document.getElementById('jsonImport').click()}
-
-function doImportJSON(file){
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=function(e){
-    try{
-      const data=JSON.parse(e.target.result);
-      if(typeof data!=='object')throw new Error('Ongeldig formaat');
-      const n=Object.keys(data).length;
-      if(!confirm(`${n} dagen importeren? Bestaande data wordt samengevoegd.`))return;
-      days={...days,...data};
-      persist();
-      renderExportStats();
-      toast(`${n} dagen geïmporteerd ✓`,'ok');
-    }catch(err){toast('Fout: '+err.message,'bad')}
-  };
-  r.readAsText(file);
-}
-
-function clearAllConfirm(){
-  if(!confirm('Alle data permanent wissen?'))return;
-  days={};persist();
-  renderExportStats();
-  loadDayBlocks();
-  toast('Data gewist','info');
-}
-
-// ── TOAST ─────────────────────────────────────
-function toast(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className=`toast ${type} show`;
-  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);
-}
+window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
 
 init();
 </script>
