@@ -1332,12 +1332,20 @@ async function renderOmzet(){
       const kmTarief = d.kmTarief || 0.23;
       const btwPct = d.btwPct !== undefined ? d.btwPct : 21;
 
-      const totalMins = regels.reduce((s,r) => {
-        const tM = t => { if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; };
-        return s + Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0));
-      }, 0);
-      const uren = totalMins / 60;
-      const totalKm = regels.reduce((s,r) => s+(r.km||0), 0);
+      // Support both formats: regels array (2026) and direct uren/km fields (2025 import)
+      let uren, totalKm;
+      if(regels.length > 0) {
+        const totalMins = regels.reduce((s,r) => {
+          const tM = t => { if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; };
+          return s + Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0));
+        }, 0);
+        uren = totalMins / 60;
+        totalKm = regels.reduce((s,r) => s+(r.km||0), 0);
+      } else {
+        // Direct fields (2025 import format)
+        uren = d.uren || 0;
+        totalKm = d.km || 0;
+      }
       const extra = (d.extraKosten||[]).reduce((s,k) => s+(parseFloat(k.bedrag)||0), 0);
 
       const subtotaalUren = uren * tarief;
@@ -1374,27 +1382,27 @@ async function renderOmzet(){
       return;
     }
 
-    const th = (label, align='left', width='') =>
-      `<th style="text-align:${align};white-space:nowrap;padding:10px 14px;${width?'width:'+width:''}">${label}</th>`;
+    const th = (label, align='left') =>
+      `<th style="text-align:${align};padding:8px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);font-weight:600;background:var(--cream);white-space:nowrap">${label}</th>`;
     const td = (val, align='left', bold=false, color='') =>
-      `<td style="text-align:${align};padding:10px 14px;white-space:nowrap;font-family:'DM Mono',monospace;font-size:13px;${bold?'font-weight:700;':''}${color?'color:'+color+';':''}">${val}</td>`;
+      `<td style="text-align:${align};padding:7px 10px;font-family:'DM Mono',monospace;font-size:12px;white-space:nowrap;${bold?'font-weight:700;':''}${color?'color:'+color+';':''}">${val}</td>`;
 
     el.innerHTML = `<thead><tr>
-      ${th('Factuurnummer','left','140px')}
-      ${th('Maand','left','90px')}
-      ${th('Klant','left','120px')}
-      ${th('Factuurdatum','left','110px')}
-      ${th('Uren','right','70px')}
-      ${th('Tarief','right','80px')}
-      ${th('Subtotaal uren','right','120px')}
-      ${th('KM','right','60px')}
-      ${th('€/km','right','60px')}
-      ${th('Subtotaal KM','right','110px')}
-      ${th('Overig','right','90px')}
-      ${th('Excl. BTW','right','110px')}
-      ${th('BTW%','right','60px')}
-      ${th('BTW','right','100px')}
-      ${th('Incl. BTW','right','120px')}
+      ${th('Nummer','left')}
+      ${th('Maand','left')}
+      ${th('Klant','left')}
+      ${th('Datum','left')}
+      ${th('Uren','right')}
+      ${th('Tarief','right')}
+      ${th('Sub. uren','right')}
+      ${th('KM','right')}
+      ${th('€/km','right')}
+      ${th('Sub. KM','right')}
+      ${th('Overig','right')}
+      ${th('Excl. BTW','right')}
+      ${th('BTW%','right')}
+      ${th('BTW','right')}
+      ${th('Incl. BTW','right')}
     </tr></thead>
     <tbody>${rows.map((r,i) => `<tr style="background:${i%2===0?'var(--white)':'var(--cream)'}">
       ${td(r.d.nummer||'–','left',true,'var(--acc)')}
