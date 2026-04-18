@@ -217,6 +217,14 @@ async function loadSpec(){
 
 window.geefAkkoord=async function(){
   if(!specData||!specId)return;
+  // Extra check - reload from Firebase to make sure not already approved
+  const freshSnap=await getDoc(doc(db,'specs',specId));
+  if(freshSnap.exists()&&freshSnap.data().akkoord){
+    const d=new Date(freshSnap.data().akkoord_datum);
+    document.getElementById('alreadyDetail').textContent=`Geaccordeerd op ${d.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]} ${d.getFullYear()}`;
+    showState('stateAlready');
+    return;
+  }
   const btn=document.getElementById('akkoordBtn');
   btn.disabled=true;
   btn.textContent='Verwerken…';

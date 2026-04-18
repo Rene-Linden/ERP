@@ -2,205 +2,158 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#f8f7f4">
-<title>Verstuur — Ordinatio Groep</title>
+<title>Urenspecificatie accorderen — Ordinatio Groep</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --cream:#f8f7f4;--white:#fff;--ink:#1a1a18;--ink2:#4a4a46;--ink3:#8a8a84;--ink4:#c8c8c2;
+  --cream:#f8f7f4;--white:#fff;--ink:#1a1a18;--ink2:#4a4a46;--ink3:#8a8a84;
   --line:#e8e7e2;--line2:#d4d3cc;
   --acc:#2d5a8e;--acc-l:#edf3f9;--acc-m:#c8daf0;
   --grn:#1e7a4a;--grn-l:#eaf5ee;
-  --amb:#b85c00;--amb-l:#fdf3e8;
   --red:#c0392b;--red-l:#fdf0ee;
-  --r:12px;--rsm:8px;--rxs:6px;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04);
+  --r:12px;--rsm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.08);
 }
-html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
-.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.logo-bar{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.logo-icon{width:38px;height:38px;background:var(--acc);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.logo-name{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink)}
+.logo-sub{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
 
-header{background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;padding:env(safe-area-inset-top) 0 0}
-.hinner{padding:14px 20px}
-.hrow{display:flex;align-items:center;justify-content:space-between}
-.brand{display:flex;align-items:center;gap:10px}
-.bicon{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center}
-.bicon svg{width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.bname{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
-.bsub{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
-.back-btn{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink3);text-decoration:none;background:var(--cream);border:1px solid var(--line2);border-radius:20px;padding:5px 12px;transition:all .15s}
-.back-btn:hover{color:var(--acc);border-color:var(--acc-m)}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:32px;width:100%;max-width:560px;box-shadow:var(--shadow)}
 
-.tabs{display:flex;border-top:1px solid var(--line)}
-.tab{flex:1;padding:11px 0;text-align:center;font-size:13px;font-weight:500;color:var(--ink3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
-.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+/* LOADING */
+.state{display:none;text-align:center;padding:20px 0}
+.state.on{display:block}
+.spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-.main{flex:1;overflow-y:auto;padding-bottom:20px}
-.pane{display:none;padding:20px}
-.pane.on{display:block}
+/* CONTENT */
+.spec-header{margin-bottom:20px}
+.spec-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.spec-sub{font-size:14px;color:var(--ink3)}
+.spec-meta{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.meta-item{background:var(--cream);border:1px solid var(--line);border-radius:var(--rsm);padding:8px 14px}
+.meta-label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:2px}
+.meta-val{font-size:14px;font-weight:600;color:var(--ink)}
 
-.sec{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:10px}
-.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-.field:last-child{margin-bottom:0}
-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600}
-input,select,textarea{background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;padding:10px 12px;width:100%;outline:none;transition:border-color .15s,background .15s;-webkit-appearance:none;appearance:none}
-input:focus,select:focus,textarea:focus{border-color:var(--acc);background:var(--white);box-shadow:0 0 0 3px var(--acc-l)}
-select{cursor:pointer}
-textarea{resize:vertical;min-height:80px;font-size:14px;line-height:1.5}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+thead th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;padding:8px 12px;text-align:left;border-bottom:2px solid var(--line);background:var(--cream)}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--cream)}
+.mono{font-family:'DM Mono',monospace;font-size:12px}
 
-.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.total-row{background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.total-label{font-size:13px;font-weight:600;color:var(--acc)}
+.total-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:600;color:var(--acc)}
 
-.preview-card{background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:14px;margin-bottom:14px;display:none}
-.preview-title{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:10px}
-.preview-table{width:100%;border-collapse:collapse}
-.preview-table th{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--acc);padding:6px 8px;text-align:left;border-bottom:1px solid var(--acc-m)}
-.preview-table td{padding:7px 8px;font-size:13px;color:var(--ink2);border-bottom:1px solid rgba(59,158,255,.1)}
-.preview-table tr:last-child td{border-bottom:none}
-.preview-total{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--acc-m)}
-.preview-total-label{font-size:13px;font-weight:600;color:var(--acc)}
-.preview-total-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:var(--acc)}
+.akkoord-section{border-top:1px solid var(--line);padding-top:20px}
+.akkoord-text{font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:20px}
+.akkoord-btn{width:100%;background:var(--grn);color:white;border:none;border-radius:var(--rsm);padding:16px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:10px}
+.akkoord-btn:hover{background:#165c38}
+.akkoord-btn:active{transform:scale(.99)}
+.akkoord-btn:disabled{opacity:.5;cursor:not-allowed}
+.akkoord-btn svg{width:20px;height:20px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 
-.send-btn{width:100%;background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center;gap:8px}
-.send-btn:hover{background:#234d7a}
-.send-btn:disabled{opacity:.4;cursor:not-allowed}
-.send-btn svg{width:18px;height:18px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:sp .7s linear infinite;display:none}
-@keyframes sp{to{transform:rotate(360deg)}}
-.send-btn.loading .spin{display:block}
-.send-btn.loading .btn-icon{display:none}
+/* SUCCESS */
+.success-icon{width:64px;height:64px;background:var(--grn-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.success-icon svg{width:32px;height:32px;stroke:var(--grn);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.success-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.success-text{font-size:14px;color:var(--ink3);line-height:1.6}
+.success-detail{background:var(--grn-l);border:1px solid rgba(30,122,74,.2);border-radius:var(--rsm);padding:12px 16px;margin:16px 0;font-size:13px;color:var(--grn);font-weight:500}
 
-.history-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
-.history-item:last-child{border-bottom:none}
-.history-body{flex:1;min-width:0}
-.history-title{font-size:13px;font-weight:600;color:var(--ink)}
-.history-sub{font-size:11px;color:var(--ink3);margin-top:2px}
-.status-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
-.status-badge.akkoord{background:var(--grn-l);color:var(--grn)}
-.status-badge.wacht{background:var(--amb-l);color:var(--amb)}
+/* ERROR */
+.error-icon{width:64px;height:64px;background:var(--red-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.error-icon svg{width:32px;height:32px;stroke:var(--red);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.error-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.error-text{font-size:14px;color:var(--ink3);line-height:1.6}
 
-.empty{text-align:center;padding:40px 20px;color:var(--ink3)}
-.empty-icon{font-size:32px;margin-bottom:8px;opacity:.4}
-.empty-text{font-size:14px}
-
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);border-radius:20px;padding:10px 18px;font-size:13px;font-weight:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;max-width:92vw;text-align:center}
-.toast.show{transform:translateX(-50%) translateY(0)}
-.toast.ok{background:var(--grn-l);border:1px solid rgba(30,122,74,.25);color:var(--grn)}
-.toast.bad{background:var(--red-l);border:1px solid rgba(192,57,43,.25);color:var(--red)}
-.toast.info{background:var(--acc-l);border:1px solid var(--acc-m);color:var(--acc)}
-
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block;margin-right:5px}
-.sync-dot.off{background:var(--amb)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.sync-dot.syncing{animation:pulse .8s infinite}
+/* ALREADY */
+.already-icon{width:64px;height:64px;background:var(--acc-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.already-icon svg{width:32px;height:32px;stroke:var(--acc);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
-<div class="app">
-  <header>
-    <div class="hinner">
-      <div class="hrow">
-        <div class="brand">
-          <div class="bicon">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-          </div>
-          <div>
-            <div class="bname">Verstuur</div>
-            <div class="bsub"><span class="sync-dot syncing" id="syncDot"></span><span id="syncText">Verbinden…</span></div>
-          </div>
-        </div>
-        <a href="index.html" class="back-btn">← Dagstaat</a>
-      </div>
-    </div>
-    <div class="tabs">
-      <button class="tab on" id="tab-uren" onclick="showTab('uren',this)">Urenspecificatie</button>
-      <button class="tab" id="tab-history" onclick="showTab('history',this)">Geschiedenis</button>
-    </div>
-  </header>
-
-  <div class="main">
-
-    <!-- UREN VERSTUREN -->
-    <div class="pane on" id="pane-uren">
-      <p class="sec">Opdrachtgever & periode</p>
-      <div class="card">
-        <div class="field">
-          <label>Opdrachtgever</label>
-          <select id="v-klant" onchange="onKlantChange()">
-            <option value="">Kies opdrachtgever…</option>
-          </select>
-        </div>
-        <div class="fg2">
-          <div class="field">
-            <label>Maand</label>
-            <select id="v-maand" onchange="buildPreview()"></select>
-          </div>
-          <div class="field">
-            <label>Jaar</label>
-            <select id="v-jaar" onchange="buildPreview()"></select>
-          </div>
-        </div>
-      </div>
-
-      <div class="preview-card" id="previewCard">
-        <div class="preview-title">Overzicht te versturen uren</div>
-        <table class="preview-table">
-          <thead><tr><th>Datum</th><th>Start</th><th>Eind</th><th style="text-align:right">Uren</th></tr></thead>
-          <tbody id="previewBody"></tbody>
-        </table>
-        <div class="preview-total">
-          <span class="preview-total-label">Totaal</span>
-          <span class="preview-total-val" id="previewTotal">–</span>
-        </div>
-      </div>
-
-      <p class="sec">Ontvanger</p>
-      <div class="card">
-        <div class="field" id="klant-info-wrap" style="display:none">
-          <div style="background:var(--cream);border-radius:var(--rsm);padding:10px 12px;font-size:13px;color:var(--ink2);line-height:1.7" id="klant-info-text"></div>
-        </div>
-        <div class="field">
-          <label>Emailadres ontvanger</label>
-          <input type="email" id="v-email" placeholder="naam@bedrijf.nl">
-        </div>
-        <div class="field">
-          <label>Persoonlijke begeleidende tekst (optioneel)</label>
-          <textarea id="v-note" placeholder="Bijv. 'Hierbij de urenspecificatie voor april. Graag uw akkoord.'"></textarea>
-        </div>
-      </div>
-
-      <button class="send-btn" id="sendBtn" onclick="verstuur()">
-        <svg class="btn-icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        <div class="spin"></div>
-        Verstuur urenspecificatie
-      </button>
-    </div>
-
-    <!-- GESCHIEDENIS -->
-    <div class="pane" id="pane-history">
-      <p class="sec">Verstuurde specificaties</p>
-      <div class="card" style="padding:0;overflow:hidden" id="historyList">
-        <div class="empty"><div class="empty-icon">📨</div><div class="empty-text">Nog niets verstuurd</div></div>
-      </div>
-    </div>
-
+<div class="wrap">
+  <div class="logo-bar">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></div>
+    <div><div class="logo-name">Ordinatio Groep</div><div class="logo-sub">Urenspecificatie</div></div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <div class="card">
+    <!-- LOADING -->
+    <div class="state on" id="stateLoading">
+      <div class="spinner"></div>
+      <p style="font-size:14px;color:var(--ink3)">Urenspecificatie laden…</p>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="state" id="stateContent">
+      <div class="spec-header">
+        <div class="spec-title" id="specTitle">Urenspecificatie</div>
+        <div class="spec-sub" id="specSub">–</div>
+      </div>
+      <div class="spec-meta">
+        <div class="meta-item"><div class="meta-label">Opdrachtgever</div><div class="meta-val" id="metaKlant">–</div></div>
+        <div class="meta-item"><div class="meta-label">Periode</div><div class="meta-val" id="metaMaand">–</div></div>
+        <div class="meta-item"><div class="meta-label">Totaal uren</div><div class="meta-val" id="metaUren">–</div></div>
+      </div>
+      <table id="specTable">
+        <thead><tr><th>Datum</th><th>Start</th><th>Eind</th><th>Pauze</th><th style="text-align:right">Uren</th></tr></thead>
+        <tbody id="specBody"></tbody>
+      </table>
+      <div class="total-row">
+        <span class="total-label">Totaal gewerkte uren</span>
+        <span class="total-val" id="totalUren">–</span>
+      </div>
+      <div class="akkoord-section">
+        <p class="akkoord-text">Door op <strong>Akkoord</strong> te klikken bevestigt u dat bovenstaande urenregistratie correct is. Uw akkoord wordt digitaal vastgelegd.</p>
+        <button class="akkoord-btn" id="akkoordBtn" onclick="geefAkkoord()">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Akkoord met urenspecificatie
+        </button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="state" id="stateSuccess" style="text-align:center">
+      <div class="success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="success-title">Akkoord ontvangen!</div>
+      <div class="success-text">Bedankt voor uw bevestiging. De urenspecificatie is goedgekeurd en uw akkoord is digitaal vastgelegd.</div>
+      <div class="success-detail" id="successDetail">–</div>
+      <p style="font-size:13px;color:var(--ink3);margin-top:16px">U kunt dit venster sluiten.</p>
+    </div>
+
+    <!-- ALREADY APPROVED -->
+    <div class="state" id="stateAlready" style="text-align:center">
+      <div class="already-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:8px">Al geaccordeerd</div>
+      <div style="font-size:14px;color:var(--ink3);line-height:1.6">Deze urenspecificatie is al eerder geaccordeerd.</div>
+      <div style="background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:12px 16px;margin:16px 0;font-size:13px;color:var(--acc);font-weight:500" id="alreadyDetail">–</div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="state" id="stateError" style="text-align:center">
+      <div class="error-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div class="error-title">Niet gevonden</div>
+      <div class="error-text">Deze urenspecificatie link is ongeldig of verlopen. Neem contact op met Rene van der Linden via <a href="mailto:info@renevanderlinden.com" style="color:var(--acc)">info@renevanderlinden.com</a>.</div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:var(--ink3);margin-top:20px;text-align:center">Ordinatio Groep · info@renevanderlinden.com</p>
+</div>
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,doc,getDoc,onSnapshot,collection,addDoc,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,getDoc,updateDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// ── CONFIG ────────────────────────────────────
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
-emailjs.init('LVecJZWPqdswbZbga');
-
 const fbApp=initializeApp(FB);
 const db=getFirestore(fbApp);
 
@@ -208,258 +161,91 @@ const MO=['januari','februari','maart','april','mei','juni','juli','augustus','s
 const MOS=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 const DY=['zo','ma','di','wo','do','vr','za'];
 
-let days={};
-let clients=[];
+function p2(n){return String(n).padStart(2,'0')}
+function m2s(m){return`${Math.floor(m/60)}:${p2(m%60)}`}
+function tMins(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m}
+function bMins(b){return Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.brk)||0))}
+function isoD(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)}
+function showState(id){document.querySelectorAll('.state').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on')}
 
-// ── SYNC STATUS ───────────────────────────────
-function setSync(s,t){
-  const d=document.getElementById('syncDot');
-  const tx=document.getElementById('syncText');
-  d.className='sync-dot'+(s==='ok'?'':s==='syncing'?' syncing':' off');
-  tx.textContent=t;
+// Get spec ID from URL
+const params=new URLSearchParams(window.location.search);
+const specId=params.get('id');
+let specData=null;
+
+async function loadSpec(){
+  if(!specId){showState('stateError');return;}
+  try{
+    const snap=await getDoc(doc(db,'specs',specId));
+    if(!snap.exists()){showState('stateError');return;}
+    specData=snap.data();
+
+    // Already approved?
+    if(specData.akkoord){
+      const d=new Date(specData.akkoord_datum);
+      document.getElementById('alreadyDetail').textContent=`Geaccordeerd op ${d.getDate()} ${MOS[d.getMonth()]} ${d.getFullYear()} om ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+      showState('stateAlready');return;
+    }
+
+    // Show content
+    const maandStr=`${MO[specData.maand]} ${specData.jaar}`;
+    document.getElementById('specTitle').textContent=`Urenspecificatie ${maandStr}`;
+    document.getElementById('specSub').textContent=`Opgesteld door Rene van der Linden · Ordinatio Groep`;
+    document.getElementById('metaKlant').textContent=specData.klant;
+    document.getElementById('metaMaand').textContent=maandStr;
+
+    // Build table
+    const rows=specData.regels||[];
+    const totalMins=rows.reduce((s,r)=>s+bMins(r),0);
+    document.getElementById('metaUren').textContent=m2s(totalMins);
+    document.getElementById('totalUren').textContent=m2s(totalMins);
+
+    document.getElementById('specBody').innerHTML=rows.map(r=>{
+      const d=isoD(r.date);
+      return`<tr>
+        <td><strong>${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]}</strong></td>
+        <td class="mono">${r.start}</td>
+        <td class="mono">${r.end}</td>
+        <td class="mono" style="color:var(--ink3)">${r.brk||0}min</td>
+        <td class="mono" style="text-align:right;font-weight:600;color:var(--acc)">${m2s(bMins(r))}</td>
+      </tr>`;
+    }).join('');
+
+    showState('stateContent');
+  }catch(e){showState('stateError');}
 }
 
-// ── LOAD DATA ─────────────────────────────────
-onSnapshot(doc(db,'dagstaat','data'),(snap)=>{
-  days=snap.exists()?snap.data().days||{}:{};
-  setSync('ok','Gesynchroniseerd');
-  buildPreview();
-},(err)=>setSync('err','Offline'));
-
-function loadClients(){
-  clients=JSON.parse(localStorage.getItem('dgs_clients_v1')||'[]');
-  if(!clients.length){
-    clients=[
-      {name:'Sitech',rate:115,color:'#2d5a8e',email:''},
-      {name:'Dysel',rate:110,color:'#1e7a4a',email:''},
-      {name:'Seeder',rate:110,color:'#b85c00',email:''},
-      {name:'HG',rate:110,color:'#7b3f9e',email:''},
-      {name:'Nabuurs',rate:110,color:'#c0392b',email:''},
-    ];
-  }
-}
-
-// ── INIT ──────────────────────────────────────
-function init(){
-  loadClients();
-
-  // Fill klant dropdown
-  const sel=document.getElementById('v-klant');
-  sel.innerHTML='<option value="">Kies opdrachtgever…</option>'+
-    clients.filter(c=>c.name!=='Intern').map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
-
-  // Fill maand
-  const now=new Date();
-  const mSel=document.getElementById('v-maand');
-  mSel.innerHTML=MO.map((m,i)=>`<option value="${i}"${i===now.getMonth()?' selected':''}>${m}</option>`).join('');
-
-  // Fill jaar
-  const ySel=document.getElementById('v-jaar');
-  ySel.innerHTML=[0,1,2].map(d=>`<option value="${now.getFullYear()-d}"${d===0?' selected':''}>${now.getFullYear()-d}</option>`).join('');
-
-  loadHistory();
-}
-
-// ── KLANT CHANGE ──────────────────────────────
-window.onKlantChange=function(){
-  const name=document.getElementById('v-klant').value;
-  const wrap=document.getElementById('klant-info-wrap');
-  const txt=document.getElementById('klant-info-text');
-  const emailEl=document.getElementById('v-email');
-  const c=clients.find(x=>x.name===name);
-  if(c&&(c.contact||c.address||c.city||c.phone||c.email)){
-    let info='';
-    if(c.contact) info+=`<strong>${c.contact}</strong><br>`;
-    if(c.address) info+=`${c.address}<br>`;
-    if(c.city) info+=`${c.city}<br>`;
-    if(c.phone) info+=`📞 ${c.phone}`;
-    txt.innerHTML=info;
-    wrap.style.display='block';
-    if(c.email) emailEl.value=c.email;
-  } else {
-    wrap.style.display='none';
-    emailEl.value='';
-  }
-  buildPreview();
-}
-
-// ── BUILD PREVIEW ─────────────────────────────
-window.buildPreview=function(){
-  const klant=document.getElementById('v-klant').value;
-  const maand=parseInt(document.getElementById('v-maand').value);
-  const jaar=parseInt(document.getElementById('v-jaar').value);
-  const card=document.getElementById('previewCard');
-  const body=document.getElementById('previewBody');
-  const total=document.getElementById('previewTotal');
-
-  if(!klant){card.style.display='none';return;}
-
-  const pfx=`${jaar}-${String(maand+1).padStart(2,'0')}`;
-  const mDays=Object.keys(days).filter(d=>d.startsWith(pfx)).sort();
-  const regels=mDays.flatMap(k=>days[k].filter(b=>b.klant===klant).map(b=>({...b,date:k})));
-
-  if(!regels.length){
-    card.style.display='none';
+window.geefAkkoord=async function(){
+  if(!specData||!specId)return;
+  // Extra check - reload from Firebase to make sure not already approved
+  const freshSnap=await getDoc(doc(db,'specs',specId));
+  if(freshSnap.exists()&&freshSnap.data().akkoord){
+    const d=new Date(freshSnap.data().akkoord_datum);
+    document.getElementById('alreadyDetail').textContent=`Geaccordeerd op ${d.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]} ${d.getFullYear()}`;
+    showState('stateAlready');
     return;
   }
-
-  const p2=n=>String(n).padStart(2,'0');
-  const tMins=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
-  const bMins=b=>Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.brk)||0));
-  const m2s=m=>`${Math.floor(m/60)}:${p2(m%60)}`;
-
-  const totalMins=regels.reduce((s,r)=>s+bMins(r),0);
-
-  body.innerHTML=regels.map(r=>{
-    const d=new Date(r.date);
-    return`<tr>
-      <td><strong>${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]}</strong></td>
-      <td style="font-family:'DM Mono',monospace;font-size:12px">${r.start}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:12px">${r.end}</td>
-      <td style="text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:600">${m2s(bMins(r))}</td>
-    </tr>`;
-  }).join('');
-  total.textContent=m2s(totalMins);
-  card.style.display='block';
-}
-
-// ── VERSTUUR ──────────────────────────────────
-window.verstuur=async function(){
-  const klant=document.getElementById('v-klant').value;
-  const email=document.getElementById('v-email').value.trim();
-  const maand=parseInt(document.getElementById('v-maand').value);
-  const jaar=parseInt(document.getElementById('v-jaar').value);
-  const note=document.getElementById('v-note').value.trim();
-
-  if(!klant){showToast('Kies een opdrachtgever','bad');return;}
-  if(!email||!email.includes('@')){showToast('Voer een geldig emailadres in','bad');return;}
-
-  const p2=n=>String(n).padStart(2,'0');
-  const tMins=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
-  const bMins=b=>Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.brk)||0));
-  const m2s=m=>`${Math.floor(m/60)}:${p2(m%60)}`;
-
-  const pfx=`${jaar}-${p2(maand+1)}`;
-  const mDays=Object.keys(days).filter(d=>d.startsWith(pfx)).sort();
-  const regels=mDays.flatMap(k=>days[k].filter(b=>b.klant===klant).map(b=>({...b,date:k})));
-
-  if(!regels.length){showToast('Geen registraties voor deze periode','bad');return;}
-
-  const btn=document.getElementById('sendBtn');
-  btn.classList.add('loading');btn.disabled=true;
-
+  const btn=document.getElementById('akkoordBtn');
+  btn.disabled=true;
+  btn.textContent='Verwerken…';
   try{
-    const totalMins=regels.reduce((s,r)=>s+bMins(r),0);
-    const maandStr=`${MO[maand]} ${jaar}`;
-
-    // Save to Firebase
-    const specRef=await addDoc(collection(db,'specs'),{
-      klant,maand,jaar,email,
-      regels,
-      totaal_mins:totalMins,
-      verstuurd_datum:new Date().toISOString(),
-      akkoord:false,
-      akkoord_datum:null,
-      note
+    const now=new Date();
+    await updateDoc(doc(db,'specs',specId),{
+      akkoord:true,
+      akkoord_datum:now.toISOString(),
+      akkoord_ip:'client'
     });
-
-    const akkoordLink=`https://rene-linden.github.io/ERP/accordeer.html?id=${specRef.id}`;
-
-    // Build HTML table
-    const tabelHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Arial,sans-serif">
-      <thead><tr style="background:#edf3f9">
-        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #c8daf0;color:#2d5a8e">Datum</th>
-        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #c8daf0;color:#2d5a8e">Start</th>
-        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #c8daf0;color:#2d5a8e">Eind</th>
-        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #c8daf0;color:#2d5a8e">Pauze</th>
-        <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #c8daf0;color:#2d5a8e">Uren</th>
-      </tr></thead>
-      <tbody>${regels.map((r,i)=>{
-        const d=new Date(r.date);
-        return`<tr style="background:${i%2===0?'#fff':'#f8f7f4'}">
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;font-weight:600">${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;font-family:monospace">${r.start}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;font-family:monospace">${r.end}</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;color:#8a8a84">${r.brk||0}min</td>
-          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;text-align:right;font-weight:600;font-family:monospace;color:#2d5a8e">${m2s(bMins(r))}</td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table>`;
-
-    const noteHTML=note?`<p style="font-family:Arial,sans-serif;font-size:14px;color:#4a4a46;margin:0 0 16px;font-style:italic">${note}</p>`:'';
-
-    await emailjs.send('service_rpek59r','template_p4r2rkp',{
-      to_email: email,
-      klant: klant,
-      naam: 'Rene van der Linden',
-      maand: maandStr,
-      tabel: noteHTML+tabelHTML,
-      totaal_uren: m2s(totalMins),
-      akkoord_link: akkoordLink,
-      email: 'info@renevanderlinden.com'
-    });
-
-    showToast(`Verstuurd naar ${email} ✓`,'ok');
-    document.getElementById('v-note').value='';
-    loadHistory();
-
+    const maandStr=`${MO[specData.maand]} ${specData.jaar}`;
+    document.getElementById('successDetail').textContent=`${specData.klant} · ${maandStr} · ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}`;
+    showState('stateSuccess');
   }catch(e){
-    console.error(e);
-    showToast('Fout: '+e.message,'bad');
-  }finally{
-    btn.classList.remove('loading');btn.disabled=false;
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="20 6 9 17 4 12"/></svg> Akkoord met urenspecificatie';
+    alert('Fout bij verwerken. Probeer opnieuw.');
   }
 }
 
-// ── HISTORY ───────────────────────────────────
-async function loadHistory(){
-  const el=document.getElementById('historyList');
-  try{
-    const q=query(collection(db,'specs'),orderBy('verstuurd_datum','desc'));
-    const snap=await getDocs(q);
-    if(snap.empty){
-      el.innerHTML='<div class="empty"><div class="empty-icon">📨</div><div class="empty-text">Nog niets verstuurd</div></div>';
-      return;
-    }
-    el.innerHTML=snap.docs.map(d=>{
-      const data=d.data();
-      const vd=new Date(data.verstuurd_datum);
-      const p2=n=>String(n).padStart(2,'0');
-      const m2s=m=>`${Math.floor(m/60)}:${p2(m%60)}`;
-      const totalMins=data.totaal_mins||(data.regels||[]).reduce((s,r)=>{
-        const tM=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
-        return s+Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0));
-      },0);
-      return`<div class="history-item">
-        <div class="history-body">
-          <div class="history-title">${data.klant} — ${MO[data.maand]} ${data.jaar}</div>
-          <div class="history-sub">${data.email} · ${vd.getDate()} ${MOS[vd.getMonth()]} · ${m2s(totalMins)}</div>
-        </div>
-        <div class="status-badge ${data.akkoord?'akkoord':'wacht'}">${data.akkoord?'✓ Akkoord':'⏳ Wacht'}</div>
-      </div>`;
-    }).join('');
-  }catch(e){
-    el.innerHTML='<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Laden mislukt</div></div>';
-  }
-}
-
-// ── TAB SWITCH ────────────────────────────────
-window.showTab=function(name,btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('pane-'+name).classList.add('on');
-  if(name==='history') loadHistory();
-}
-
-// ── TOAST ─────────────────────────────────────
-window.showToast=function(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className=`toast ${type} show`;
-  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);
-}
-
-init();
+loadSpec();
 </script>
 </body>
 </html>
