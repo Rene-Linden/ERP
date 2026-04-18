@@ -116,9 +116,11 @@ textarea{resize:vertical;min-height:70px;font-size:14px;line-height:1.5}
 .toast.info{background:var(--acc-l);border:1px solid var(--acc-m);color:var(--acc)}
 
 @media print{
-  .app{display:none}
-  #printArea{display:block!important}
+  body > *{display:none!important}
+  #printArea{display:block!important;padding:20px}
 }
+.btn-secondary{width:100%;background:var(--cream);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{background:var(--acc-l);border-color:var(--acc-m);color:var(--acc)}
 </style>
 </head>
 <body>
@@ -216,19 +218,33 @@ textarea{resize:vertical;min-height:70px;font-size:14px;line-height:1.5}
         <div class="totaal-row sub"><span>Totaal incl. BTW</span><span class="totaal-val" id="tot-incl">€ 0,00</span></div>
       </div>
 
-      <p class="sec">Versturen</p>
-      <div class="card">
-        <div class="field">
-          <label>Emailadres ontvanger</label>
-          <input type="email" id="f-email" placeholder="naam@bedrijf.nl">
-        </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+        <button class="btn-secondary" onclick="printFactuur()" style="display:flex;align-items:center;justify-content:center;gap:6px">
+          🖨 Afdrukken / PDF
+        </button>
+        <button class="btn-secondary" onclick="toggleEmailSection()" style="display:flex;align-items:center;justify-content:center;gap:6px" id="toggleEmailBtn">
+          📧 Ook e-mailen
+        </button>
       </div>
 
-      <button class="btn-secondary" onclick="previewFactuur()">👁 Voorbeeld bekijken</button>
-      <button class="btn-primary" id="sendFactuurBtn" onclick="verstuurFactuur()">
-        <svg class="bic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <div id="emailSection" style="display:none;margin-bottom:8px">
+        <div class="card" style="margin-bottom:8px">
+          <div class="field" style="margin-bottom:0">
+            <label>Emailadres ontvanger</label>
+            <input type="email" id="f-email" placeholder="naam@bedrijf.nl">
+          </div>
+        </div>
+        <button class="btn-primary" id="sendFactuurBtn" onclick="verstuurFactuur()">
+          <svg class="bic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <div class="spin"></div>
+          Factuur versturen per email
+        </button>
+      </div>
+
+      <button class="btn-primary" onclick="slaFactuurOp()" style="background:var(--grn)" id="saveFactuurBtn">
+        <svg class="bic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         <div class="spin"></div>
-        Factuur versturen
+        Factuur opslaan (zonder email)
       </button>
     </div>
 
@@ -645,13 +661,88 @@ function generateFactuurHTML(data) {
   </div>`;
 }
 
-// ── PREVIEW ───────────────────────────────────
+// ── TOGGLE EMAIL SECTION ──────────────────────
+window.toggleEmailSection = function() {
+  const s = document.getElementById('emailSection');
+  const btn = document.getElementById('toggleEmailBtn');
+  const on = s.style.display === 'none';
+  s.style.display = on ? 'block' : 'none';
+  btn.textContent = on ? '✕ Annuleer email' : '📧 Ook e-mailen';
+};
+
+// ── PRINT / PDF ────────────────────────────────
+window.printFactuur = function() {
+  const data = collectFactuurData();
+  if (!data) return;
+  const html = generateFactuurHTML(data);
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(() => window.print(), 100);
+};
+
+// ── OPSLAAN ZONDER EMAIL ───────────────────────
+window.slaFactuurOp = async function() {
+  const data = collectFactuurData();
+  if (!data) return;
+
+  const btn = document.getElementById('saveFactuurBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+
+  try {
+    // Save to Firebase
+    const factuurRef = await addDoc(collection(db,'facturen'), {
+      ...data,
+      email: '',
+      verstuurd_datum: new Date().toISOString(),
+      spec_id: currentSpec.id,
+      status: 'opgeslagen'
+    });
+
+    // Mark spec as factuur verstuurd
+    await updateDoc(doc(db,'specs',currentSpec.id), {
+      factuur_verstuurd: true,
+      factuur_id: factuurRef.id,
+      factuur_nummer: data.nummer
+    });
+
+    toast(`Factuur ${data.nummer} opgeslagen ✓`, 'ok');
+
+    // Print PDF
+    const html = generateFactuurHTML(data);
+    document.getElementById('printArea').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+
+    // Reset form
+    await resetForm();
+
+  } catch(e) {
+    console.error(e);
+    toast('Fout: ' + e.message, 'bad');
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+};
+
+async function resetForm() {
+  extraRegels = [];
+  renderExtraRegels();
+  document.getElementById('f-klant').value = '';
+  document.getElementById('f-spec').innerHTML = '<option value="">Kies periode…</option>';
+  document.getElementById('urenCard').innerHTML = '<div style="font-size:13px;color:var(--ink3);text-align:center;padding:10px">Kies eerst een geaccordeerde periode</div>';
+  document.getElementById('f-omschrijving').value = '';
+  document.getElementById('f-ref').value = '';
+  currentSpec = null;
+  berekenTotaal();
+  const newNum = await getNextFactuurNummer();
+  document.getElementById('f-nummer').value = newNum;
+}
+
+// ── PREVIEW (legacy) ──────────────────────────
 window.previewFactuur = function() {
   const data = collectFactuurData();
   if (!data) return;
   const html = generateFactuurHTML(data);
   document.getElementById('printArea').innerHTML = html;
-  window.print();
+  setTimeout(() => window.print(), 100);
 };
 
 function collectFactuurData() {
@@ -721,16 +812,9 @@ window.verstuurFactuur = async function() {
 
     toast(`Factuur ${data.nummer} verstuurd ✓`, 'ok');
     // Reset form
-    extraRegels = [];
-    renderExtraRegels();
-    document.getElementById('f-klant').value = '';
-    document.getElementById('f-spec').innerHTML = '<option value="">Kies periode…</option>';
-    document.getElementById('urenCard').innerHTML = '<div style="font-size:13px;color:var(--ink3);text-align:center;padding:10px">Kies eerst een geaccordeerde periode</div>';
-    currentSpec = null;
-    berekenTotaal();
-    // Get new number for next invoice
-    const newNum = await getNextFactuurNummer();
-    document.getElementById('f-nummer').value = newNum;
+    await resetForm();
+    document.getElementById('emailSection').style.display = 'none';
+    document.getElementById('toggleEmailBtn').textContent = '📧 Ook e-mailen';
 
   } catch(e) {
     console.error(e);
