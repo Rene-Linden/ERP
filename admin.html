@@ -222,6 +222,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
       <button class="nav-item" onclick="showPage('omzet',this)">
         <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Omzet
       </button>
+      <button class="nav-item" onclick="showPage('prognose',this)">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Prognose
+      </button>
       <button class="nav-item" onclick="showPage('instellingen',this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Instellingen
       </button>
@@ -387,6 +390,124 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
         </div>
       </div>
 
+      <div class="page" id="page-prognose">
+        <div class="page-header">
+          <div><div class="page-title">Jaarprognose</div><div class="page-sub">Omzetprognose op basis van huidige en toekomstige contracten</div></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="prognoseJaar" onchange="renderPrognose()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none">
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+            </select>
+            <button onclick="renderPrognose()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">↺ Herbereken</button>
+          </div>
+        </div>
+
+        <!-- KPI STRIP -->
+        <div class="kpi-grid" id="prognose-kpis"></div>
+
+        <!-- TWEE KOLOMMEN: INPUTS + GRAFIEK -->
+        <div style="display:grid;grid-template-columns:340px 1fr;gap:18px;margin-bottom:18px;align-items:start">
+
+          <!-- INVOER PANEEL -->
+          <div>
+            <!-- HUIDIG CONTRACT -->
+            <div class="card" style="margin-bottom:14px">
+              <div class="card-header" style="background:var(--acc);border-radius:var(--r) var(--r) 0 0">
+                <span class="card-title" style="color:white">📋 Huidig contract</span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+                <div class="field" style="margin-bottom:0">
+                  <label>Klant</label>
+                  <select id="p-klant1" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;width:100%"></select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div class="field" style="margin-bottom:0">
+                    <label>Einddatum contract</label>
+                    <input type="date" id="p-einddatum" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;width:100%">
+                  </div>
+                  <div class="field" style="margin-bottom:0">
+                    <label>Uren per week</label>
+                    <input type="number" id="p-uren1" value="32" min="0" max="40" step="1" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);outline:none;width:100%">
+                  </div>
+                  <div class="field" style="margin-bottom:0">
+                    <label>Tarief per uur (€)</label>
+                    <input type="number" id="p-tarief1" value="115" min="0" step="1" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);outline:none;width:100%">
+                  </div>
+                  <div class="field" style="margin-bottom:0">
+                    <label>Vakantiedagen (periode)</label>
+                    <input type="number" id="p-vakantie" value="0" min="0" max="30" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);outline:none;width:100%">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- VOLGEND CONTRACT -->
+            <div class="card" style="margin-bottom:14px">
+              <div class="card-header" style="background:var(--grn);border-radius:var(--r) var(--r) 0 0">
+                <span class="card-title" style="color:white">🔮 Volgend contract (prognose)</span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+                <div class="field" style="margin-bottom:0">
+                  <label>Klant</label>
+                  <select id="p-klant2" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;width:100%">
+                    <option value="">Nog onbekend</option>
+                  </select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div class="field" style="margin-bottom:0">
+                    <label>Startdatum</label>
+                    <input type="date" id="p-startdatum2" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none;width:100%">
+                  </div>
+                  <div class="field" style="margin-bottom:0">
+                    <label>Uren per week</label>
+                    <input type="number" id="p-uren2" value="40" min="0" max="40" step="1" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);outline:none;width:100%">
+                  </div>
+                  <div class="field" style="margin-bottom:0">
+                    <label>Tarief per uur (€)</label>
+                    <input type="number" id="p-tarief2" value="120" min="0" step="1" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);outline:none;width:100%">
+                  </div>
+                  <div class="field" style="margin-bottom:0">
+                    <label>Vakantiedagen (periode)</label>
+                    <input type="number" id="p-vakantie2" value="0" min="0" max="30" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);outline:none;width:100%">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MINIMUMDOEL -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">🎯 Doelstelling</span></div>
+              <div class="card-body">
+                <div class="field" style="margin-bottom:0">
+                  <label>Minimale gewenste omzet (€ excl. BTW)</label>
+                  <input type="number" id="p-doel" value="150000" min="0" step="1000" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);outline:none;width:100%">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GRAFIEK -->
+          <div class="card" style="min-height:420px">
+            <div class="card-header"><span class="card-title">Omzet per maand</span></div>
+            <div class="card-body" style="padding:12px 8px">
+              <div id="prognoseChart" style="height:320px;display:flex;align-items:flex-end;gap:4px;padding:0 4px"></div>
+              <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;padding:0 4px">
+                <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--acc);border-radius:2px"></div><span style="font-size:11px;color:var(--ink3)">Werkelijk</span></div>
+                <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--grn);border-radius:2px"></div><span style="font-size:11px;color:var(--ink3)">Huidig contract</span></div>
+                <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;background:var(--amb);border-radius:2px"></div><span style="font-size:11px;color:var(--ink3)">Volgend contract</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAANDTABEL -->
+        <div class="card" style="overflow:hidden">
+          <div class="card-header"><span class="card-title">Maandoverzicht</span></div>
+          <table class="data-table" id="prognose-table" style="width:100%"></table>
+          <div id="prognose-totaal" style="padding:14px 16px;border-top:2px solid var(--line);background:var(--cream)"></div>
+        </div>
+      </div>
+
       <div class="page" id="page-instellingen">
         <div class="page-header"><div><div class="page-title">Instellingen</div><div class="page-sub">Beveiliging en data</div></div></div>
         <div class="card">
@@ -508,6 +629,7 @@ window.showPage=function(name,btn){
   else if(name==='accordering')renderAccordering();
   else if(name==='facturen')renderFacturen();
   else if(name==='omzet')renderOmzet();
+  else if(name==='prognose')renderPrognose();
   else if(name==='instellingen')renderInstellingen();
 }
 
@@ -1204,6 +1326,270 @@ window.resetClients=function(){
   localStorage.setItem('dgs_clients_v1',JSON.stringify(clients));
   renderKlanten();
   showToast('Klanten hersteld ✓','ok');
+}
+
+// ── PROGNOSE ──────────────────────────────────
+const MO_NL=['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+const MO_SHORT=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+// Werkdagen in een maand (ma-vr, excl feestdagen NL)
+const NL_FEESTDAGEN_2026=['2026-01-01','2026-04-03','2026-04-05','2026-04-06','2026-04-27','2026-05-05','2026-05-14','2026-05-24','2026-05-25','2026-12-25','2026-12-26'];
+const NL_FEESTDAGEN_2027=['2027-01-01','2027-03-26','2027-03-28','2027-03-29','2027-04-26','2027-05-05','2027-05-06','2027-05-16','2027-06-13','2027-12-25','2027-12-26'];
+
+function werkdagenInMaand(jaar, maandIdx) {
+  const feestdagen = jaar===2026 ? NL_FEESTDAGEN_2026 : NL_FEESTDAGEN_2027;
+  let count = 0;
+  const daysInMonth = new Date(jaar, maandIdx+1, 0).getDate();
+  for(let d=1; d<=daysInMonth; d++){
+    const dt = new Date(jaar, maandIdx, d);
+    const dow = dt.getDay();
+    if(dow===0||dow===6) continue;
+    const iso = `${jaar}-${String(maandIdx+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if(feestdagen.includes(iso)) continue;
+    count++;
+  }
+  return count;
+}
+
+function werkdagenInPeriode(vanDatum, totDatum) {
+  const feestdagen=[...NL_FEESTDAGEN_2026,...NL_FEESTDAGEN_2027];
+  let count=0;
+  const cur=new Date(vanDatum);
+  while(cur<=totDatum){
+    const dow=cur.getDay();
+    if(dow!==0&&dow!==6){
+      const iso=cur.toISOString().slice(0,10);
+      if(!feestdagen.includes(iso)) count++;
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  return count;
+}
+
+function initPrognoseInputs(){
+  // Fill klant dropdowns
+  const opts='<option value="">Onbekend</option>'+clients.filter(c=>c.name!=='Intern').map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+  const k1=document.getElementById('p-klant1');
+  const k2=document.getElementById('p-klant2');
+  if(k1){k1.innerHTML=opts;}
+  if(k2){k2.innerHTML='<option value="">Nog onbekend</option>'+clients.filter(c=>c.name!=='Intern').map(c=>`<option value="${c.name}">${c.name}</option>`).join('');}
+
+  // Set defaults based on current date
+  const now=new Date();
+  const jaar=parseInt(document.getElementById('prognoseJaar')?.value||now.getFullYear());
+  // Default einddatum huidig contract = eind van huidige maand
+  const eindeHuidig=new Date(jaar, now.getMonth()+2, 0); // end of next month
+  if(k1&&!document.getElementById('p-einddatum').value){
+    document.getElementById('p-einddatum').value=`${eindeHuidig.getFullYear()}-${String(eindeHuidig.getMonth()+1).padStart(2,'0')}-${String(eindeHuidig.getDate()).padStart(2,'0')}`;
+  }
+  // Default startdatum volgend contract = begin maand erna
+  if(k2&&!document.getElementById('p-startdatum2').value){
+    const startVolg=new Date(eindeHuidig.getFullYear(), eindeHuidig.getMonth()+1, 1);
+    document.getElementById('p-startdatum2').value=`${startVolg.getFullYear()}-${String(startVolg.getMonth()+1).padStart(2,'0')}-01`;
+  }
+}
+
+async function renderPrognose(){
+  const jaar=parseInt(document.getElementById('prognoseJaar')?.value||new Date().getFullYear());
+  initPrognoseInputs();
+
+  const einddatum1Str=document.getElementById('p-einddatum').value;
+  const startdatum2Str=document.getElementById('p-startdatum2').value;
+  const urenPerWeek1=parseFloat(document.getElementById('p-uren1').value)||32;
+  const urenPerWeek2=parseFloat(document.getElementById('p-uren2').value)||40;
+  const tarief1=parseFloat(document.getElementById('p-tarief1').value)||115;
+  const tarief2=parseFloat(document.getElementById('p-tarief2').value)||120;
+  const vakantie1=parseInt(document.getElementById('p-vakantie').value)||0;
+  const vakantie2=parseInt(document.getElementById('p-vakantie2').value)||0;
+  const doel=parseFloat(document.getElementById('p-doel').value)||150000;
+  const klant1=document.getElementById('p-klant1').value||'Huidig contract';
+  const klant2=document.getElementById('p-klant2').value||'Volgend contract';
+  const urenPerDag1=urenPerWeek1/5;
+  const urenPerDag2=urenPerWeek2/5;
+
+  const einddatum1=einddatum1Str?new Date(einddatum1Str):new Date(jaar,11,31);
+  const startdatum2=startdatum2Str?new Date(startdatum2Str):null;
+
+  // Load werkelijke omzet from Firebase
+  let werkelijkeOmzet={};
+  try{
+    const q=query(collection(db,'facturen'),orderBy('verstuurd_datum','desc'));
+    const snap=await getDocs(q);
+    snap.docs.forEach(d=>{
+      const data=d.data();
+      const spec=data.spec||{};
+      if(spec.jaar===jaar&&spec.maand!==undefined){
+        const regels=data.regels||[];
+        const mins=regels.reduce((s,r)=>{
+          const tM=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
+          return s+Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0));
+        },0);
+        const km=regels.reduce((s,r)=>s+(r.km||0),0);
+        const tarief=data.tarief||0;
+        const kmT=data.kmTarief||0.23;
+        const extra=(data.extraKosten||[]).reduce((s,k)=>s+(parseFloat(k.bedrag)||0),0);
+        const omzetExcl=(mins/60)*tarief+km*kmT+extra;
+        werkelijkeOmzet[spec.maand]={omzetExcl,uren:mins/60,gefactureerd:true};
+      }
+    });
+  }catch(e){}
+
+  // Calculate per month
+  const maanden=[];
+  // Add 3 months of next year if selected
+  const maxMaand=jaar===parseInt(document.getElementById('prognoseJaar')?.value) ? 14 : 11;
+
+  for(let m=0; m<15; m++){
+    const curJaar=m>11?jaar+1:jaar;
+    const curMaand=m>11?m-12:m;
+    const maandNaam=MO_NL[curMaand];
+    const maandStart=new Date(curJaar,curMaand,1);
+    const maandEinde=new Date(curJaar,curMaand+1,0);
+    const werkdagen=werkdagenInMaand(curJaar,curMaand);
+
+    let type='leeg'; // werkelijk, contract1, contract2, leeg
+    let omzetExcl=0;
+    let uren=0;
+    let minusDagen=0;
+    let tarief=0;
+    let klant='';
+
+    if(werkelijkeOmzet[curMaand]&&curJaar===jaar){
+      // Gefactureerd — vast
+      type='werkelijk';
+      omzetExcl=werkelijkeOmzet[curMaand].omzetExcl;
+      uren=werkelijkeOmzet[curMaand].uren;
+      tarief=tarief1;
+      klant=klant1;
+    } else {
+      // Bereken prognose
+      // Huidig contract loopt tot einddatum1
+      const inContract1 = maandStart<=einddatum1;
+      const inContract2 = startdatum2 && maandStart>=new Date(startdatum2.getFullYear(),startdatum2.getMonth(),1);
+
+      if(inContract1 && !inContract2){
+        type='contract1';
+        klant=klant1;
+        tarief=tarief1;
+        // Werkdagen in overlap van maand met contract
+        const overlapStart=maandStart;
+        const overlapEinde=maandEinde<einddatum1?maandEinde:einddatum1;
+        const wdInContract=werkdagenInPeriode(overlapStart,overlapEinde);
+        minusDagen=m===maanden.length?vakantie1:0; // vakantiedagen alleen eerste prognose maand
+        const effectieveWd=Math.max(0,wdInContract-minusDagen);
+        uren=effectieveWd*urenPerDag1;
+        omzetExcl=uren*tarief1;
+      } else if(inContract2){
+        type='contract2';
+        klant=klant2;
+        tarief=tarief2;
+        const overlapStart=maandStart>startdatum2?maandStart:startdatum2;
+        const overlapEinde=maandEinde;
+        const wdInContract=werkdagenInPeriode(overlapStart,overlapEinde);
+        minusDagen=0;
+        uren=Math.max(0,wdInContract-vakantie2)*urenPerDag2;
+        omzetExcl=uren*tarief2;
+      }
+    }
+
+    const btw=omzetExcl*0.21;
+    maanden.push({
+      jaar:curJaar,maand:curMaand,naam:maandNaam,werkdagen,
+      type,klant,tarief,uren,minusDagen,omzetExcl,btw,
+      isVolgendeJaar:curJaar>jaar
+    });
+    if(m>11&&type==='leeg') break; // Stop na 3 maanden als geen contract meer
+  }
+
+  // Slice to max 15 months, stop when empty after year end
+  const relevanteMaanden=maanden.filter((m,i)=>i<=11||m.type!=='leeg');
+
+  // KPIs
+  const jaarMaanden=relevanteMaanden.filter(m=>m.jaar===jaar);
+  const totOmzetExcl=jaarMaanden.reduce((s,m)=>s+m.omzetExcl,0);
+  const totBtw=jaarMaanden.reduce((s,m)=>s+m.btw,0);
+  const totUren=jaarMaanden.reduce((s,m)=>s+m.uren,0);
+  const verschil=totOmzetExcl-doel;
+  const fmt=n=>'€ '+n.toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fmtD=n=>'€ '+n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  document.getElementById('prognose-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Prognose omzet ${jaar}</div><div class="kpi-val blue">${fmt(totOmzetExcl)}</div><div class="kpi-sub">excl. BTW</div></div>
+    <div class="kpi"><div class="kpi-label">BTW ${jaar}</div><div class="kpi-val amber">${fmt(totBtw)}</div></div>
+    <div class="kpi"><div class="kpi-label">Prognose incl. BTW</div><div class="kpi-val green">${fmt(totOmzetExcl+totBtw)}</div></div>
+    <div class="kpi"><div class="kpi-label">Totaal uren</div><div class="kpi-val purple">${Math.round(totUren)}</div></div>
+    <div class="kpi"><div class="kpi-label">vs. doelstelling</div>
+      <div class="kpi-val ${verschil>=0?'green':'red'}" style="color:${verschil>=0?'var(--grn)':'var(--red)'}">${verschil>=0?'+':''}${fmt(verschil)}</div>
+      <div class="kpi-sub">${verschil>=0?'Boven doel':'Onder doel'}</div>
+    </div>`;
+
+  // Grafiek
+  const maxOmzet=Math.max(...relevanteMaanden.map(m=>m.omzetExcl),1);
+  const colors={werkelijk:'var(--acc)',contract1:'var(--grn)',contract2:'var(--amb)',leeg:'var(--line)'};
+  const chartEl=document.getElementById('prognoseChart');
+  chartEl.innerHTML=relevanteMaanden.map(m=>{
+    const h=Math.round((m.omzetExcl/maxOmzet)*280);
+    const col=colors[m.type];
+    return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;justify-content:flex-end;min-width:0">
+      <div style="font-size:9px;color:var(--ink3);text-align:center;white-space:nowrap;overflow:hidden;width:100%">${m.omzetExcl>0?fmt(m.omzetExcl).replace('€ ',''):''}</div>
+      <div style="width:100%;height:${Math.max(h,m.omzetExcl>0?4:1)}px;background:${col};border-radius:3px 3px 0 0;transition:height .4s;opacity:${m.isVolgendeJaar?'.6':'1'}" title="${m.naam}: ${fmtD(m.omzetExcl)}"></div>
+      <div style="font-size:10px;color:var(--ink3);text-align:center">${m.naam.slice(0,3)}${m.isVolgendeJaar?"'27":''}</div>
+    </div>`;
+  }).join('');
+
+  // Tabel
+  const thead=`<thead><tr>
+    <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">Maand</th>
+    <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">Status</th>
+    <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">Klant</th>
+    <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">Werkdagen</th>
+    <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">Vrij</th>
+    <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">Uren</th>
+    <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">Tarief</th>
+    <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">Omzet excl. BTW</th>
+    <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600">BTW 21%</th>
+    <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;color:var(--acc)">Incl. BTW</th>
+  </tr></thead>`;
+
+  const typeLabel={werkelijk:'✓ Werkelijk',contract1:'⬤ Huidig contract',contract2:'◆ Volgend contract',leeg:'–'};
+  const typeBg={werkelijk:'var(--acc-l)',contract1:'var(--grn-l)',contract2:'var(--amb-l)',leeg:'transparent'};
+  const typeColor={werkelijk:'var(--acc)',contract1:'var(--grn)',contract2:'var(--amb)',leeg:'var(--ink3)'};
+
+  const tbody=relevanteMaanden.map((m,i)=>`<tr style="border-bottom:1px solid var(--line);background:${m.isVolgendeJaar?'rgba(255,255,200,.15)':i%2===0?'var(--white)':'var(--cream)'}">
+    <td style="padding:10px 14px;font-weight:600;color:var(--ink);white-space:nowrap">${m.naam} ${m.isVolgendeJaar?m.jaar:''}</td>
+    <td style="padding:10px 14px"><span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${typeBg[m.type]};color:${typeColor[m.type]};white-space:nowrap">${typeLabel[m.type]}</span></td>
+    <td style="padding:10px 14px;font-size:13px;color:var(--ink2)">${m.klant||'–'}</td>
+    <td style="padding:10px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:13px">${m.werkdagen}</td>
+    <td style="padding:10px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink3)">${m.minusDagen||'–'}</td>
+    <td style="padding:10px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:13px">${m.uren>0?m.uren.toFixed(1):'–'}</td>
+    <td style="padding:10px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:13px">${m.tarief?'€ '+m.tarief:'–'}</td>
+    <td style="padding:10px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600">${m.omzetExcl>0?fmtD(m.omzetExcl):'–'}</td>
+    <td style="padding:10px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:13px">${m.btw>0?fmtD(m.btw):'–'}</td>
+    <td style="padding:10px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--acc)">${m.omzetExcl>0?fmtD(m.omzetExcl+m.btw):'–'}</td>
+  </tr>`).join('');
+
+  document.getElementById('prognose-table').innerHTML=thead+'<tbody>'+tbody+'</tbody>';
+
+  // Totaal
+  const doelPct=Math.min(100,Math.round((totOmzetExcl/doel)*100));
+  document.getElementById('prognose-totaal').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+      <div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px">Doelstelling: <strong>${fmt(doel)}</strong></div>
+        <div style="width:220px;height:8px;background:var(--line);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${doelPct}%;background:${verschil>=0?'var(--grn)':'var(--amb)'};border-radius:4px;transition:width .5s"></div>
+        </div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:4px">${doelPct}% van doelstelling</div>
+      </div>
+      <div style="display:flex;gap:28px;flex-wrap:wrap">
+        <div style="text-align:right"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:3px">Excl. BTW</div><div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600">${fmtD(totOmzetExcl)}</div></div>
+        <div style="text-align:right"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:3px">BTW</div><div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600">${fmtD(totBtw)}</div></div>
+        <div style="background:var(--acc);border-radius:var(--rsm);padding:10px 20px;text-align:right">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.7);font-weight:600;margin-bottom:3px">Prognose incl. BTW</div>
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:white">${fmtD(totOmzetExcl+totBtw)}</div>
+        </div>
+      </div>
+    </div>`;
 }
 
 window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
