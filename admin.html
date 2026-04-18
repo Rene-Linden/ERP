@@ -1366,7 +1366,7 @@ function werkdagenInPeriode(vanDatum, totDatum) {
   return count;
 }
 
-function initPrognoseInputs(){
+window.initPrognoseInputs=function(){
   // Fill klant dropdowns
   const opts='<option value="">Onbekend</option>'+clients.filter(c=>c.name!=='Intern').map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
   const k1=document.getElementById('p-klant1');
@@ -1389,7 +1389,7 @@ function initPrognoseInputs(){
   }
 }
 
-async function renderPrognose(){
+window.renderPrognose=async function(){
   const jaar=parseInt(document.getElementById('prognoseJaar')?.value||new Date().getFullYear());
   initPrognoseInputs();
 
