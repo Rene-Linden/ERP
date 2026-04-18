@@ -219,6 +219,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
       <button class="nav-item" onclick="showPage('facturen',this)">
         <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>Facturen
       </button>
+      <button class="nav-item" onclick="showPage('omzet',this)">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Omzet
+      </button>
       <button class="nav-item" onclick="showPage('instellingen',this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Instellingen
       </button>
@@ -360,6 +363,27 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
         </div>
       </div>
 
+      <div class="page" id="page-omzet">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Omzet</div>
+            <div class="page-sub">Overzicht per factuur — automatisch bijgewerkt</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="omzetJaar" onchange="renderOmzet()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none">
+              <option value="2026">2026</option>
+              <option value="2025">2025</option>
+            </select>
+          </div>
+        </div>
+        <div class="kpi-grid" id="omzet-kpis"></div>
+        <div class="card" style="overflow-x:auto">
+          <div class="card-header"><span class="card-title">Factuuroverzicht</span></div>
+          <table class="data-table" id="omzet-table" style="min-width:900px"></table>
+          <div id="omzet-totaal" style="padding:14px 16px;border-top:2px solid var(--line);background:var(--cream)"></div>
+        </div>
+      </div>
+
       <div class="page" id="page-instellingen">
         <div class="page-header"><div><div class="page-title">Instellingen</div><div class="page-sub">Beveiliging en data</div></div></div>
         <div class="card">
@@ -480,6 +504,7 @@ window.showPage=function(name,btn){
   else if(name==='klanten')renderKlanten();
   else if(name==='accordering')renderAccordering();
   else if(name==='facturen')renderFacturen();
+  else if(name==='omzet')renderOmzet();
   else if(name==='instellingen')renderInstellingen();
 }
 
@@ -967,6 +992,136 @@ window.printFactuurAdmin = async function(factuurId) {
   } catch(e) {
     showToast('Fout: '+e.message,'bad');
     console.error(e);
+  }
+}
+
+// ── OMZET ─────────────────────────────────────
+async function renderOmzet(){
+  const jaar = parseInt(document.getElementById('omzetJaar')?.value || new Date().getFullYear());
+  const kpis = document.getElementById('omzet-kpis');
+  const el = document.getElementById('omzet-table');
+  const totaalEl = document.getElementById('omzet-totaal');
+
+  kpis.innerHTML = '<div class="kpi"><div class="kpi-label">Laden</div><div class="kpi-val blue">…</div></div>';
+
+  try {
+    const q = query(collection(db,'facturen'), orderBy('verstuurd_datum','desc'));
+    const snap = await getDocs(q);
+    const alle = snap.docs.map(d => ({id:d.id,...d.data()}));
+    const docs = alle.filter(d => {
+      const vd = new Date(d.verstuurd_datum);
+      return vd.getFullYear() === jaar;
+    });
+
+    // Helper
+    const fmt = n => n > 0 ? '€ ' + n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2}) : '–';
+    const fmtN = n => n ? n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2}) : '–';
+    const MO_F=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+
+    // Calculate totals per factuur
+    const rows = docs.map(d => {
+      const regels = d.regels || [];
+      const tarief = d.tarief || 0;
+      const kmTarief = d.kmTarief || 0.23;
+      const btwPct = d.btwPct !== undefined ? d.btwPct : 21;
+
+      const totalMins = regels.reduce((s,r) => {
+        const tM = t => { if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; };
+        return s + Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0));
+      }, 0);
+      const uren = totalMins / 60;
+      const totalKm = regels.reduce((s,r) => s+(r.km||0), 0);
+      const extra = (d.extraKosten||[]).reduce((s,k) => s+(parseFloat(k.bedrag)||0), 0);
+
+      const subtotaalUren = uren * tarief;
+      const subtotaalKm = totalKm * kmTarief;
+      const subtotaalExcl = subtotaalUren + subtotaalKm + extra;
+      const btw = subtotaalExcl * (btwPct/100);
+      const totaalIncl = subtotaalExcl + btw;
+
+      const spec = d.spec || {};
+      const maandStr = spec.maand !== undefined ? MO_F[spec.maand] : '–';
+      const factuurDatum = d.datum ? new Date(d.datum).toLocaleDateString('nl-NL') : new Date(d.verstuurd_datum).toLocaleDateString('nl-NL');
+
+      return { d, uren, tarief, subtotaalUren, totalKm, kmTarief, subtotaalKm, extra, subtotaalExcl, btwPct, btw, totaalIncl, maandStr, factuurDatum };
+    });
+
+    // KPIs
+    const totExcl = rows.reduce((s,r) => s+r.subtotaalExcl, 0);
+    const totBtw = rows.reduce((s,r) => s+r.btw, 0);
+    const totIncl = rows.reduce((s,r) => s+r.totaalIncl, 0);
+    const totUren = rows.reduce((s,r) => s+r.uren, 0);
+    const totKm = rows.reduce((s,r) => s+r.totalKm, 0);
+
+    kpis.innerHTML = `
+      <div class="kpi"><div class="kpi-label">Facturen ${jaar}</div><div class="kpi-val blue">${rows.length}</div></div>
+      <div class="kpi"><div class="kpi-label">Omzet excl. BTW</div><div class="kpi-val green">${fmt(totExcl)}</div></div>
+      <div class="kpi"><div class="kpi-label">BTW</div><div class="kpi-val amber">${fmt(totBtw)}</div></div>
+      <div class="kpi"><div class="kpi-label">Omzet incl. BTW</div><div class="kpi-val blue">${fmt(totIncl)}</div></div>
+      <div class="kpi"><div class="kpi-label">Totaal uren</div><div class="kpi-val purple">${totUren.toFixed(2)}</div></div>
+      <div class="kpi"><div class="kpi-label">Totaal KM</div><div class="kpi-val purple">${totKm}</div></div>`;
+
+    if (!rows.length) {
+      el.innerHTML = '<tr><td colspan="14" style="text-align:center;padding:24px;color:var(--ink3)">Geen facturen in '+jaar+'</td></tr>';
+      totaalEl.innerHTML = '';
+      return;
+    }
+
+    el.innerHTML = `<thead><tr style="background:var(--cream)">
+      <th>Nummer</th>
+      <th>Maand</th>
+      <th>Klant</th>
+      <th>Factuurdatum</th>
+      <th style="text-align:right">Uren</th>
+      <th style="text-align:right">Tarief</th>
+      <th style="text-align:right">Subtotaal uren</th>
+      <th style="text-align:right">KM</th>
+      <th style="text-align:right">€/km</th>
+      <th style="text-align:right">Subtotaal KM</th>
+      <th style="text-align:right">Overig</th>
+      <th style="text-align:right">Excl. BTW</th>
+      <th style="text-align:right">BTW %</th>
+      <th style="text-align:right">BTW</th>
+      <th style="text-align:right;font-weight:700;color:var(--acc)">Incl. BTW</th>
+    </tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td style="font-family:'DM Mono',monospace;font-weight:600;color:var(--acc)">${r.d.nummer||'–'}</td>
+      <td>${r.maandStr}</td>
+      <td class="bold">${r.d.klant||'–'}</td>
+      <td class="muted">${r.factuurDatum}</td>
+      <td class="mono" style="text-align:right">${r.uren.toFixed(2)}</td>
+      <td class="mono" style="text-align:right">€ ${r.tarief.toFixed(2)}</td>
+      <td class="mono" style="text-align:right">${fmt(r.subtotaalUren)}</td>
+      <td class="mono" style="text-align:right">${r.totalKm||'–'}</td>
+      <td class="mono" style="text-align:right">€ ${r.kmTarief.toFixed(2)}</td>
+      <td class="mono" style="text-align:right">${r.subtotaalKm>0?fmt(r.subtotaalKm):'–'}</td>
+      <td class="mono" style="text-align:right">${r.extra>0?fmt(r.extra):'–'}</td>
+      <td class="mono" style="text-align:right">${fmt(r.subtotaalExcl)}</td>
+      <td class="mono" style="text-align:right">${r.btwPct}%</td>
+      <td class="mono" style="text-align:right">${fmt(r.btw)}</td>
+      <td class="mono" style="text-align:right;font-weight:700;color:var(--acc)">${fmt(r.totaalIncl)}</td>
+    </tr>`).join('')}</tbody>`;
+
+    // Totaalrij
+    totaalEl.innerHTML = `
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:32px;flex-wrap:wrap">
+        <div style="text-align:right">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600;margin-bottom:3px">Totaal excl. BTW</div>
+          <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:var(--ink)">${fmt(totExcl)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600;margin-bottom:3px">BTW</div>
+          <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:var(--ink)">${fmt(totBtw)}</div>
+        </div>
+        <div style="background:var(--acc);border-radius:var(--rsm);padding:10px 20px;text-align:right">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.7);font-weight:600;margin-bottom:3px">Totaal incl. BTW</div>
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:white">${fmt(totIncl)}</div>
+        </div>
+      </div>`;
+
+  } catch(e) {
+    console.error(e);
+    el.innerHTML = '<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Laden mislukt</td></tr>';
   }
 }
 
