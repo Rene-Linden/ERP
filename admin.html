@@ -194,6 +194,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
       <button class="nav-item" onclick="showPage('accordering',this)">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>Accordering
       </button>
+      <button class="nav-item" onclick="showPage('facturen',this)">
+        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>Facturen
+      </button>
       <button class="nav-item" onclick="showPage('instellingen',this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Instellingen
       </button>
@@ -318,6 +321,23 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
         </div>
       </div>
 
+      <div class="page" id="page-facturen">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Facturen</div>
+            <div class="page-sub">Overzicht en beheer van alle facturen</div>
+          </div>
+          <a href="factuur.html" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px">
+            + Nieuwe factuur
+          </a>
+        </div>
+        <div class="kpi-grid" id="fact-kpis"></div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Alle facturen</span></div>
+          <table class="data-table" id="fact-table"></table>
+        </div>
+      </div>
+
       <div class="page" id="page-instellingen">
         <div class="page-header"><div><div class="page-title">Instellingen</div><div class="page-sub">Beveiliging en data</div></div></div>
         <div class="card">
@@ -365,7 +385,7 @@ const DEFAULT_PWD='ordinatio2024';
 const MO=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 const MOS=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 const DY=['zo','ma','di','wo','do','vr','za'];
-const DEF_CLIENTS=[{name:'Intern',rate:0,color:'#5c6b7a',email:'',phone:'',address:'',city:'',contact:''},{name:'Sitech',rate:115,color:'#2d5a8e',email:'',phone:'',address:'',city:'',contact:''},{name:'Dysel',rate:110,color:'#1e7a4a',email:'',phone:'',address:'',city:'',contact:''},{name:'Seeder',rate:110,color:'#b85c00',email:'',phone:'',address:'',city:'',contact:''},{name:'HG',rate:110,color:'#7b3f9e',email:'',phone:'',address:'',city:'',contact:''},{name:'Nabuurs',rate:110,color:'#c0392b',email:'',phone:'',address:'',city:'',contact:''}];
+const DEF_CLIENTS=[{name:'Intern',rate:0,color:'#5c6b7a',email:'',phone:'',address:'',city:'',contact:'',btw:0,klantnr:''},{name:'Sitech',rate:115,color:'#2d5a8e',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100107'},{name:'Dysel',rate:110,color:'#1e7a4a',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:''},{name:'Seeder',rate:110,color:'#b85c00',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:''},{name:'HG',rate:110,color:'#7b3f9e',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:''},{name:'Nabuurs',rate:110,color:'#c0392b',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:''}];
 const COLORS=['#2d5a8e','#1e7a4a','#b85c00','#7b3f9e','#c0392b','#1a7a8a','#5c6b7a','#8a6a1e'];
 
 let days={},clients=JSON.parse(localStorage.getItem(CK)||JSON.stringify(DEF_CLIENTS));
@@ -437,6 +457,7 @@ window.showPage=function(name,btn){
   else if(name==='opdrachtgevers')renderOpdrachtgevers();
   else if(name==='klanten')renderKlanten();
   else if(name==='accordering')renderAccordering();
+  else if(name==='facturen')renderFacturen();
   else if(name==='instellingen')renderInstellingen();
 }
 
@@ -590,9 +611,12 @@ window.addClient=function(){
   const contact=document.getElementById('newContact').value.trim();
   if(!name){showToast('Voer een naam in','bad');return;}
   if(clients.find(c=>c.name===name)){showToast('Naam bestaat al','bad');return;}
-  clients.push({name,rate:r,color:selColor,email,phone,address,city,contact});
+  const btw = parseInt(document.getElementById('newBtw').value)||21;
+  const klantnr = document.getElementById('newKlantnr').value.trim();
+  clients.push({name,rate:r,color:selColor,email,phone,address,city,contact,btw,klantnr});
   localStorage.setItem(CK,JSON.stringify(clients));
-  ['newName','newRate','newEmail','newPhone','newAddress','newCity','newContact'].forEach(id=>document.getElementById(id).value='');
+  ['newName','newRate','newEmail','newPhone','newAddress','newCity','newContact','newKlantnr'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('newBtw').value='21';
   renderKlanten();showToast(`${name} toegevoegd ✓`,'ok');
 }
 window.deleteClient=function(name){
@@ -646,6 +670,7 @@ function renderKlanten(){
           ${inp(c.name,'phone',c.phone,'tel','Telefoon')}
           ${inp(c.name,'address',c.address,'text','Adres')}
           ${inp(c.name,'city',c.city,'text','Postcode & Plaats')}
+          ${inp(c.name,'klantnr',c.klantnr,'text','Klantnummer')}
           <div class="field">
             <label>Uurtarief</label>
             <div style="display:flex;align-items:center;gap:6px">
@@ -656,6 +681,14 @@ function renderKlanten(){
                 onfocus="this.style.borderColor='var(--acc)'"
                 onblur="this.style.borderColor='var(--line2)'">
             </div>
+          </div>
+          <div class="field">
+            <label>BTW %</label>
+            <select style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none"
+              onchange="editField('${c.name}','btw',parseInt(this.value))">
+              <option value="21"${(c.btw===21||c.btw===undefined)?'selected':''}>21%</option>
+              <option value="0"${c.btw===0?'selected':''}>0%</option>
+            </select>
           </div>
         </div>
       </div>
@@ -714,10 +747,85 @@ async function renderAccordering(){
         <td class="muted">${vd.getDate()} ${MOS_S[vd.getMonth()]} ${vd.getFullYear()}</td>
         <td class="mono">${m2s(totalMins)}</td>
         <td><span style="background:${statusBg};color:${statusColor};font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">${statusText}</span>${d.akkoord?`<div style="font-size:11px;color:var(--ink3);margin-top:2px">${akkDatum}</div>`:''}</td>
-        <td><a href="${link}" target="_blank" style="font-size:12px;color:var(--acc);text-decoration:none;border:1px solid var(--acc-m);border-radius:var(--rxs);padding:4px 10px">Link ↗</a></td>
+        <td style="display:flex;gap:6px">
+          <a href="${link}" target="_blank" style="font-size:12px;color:var(--acc);text-decoration:none;border:1px solid var(--acc-m);border-radius:var(--rxs);padding:4px 10px">Link ↗</a>
+          ${d.akkoord&&!d.factuur_verstuurd?`<a href="factuur.html" style="font-size:12px;color:var(--grn);text-decoration:none;border:1px solid rgba(30,122,74,.3);background:var(--grn-l);border-radius:var(--rxs);padding:4px 10px;font-weight:500">🧾 Factuur</a>`:''}
+          ${d.factuur_verstuurd?`<span style="font-size:11px;color:var(--grn);padding:4px 8px;background:var(--grn-l);border-radius:var(--rxs)">✓ ${d.factuur_nummer||'Gefactureerd'}</span>`:''}
+        </td>
       </tr>`;
     }).join('')}</tbody>`;
   }catch(e){el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Laden mislukt</td></tr>';}
+}
+
+// ── FACTUREN ──────────────────────────────────
+async function renderFacturen(){
+  const kpis = document.getElementById('fact-kpis');
+  const el = document.getElementById('fact-table');
+
+  try{
+    const q = query(collection(db,'facturen'), orderBy('verstuurd_datum','desc'));
+    const snap = await getDocs(q);
+    const docs = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+    const total = docs.length;
+    const totalBedrag = docs.reduce((s,d)=>{
+      if(!d.regels) return s;
+      const regels = d.regels||[];
+      const tarief = d.tarief||0;
+      const kmTarief = d.kmTarief||0.23;
+      const totalMins = regels.reduce((s2,r)=>s2+Math.max(0,(tMins(r.end)-tMins(r.start))-(parseInt(r.brk)||0)),0);
+      const totalKm = regels.reduce((s2,r)=>s2+(r.km||0),0);
+      const extraTotal = (d.extraKosten||[]).reduce((s2,k)=>s2+(parseFloat(k.bedrag)||0),0);
+      const excl = (totalMins/60)*tarief + totalKm*kmTarief + extraTotal;
+      const btw = excl * ((d.btwPct||21)/100);
+      return s + excl + btw;
+    }, 0);
+
+    kpis.innerHTML = `
+      <div class="kpi"><div class="kpi-label">Facturen</div><div class="kpi-val blue">${total}</div></div>
+      <div class="kpi"><div class="kpi-label">Totaal gefactureerd</div><div class="kpi-val green">${euro(totalBedrag)}</div><div class="kpi-sub">incl. BTW</div></div>`;
+
+    if(!docs.length){
+      el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Nog geen facturen</td></tr>';
+      return;
+    }
+
+    el.innerHTML = `<thead><tr>
+      <th>Nummer</th><th>Opdrachtgever</th><th>Periode</th><th>Datum</th><th style="text-align:right">Bedrag</th><th>Status</th><th></th>
+    </tr></thead><tbody>${docs.map(d=>{
+      const MO_F=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+      const MOS_S=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+      const vd=new Date(d.verstuurd_datum);
+
+      // Calculate total
+      const regels = d.regels||[];
+      const tarief = d.tarief||0;
+      const kmTarief2 = d.kmTarief||0.23;
+      const totalMins2 = regels.reduce((s,r)=>s+Math.max(0,(tMins(r.end)-tMins(r.start))-(parseInt(r.brk)||0)),0);
+      const totalKm2 = regels.reduce((s,r)=>s+(r.km||0),0);
+      const extra2 = (d.extraKosten||[]).reduce((s,k)=>s+(parseFloat(k.bedrag)||0),0);
+      const excl2 = (totalMins2/60)*tarief + totalKm2*kmTarief2 + extra2;
+      const incl2 = excl2 * (1 + ((d.btwPct||21)/100));
+
+      const spec = d.spec||{};
+      const maandStr = spec.maand!==undefined ? MO_F[spec.maand]+' '+spec.jaar : '–';
+      const datum = d.datum ? new Date(d.datum).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '–';
+
+      return`<tr>
+        <td style="font-family:'DM Mono',monospace;font-weight:600;color:var(--acc)">${d.nummer||'–'}</td>
+        <td class="bold">${d.klant||'–'}</td>
+        <td>${maandStr}</td>
+        <td class="muted">${datum}</td>
+        <td class="mono" style="text-align:right;font-weight:600">${euro(incl2)}</td>
+        <td><span style="background:var(--grn-l);color:var(--grn);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">✓ Verstuurd</span></td>
+        <td><a href="factuur.html" style="font-size:12px;color:var(--acc);text-decoration:none;border:1px solid var(--acc-m);border-radius:var(--rxs);padding:4px 10px">Nieuw ↗</a></td>
+      </tr>`;
+    }).join('')}</tbody>`;
+
+  }catch(e){
+    el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Laden mislukt</td></tr>';
+    console.error(e);
+  }
 }
 
 window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
