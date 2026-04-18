@@ -222,6 +222,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
       <button class="nav-item" onclick="showPage('omzet',this)">
         <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Omzet
       </button>
+      <button class="nav-item" onclick="showPage('historie',this)">
+        <svg viewBox="0 0 24 24"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5"/></svg>Historie
+      </button>
       <button class="nav-item" onclick="showPage('prognose',this)">
         <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Prognose
       </button>
@@ -390,6 +393,31 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
           <div class="card-header"><span class="card-title">Factuuroverzicht</span></div>
           <table class="data-table" id="omzet-table" style="width:100%;border-collapse:collapse"></table>
           <div id="omzet-totaal" style="padding:14px 16px;border-top:2px solid var(--line);background:var(--cream)"></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-historie">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Omzet Historie</div>
+            <div class="page-sub">Omzet per maand per jaar — vergelijking meerdere jaren</div>
+          </div>
+          <button onclick="renderHistorie()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">↺ Vernieuwen</button>
+        </div>
+        <div class="kpi-grid" id="hist-kpis"></div>
+        <div class="card" style="overflow:hidden">
+          <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+            <span class="card-title">Omzet per maand (excl. BTW)</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span id="hist-edit-status" style="font-size:12px;color:var(--ink3)">Alleen verleden maanden aanpasbaar</span>
+              <button id="hist-edit-btn" onclick="toggleHistorieEdit()" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Wijzigen</button>
+              <button id="hist-save-btn" onclick="saveHistorie()" style="background:var(--grn);color:white;border:none;border-radius:var(--rxs);padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:none">Opslaan</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table id="hist-table" style="width:100%;border-collapse:collapse;min-width:700px"></table>
+          </div>
+          <div id="hist-totaal" style="padding:14px 16px;border-top:2px solid var(--line);background:var(--cream)"></div>
         </div>
       </div>
 
@@ -748,6 +776,7 @@ window.showPage=function(name,btn){
   else if(name==='accordering')renderAccordering();
   else if(name==='facturen')renderFacturen();
   else if(name==='omzet')renderOmzet();
+  else if(name==='historie')renderHistorie();
   else if(name==='prognose')renderPrognose();
   else if(name==='liquiditeit'){renderLiquiditeit();}
   else if(name==='instellingen')renderInstellingen();
@@ -1951,6 +1980,209 @@ window.renderLiquiditeit=async function(){
   </tr>`;
 
   document.getElementById('liq-table').innerHTML = thead+'<tbody>'+tbody+totaalRij+'</tbody>';
+}
+
+// ── HISTORIE ──────────────────────────────────
+const HIST_KEY = 'dgs_omzet_historie';
+const MO_HIST = ['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+const HIST_JAREN = [2021,2022,2023,2024,2025,2026];
+
+// Default data from Excel
+const HIST_DEFAULT = {
+  2021: [11000,11000,11000,11000,11000,11000,11000,11000,11000,null,null,null],
+  2022: [216.95,165.73,202.30,355.30,null,21442.52,14920.22,12146.88,20470.32,17320.32,18219.18,14957.46],
+  2023: [19416.38,13570.22,21518.14,16306.91,16061.64,17091.36,17597.60,17168.60,15717.75,21611.20,21135.50,16665.80],
+  2024: [17142,18030.90,19101.97,8651.56,-8651.56,6271.76,10726.76,4583.72,12151.06,14844.70,16590.18,12821.86],
+  2025: [16183.76,14595.81,17977.47,10179.15,null,null,null,null,null,null,null,null],
+  2026: [16691.85,14595.81,17977.47,10179.15,null,null,null,null,null,null,null,null]
+};
+
+let historieData = {};
+let historieEditMode = false;
+
+function loadHistorieData() {
+  const stored = localStorage.getItem(HIST_KEY);
+  if (stored) {
+    historieData = JSON.parse(stored);
+  } else {
+    historieData = JSON.parse(JSON.stringify(HIST_DEFAULT));
+    localStorage.setItem(HIST_KEY, JSON.stringify(historieData));
+  }
+}
+
+function saveHistorieData() {
+  localStorage.setItem(HIST_KEY, JSON.stringify(historieData));
+}
+
+// Sync facturen from Firebase into historieData
+async function syncFacturenToHistorie() {
+  try {
+    const q = query(collection(db,'facturen'), orderBy('verstuurd_datum','desc'));
+    const snap = await getDocs(q);
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const spec = data.spec || {};
+      const jaar = spec.jaar;
+      const maand = spec.maand;
+      if (!jaar || maand === undefined) return;
+
+      // Calculate omzet excl BTW
+      let omzet = 0;
+      if (data.regels && data.regels.length > 0) {
+        const tM = t => { if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; };
+        const mins = data.regels.reduce((s,r) => s+Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0)), 0);
+        const km = data.regels.reduce((s,r) => s+(r.km||0), 0);
+        const extra = (data.extraKosten||[]).reduce((s,k) => s+(parseFloat(k.bedrag)||0), 0);
+        omzet = (mins/60)*(data.tarief||0) + km*(data.kmTarief||0.23) + extra;
+      } else {
+        const km = data.km || 0;
+        const extra = (data.extraKosten||[]).reduce((s,k) => s+(parseFloat(k.bedrag)||0), 0);
+        omzet = (data.uren||0)*(data.tarief||0) + km*(data.kmTarief||0.21) + extra;
+      }
+
+      if (!historieData[jaar]) historieData[jaar] = new Array(12).fill(null);
+      historieData[jaar][maand] = omzet;
+    });
+    saveHistorieData();
+  } catch(e) { console.error('Sync error:', e); }
+}
+
+window.renderHistorie = async function() {
+  loadHistorieData();
+  await syncFacturenToHistorie();
+
+  const now = new Date();
+  const curJaar = now.getFullYear();
+  const curMaand = now.getMonth(); // 0-indexed, current month (not yet past)
+
+  const jaren = Object.keys(historieData).map(Number).sort();
+  const fmt = n => n !== null && n !== undefined && n !== 0
+    ? '€ ' + n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})
+    : '–';
+  const fmtK = n => '€ ' + Math.round(n||0).toLocaleString('nl-NL');
+
+  // KPIs — totals per year
+  document.getElementById('hist-kpis').innerHTML = jaren.map(j => {
+    const vals = historieData[j] || [];
+    const totaal = vals.reduce((s,v) => s+(v||0), 0);
+    return `<div class="kpi">
+      <div class="kpi-label">Omzet ${j}</div>
+      <div class="kpi-val ${j===curJaar?'blue':j===curJaar-1?'green':'amber'}" style="font-size:${j===curJaar?'20':'16'}px">${fmtK(totaal)}</div>
+    </div>`;
+  }).join('');
+
+  // Table
+  const thStyle = 'padding:9px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;background:var(--cream);text-align:right;white-space:nowrap';
+  const thead = `<thead><tr>
+    <th style="${thStyle};text-align:left">Maand</th>
+    ${jaren.map(j => `<th style="${thStyle};${j===curJaar?'color:var(--acc)':''}">${j}</th>`).join('')}
+  </tr></thead>`;
+
+  const tbody = MO_HIST.map((naam, mi) => {
+    const isPast = (y, m) => y < curJaar || (y === curJaar && m < curMaand);
+    const isCurrent = (y, m) => y === curJaar && m === curMaand;
+
+    const cells = jaren.map(j => {
+      const val = (historieData[j] || [])[mi];
+      const past = isPast(j, mi);
+      const current = isCurrent(j, mi);
+      const locked = !past; // future months locked
+
+      // In edit mode, show input for past months only
+      const cellStyle = `padding:8px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;${current?'font-weight:700;color:var(--acc)':''}`;
+
+      if (historieEditMode && past) {
+        return `<td style="${cellStyle}">
+          <input type="number" value="${val||''}" step="0.01"
+            data-jaar="${j}" data-maand="${mi}"
+            onchange="updateHistorie(${j},${mi},this.value)"
+            style="width:110px;background:var(--acc-l);border:1px solid var(--acc-m);border-radius:4px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);outline:none;text-align:right">
+        </td>`;
+      }
+
+      return `<td style="${cellStyle};${past&&val?'':'color:var(--ink3)'}">
+        ${val !== null && val !== undefined ? fmt(val) : locked ? '<span style="color:var(--line2)">–</span>' : '–'}
+        ${current&&val?'<span style="font-size:10px;color:var(--acc);margin-left:4px">◀</span>':''}
+      </td>`;
+    }).join('');
+
+    const rowBg = mi % 2 === 0 ? 'var(--white)' : 'var(--cream)';
+    return `<tr style="border-bottom:1px solid var(--line);background:${rowBg}">
+      <td style="padding:9px 12px;font-weight:600;color:var(--ink);font-size:13px">${naam}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  // Totaalrij
+  const totaalCells = jaren.map(j => {
+    const vals = historieData[j] || [];
+    const tot = vals.reduce((s,v) => s+(v||0), 0);
+    return `<td style="padding:10px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--acc)">${fmtK(tot)}</td>`;
+  }).join('');
+
+  // Groei % rij
+  const jaarTotalen = jaren.map(j => (historieData[j]||[]).reduce((s,v)=>s+(v||0),0));
+  const groeicells = jaren.map((j,i) => {
+    if (i === 0) return `<td style="padding:6px 12px;text-align:right;font-size:11px;color:var(--ink3)">–</td>`;
+    const prev = jaarTotalen[i-1];
+    const cur = jaarTotalen[i];
+    if (!prev) return `<td style="padding:6px 12px;text-align:right;font-size:11px;color:var(--ink3)">–</td>`;
+    const pct = ((cur-prev)/prev)*100;
+    return `<td style="padding:6px 12px;text-align:right;font-size:11px;font-weight:600;color:${pct>=0?'var(--grn)':'var(--red)'}">${pct>=0?'+':''}${pct.toFixed(1)}%</td>`;
+  }).join('');
+
+  document.getElementById('hist-table').innerHTML = thead + `<tbody>
+    ${tbody}
+    <tr style="border-top:2px solid var(--line);background:var(--acc-l)">
+      <td style="padding:10px 12px;font-weight:700;color:var(--acc);font-size:13px">TOTAAL</td>
+      ${totaalCells}
+    </tr>
+    <tr style="background:var(--cream)">
+      <td style="padding:6px 12px;font-size:11px;color:var(--ink3);font-weight:600">GROEI %</td>
+      ${groeicells}
+    </tr>
+  </tbody>`;
+
+  // Totaal strip
+  document.getElementById('hist-totaal').innerHTML = `
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+      ${jaren.map((j,i) => {
+        const tot = jaarTotalen[i];
+        const prev = i>0?jaarTotalen[i-1]:null;
+        const pct = prev ? ((tot-prev)/prev)*100 : null;
+        return `<div style="text-align:center;padding:8px 16px;border-radius:var(--rsm);background:${j===curJaar?'var(--acc)':'var(--white)'};border:1px solid ${j===curJaar?'var(--acc)':'var(--line)'}">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:${j===curJaar?'rgba(255,255,255,.7)':'var(--ink3)'};font-weight:600;margin-bottom:3px">${j}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:${j===curJaar?'white':'var(--ink)'}">${fmtK(tot)}</div>
+          ${pct!==null?`<div style="font-size:11px;color:${j===curJaar?'rgba(255,255,255,.8)':pct>=0?'var(--grn)':'var(--red)'};margin-top:2px">${pct>=0?'+':''}${pct.toFixed(1)}%</div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+window.toggleHistorieEdit = function() {
+  historieEditMode = !historieEditMode;
+  const btn = document.getElementById('hist-edit-btn');
+  const saveBtn = document.getElementById('hist-save-btn');
+  const status = document.getElementById('hist-edit-status');
+  btn.textContent = historieEditMode ? 'Annuleer' : 'Wijzigen';
+  btn.style.background = historieEditMode ? 'var(--amb-l)' : 'var(--acc-l)';
+  btn.style.color = historieEditMode ? 'var(--amb)' : 'var(--acc)';
+  btn.style.borderColor = historieEditMode ? 'var(--amb)' : 'var(--acc-m)';
+  saveBtn.style.display = historieEditMode ? 'block' : 'none';
+  status.textContent = historieEditMode ? '✎ Alleen verleden maanden bewerkbaar' : 'Alleen verleden maanden aanpasbaar';
+  renderHistorie();
+}
+
+window.updateHistorie = function(jaar, maand, val) {
+  if (!historieData[jaar]) historieData[jaar] = new Array(12).fill(null);
+  historieData[jaar][maand] = val === '' ? null : parseFloat(val) || 0;
+}
+
+window.saveHistorie = function() {
+  saveHistorieData();
+  historieEditMode = false;
+  renderHistorie();
+  showToast('Historie opgeslagen ✓', 'ok');
 }
 
 window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
