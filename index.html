@@ -137,16 +137,19 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
             <div class="brand-sub">Ordinatio Groep</div>
           </div>
         </div>
-        <div class="sync-pill syncing" id="syncPill" onclick="manualSync()">
-          <div class="sync-dot"></div>
-          <span id="syncText">Verbinden…</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <a href="verstuur.html" style="text-decoration:none;background:var(--acc-l);border:1px solid var(--acc-m);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;color:var(--acc)">Verstuur ↗</a>
+          <div class="sync-pill syncing" id="syncPill" onclick="manualSync()">
+            <div class="sync-dot"></div>
+            <span id="syncText">Verbinden…</span>
+          </div>
         </div>
       </div>
     </div>
     <div class="tabs">
       <button class="tab on" onclick="switchTab('invoer',this)">Invoer</button>
       <button class="tab" onclick="switchTab('overzicht',this)">Overzicht</button>
-      <button class="tab" onclick="switchTab('verstuur',this);setTimeout(function(){window.initVerstuur&&window.initVerstuur()},50)">Verstuur</button>
+
     </div>
   </header>
   <div class="main">
@@ -192,47 +195,6 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
       <div style="height:14px"></div>
       <p class="sec">Alle registraties</p>
       <div class="entries-table" id="entriesTable"></div>
-    <div class="pane" id="pane-verstuur">
-      <p class="sec">Urenspecificatie versturen</p>
-      <div style="background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm)">
-        <div class="fg">
-          <div class="field full">
-            <label>Opdrachtgever</label>
-            <select id="v-klant" onchange="onKlantChange()">
-              <option value="">Kies opdrachtgever…</option>
-            </select>
-          </div>
-          <div id="v-klant-info" style="display:none;grid-column:1/-1;background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:10px 12px">
-            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:6px">Klantgegevens</div>
-            <div id="v-klant-info-content" style="font-size:13px;color:var(--ink2);line-height:1.6"></div>
-            <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
-              <label style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600">Email:</label>
-              <input type="email" id="v-email" placeholder="naam@bedrijf.nl" style="flex:1;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:14px;padding:7px 10px;outline:none">
-            </div>
-          </div>
-          <div class="field">
-            <label>Maand</label>
-            <select id="v-maand"></select>
-          </div>
-          <div class="field">
-            <label>Jaar</label>
-            <select id="v-jaar"></select>
-          </div>
-        </div>
-        <div id="v-preview" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:12px;margin-bottom:12px;display:none">
-          <p style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:8px">Overzicht</p>
-          <div id="v-preview-content"></div>
-        </div>
-        <button class="save-btn" id="v-send-btn" onclick="verstuurSpec()" style="margin-top:0">
-          Verstuur urenspecificatie
-          <div class="spin"></div>
-        </button>
-      </div>
-
-      <p class="sec" style="margin-top:8px">Verstuurde specificaties</p>
-      <div id="v-history" style="background:var(--white);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)">
-        <div class="empty-state"><div class="empty-icon">📨</div><div class="empty-text">Nog niets verstuurd</div></div>
-      </div>
     </div>
     </div>
   </div>
