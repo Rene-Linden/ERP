@@ -325,7 +325,7 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,doc,setDoc,getDoc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,onSnapshot,collection,query,orderBy,getDocs,addDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
 const fbApp=initializeApp(FB);
@@ -599,7 +599,6 @@ window.exportData=function(){
 }
 
 // ── ACCORDERING ──────────────────────────────
-import{collection,query,orderBy,getDocs,doc,getDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 async function renderAccordering(){
   const el=document.getElementById('acc-table');
