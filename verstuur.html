@@ -475,16 +475,13 @@ async function loadHistory(){
             <thead><tr><th>Datum</th><th>Start</th><th>Eind</th><th>Pauze</th><th style="text-align:right">Uren</th></tr></thead>
             <tbody>${detailRows}</tbody>
           </table>
-          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap" id="actions-${id}">
             ${data.akkoord
-              ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--grn);background:var(--grn-l);border:1px solid rgba(30,122,74,.2);border-radius:var(--rxs);padding:6px 12px">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  Geaccordeerd — aanpassen niet mogelijk
-                </div>
-                <button class="action-btn reset" onclick="resetAkkoord('${id}')">⟳ Akkoord resetten</button>`
-              : `<button class="action-btn" onclick="herVerstuur('${id}')">↺ Opnieuw versturen</button>`
+              ? '<span style="font-size:12px;color:var(--grn);background:var(--grn-l);border:1px solid rgba(30,122,74,.2);border-radius:var(--rxs);padding:6px 12px;display:flex;align-items:center;gap:5px">✓ Geaccordeerd — aanpassen niet mogelijk</span>'
+                +'<button class="action-btn reset" onclick="resetAkkoord(''+id+'')">⟳ Reset akkoord</button>'
+              : '<button class="action-btn" onclick="herVerstuur(''+id+'')">↺ Opnieuw versturen</button>'
+                +'<button class="action-btn del" onclick="verwijderSpec(''+id+'')">✕ Verwijderen</button>'
             }
-            <button class="action-btn del" onclick="verwijderSpec('${id}')" ${data.akkoord?"title='Reset eerst het akkoord om te verwijderen' onclick="showToast('Reset eerst het akkoord','bad');return false"":''}>✕ Verwijderen</button>
           </div>
         </div>
       </div>`;
