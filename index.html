@@ -375,7 +375,7 @@ window.switchTab=function(name,btn){
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');document.getElementById('pane-'+name).classList.add('on');
   if(name==='overzicht'){vMonth=new Date().getMonth();vYear=new Date().getFullYear();renderOverzicht();}
-  if(name==='verstuur'){initVerstuur();updatePreview();}
+  if(name==='verstuur'){window.initVerstuur&&window.initVerstuur();window.updatePreview&&window.updatePreview();}
 }
 
 window.prevMonth=function(){vMonth--;if(vMonth<0){vMonth=11;vYear--}renderOverzicht()}
@@ -418,7 +418,7 @@ import{collection,addDoc,query,where,orderBy,getDocs}from'https://www.gstatic.co
 const MO_FULL=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 
 // ── INIT VERSTUUR TAB ─────────────────────────
-function initVerstuur(){
+window.initVerstuur=function(){
   // Load clients from localStorage (set by admin)
   const storedClients=JSON.parse(localStorage.getItem('dgs_clients_v1')||'[]');
   const klantList=storedClients.length?storedClients.map(c=>c.name):KLANTEN;
@@ -442,7 +442,7 @@ function initVerstuur(){
   loadVerstuurHistory();
 }
 
-function onKlantChange(){
+window.onKlantChange=function(){
   const klant=document.getElementById('v-klant').value;
   const infoBox=document.getElementById('v-klant-info');
   const infoContent=document.getElementById('v-klant-info-content');
@@ -470,7 +470,7 @@ function onKlantChange(){
   updatePreview();
 }
 
-function updatePreview(){
+window.updatePreview=function(){
   const klant=document.getElementById('v-klant').value;
   const maand=parseInt(document.getElementById('v-maand').value);
   const jaar=parseInt(document.getElementById('v-jaar').value);
