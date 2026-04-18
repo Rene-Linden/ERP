@@ -146,7 +146,7 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
     <div class="tabs">
       <button class="tab on" onclick="switchTab('invoer',this)">Invoer</button>
       <button class="tab" onclick="switchTab('overzicht',this)">Overzicht</button>
-      <button class="tab" onclick="switchTab('verstuur',this)">Verstuur</button>
+      <button class="tab" onclick="switchTab('verstuur',this);setTimeout(function(){window.initVerstuur&&window.initVerstuur()},50)">Verstuur</button>
     </div>
   </header>
   <div class="main">
@@ -611,6 +611,8 @@ async function loadVerstuurHistory(){
 
 
 init();
+// Preload verstuur after page load
+setTimeout(function(){window.initVerstuur&&window.initVerstuur();},500);
 </script>
 </body>
 </html>
