@@ -528,14 +528,41 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                 <div class="field" style="margin-bottom:0"><label>Loon René (€/mnd)</label><input type="number" id="l-loon" value="4335.78" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;width:100%"></div>
                 <div class="field" style="margin-bottom:0"><label>Loonbelasting (€/mnd)</label><input type="number" id="l-lb" value="4112" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;width:100%"></div>
-                <div class="field" style="margin-bottom:0"><label>Vakantiegeld (€/jaar)</label><input type="number" id="l-vak" value="4000" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;width:100%"></div>
-                <div class="field" style="margin-bottom:0"><label>Loonbel. vakantiegeld</label><input type="number" id="l-lbvak" value="4000" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;width:100%"></div>
+                <div class="field" style="margin-bottom:0"><label>Vakantiegeld netto (€)</label><input type="number" id="l-vak" value="4000" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;width:100%"></div>
+                <div class="field" style="margin-bottom:0"><label>Loonbelasting vakantiegeld (€)</label><input type="number" id="l-lbvak" value="4000" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;width:100%"></div>
                 <div class="field" style="margin-bottom:0"><label>Lease auto (€/mnd)</label><input type="number" id="l-lease" value="1513.96" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;width:100%"></div>
                 <div class="field" style="margin-bottom:0"><label>Rente privé (€/mnd)</label><input type="number" id="l-rente" value="200" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;width:100%"></div>
               </div>
               <div class="field" style="margin-bottom:0"><label>Maand vakantiegeld uitbetaling</label>
                 <select id="l-vakmaand" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;width:100%">
-                  ${[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>`<option value="${i}"${i===5?' selected':''}>${['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'][i]}</option>`).join('')}
+                    <option value="0">Januari</option>
+                    <option value="1">Februari</option>
+                    <option value="2">Maart</option>
+                    <option value="3">April</option>
+                    <option value="4">Mei</option>
+                    <option value="5" selected>Juni</option>
+                    <option value="6">Juli</option>
+                    <option value="7">Augustus</option>
+                    <option value="8">September</option>
+                    <option value="9">Oktober</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:0"><label>Maand loonbelasting vakantiegeld</label>
+                <select id="l-lbvakmaand" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;width:100%">
+                    <option value="0">Januari</option>
+                    <option value="1">Februari</option>
+                    <option value="2">Maart</option>
+                    <option value="3">April</option>
+                    <option value="4">Mei</option>
+                    <option value="5">Juni</option>
+                    <option value="6" selected>Juli</option>
+                    <option value="7">Augustus</option>
+                    <option value="8">September</option>
+                    <option value="9">Oktober</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
                 </select>
               </div>
             </div>
@@ -548,7 +575,18 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
                 <div class="field" style="margin-bottom:0"><label>Huidige bankstand zakelijk (€)</label><input type="number" id="l-bank" value="76548.92" step="0.01" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);outline:none;width:100%"></div>
                 <div class="field" style="margin-bottom:0"><label>Startmaand prognose</label>
                   <select id="l-startmaand" onchange="renderLiquiditeit()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;width:100%">
-                    ${[0,1,2,3,4,5,6,7,8,9,10,11].map(i=>`<option value="${i}"${i===new Date().getMonth()?' selected':''}>${['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'][i]}</option>`).join('')}
+                  <option value="0">Januari</option>
+                  <option value="1">Februari</option>
+                  <option value="2">Maart</option>
+                  <option value="3" selected>April</option>
+                  <option value="4">Mei</option>
+                  <option value="5">Juni</option>
+                  <option value="6">Juli</option>
+                  <option value="7">Augustus</option>
+                  <option value="8">September</option>
+                  <option value="9">Oktober</option>
+                  <option value="10">November</option>
+                  <option value="11">December</option>
                   </select>
                 </div>
               </div>
@@ -711,7 +749,7 @@ window.showPage=function(name,btn){
   else if(name==='facturen')renderFacturen();
   else if(name==='omzet')renderOmzet();
   else if(name==='prognose')renderPrognose();
-  else if(name==='liquiditeit')renderLiquiditeit();
+  else if(name==='liquiditeit'){renderLiquiditeit();}
   else if(name==='instellingen')renderInstellingen();
 }
 
@@ -1687,7 +1725,8 @@ window.renderLiquiditeit=async function(){
   const lease     = parseFloat(document.getElementById('l-lease').value)||0;
   const rente     = parseFloat(document.getElementById('l-rente').value)||0;
   const bankStart = parseFloat(document.getElementById('l-bank').value)||0;
-  const vakMaand  = parseInt(document.getElementById('l-vakmaand').value)||5;
+  const vakMaand    = parseInt(document.getElementById('l-vakmaand').value)||5;
+  const lbVakMaand  = parseInt(document.getElementById('l-lbvakmaand')?.value??6)||6;
   const btwOpen   = parseFloat(document.getElementById('l-btwopen').value)||0;
   const startMaand= parseInt(document.getElementById('l-startmaand').value)||new Date().getMonth();
 
@@ -1763,7 +1802,8 @@ window.renderLiquiditeit=async function(){
   for(let i=0; i<12; i++){
     const maandIdx = (startMaand + i) % 12;
     const jaar = startJaar + Math.floor((startMaand + i) / 12);
-    const isVakMaand = maandIdx === vakMaand;
+    const isVakMaand   = maandIdx === vakMaand;
+    const isLBVakMaand = maandIdx === lbVakMaand;
     const kwartaal = Math.floor(maandIdx / 3) + 1;
     const kw = `Q${kwartaal}`;
 
@@ -1791,8 +1831,8 @@ window.renderLiquiditeit=async function(){
     // UITGAVEN
     const uitLoon = loon;
     const uitLB = lb;
-    const uitVak = isVakMaand ? vak : 0;
-    const uitLBVak = isVakMaand ? lbvak : 0;
+    const uitVak   = isVakMaand ? vak : 0;
+    const uitLBVak = isLBVakMaand ? lbvak : 0;
     const uitLease = lease;
     const uitRente = rente;
     const uitBtw = btwAfdracht;
@@ -1814,7 +1854,7 @@ window.renderLiquiditeit=async function(){
       netto,
       bankStart: bankstand,
       bankEinde,
-      isVakMaand,
+      isVakMaand, isLBVakMaand,
       kwartaal
     });
 
@@ -1848,6 +1888,7 @@ window.renderLiquiditeit=async function(){
       <div style="width:100%;height:${barH(m)}px;background:${m.bankEinde>=bankStart?'var(--acc)':'var(--amb)'};border-radius:3px 3px 0 0;position:relative" title="Bank: ${fmt(m.bankEinde)}">
         ${m.uitBtw>0?`<div style="position:absolute;top:-3px;right:0;width:4px;height:4px;background:var(--pur);border-radius:50%" title="BTW afdracht"></div>`:''}
         ${m.isVakMaand?`<div style="position:absolute;top:-3px;left:0;width:4px;height:4px;background:var(--red);border-radius:50%" title="Vakantiegeld"></div>`:''}
+        ${m.isLBVakMaand?`<div style="position:absolute;top:-8px;left:0;width:4px;height:4px;background:var(--amb);border-radius:50%" title="LB Vakantiegeld"></div>`:''}
       </div>
       <div style="font-size:10px;color:var(--ink3)">${m.kort}</div>
     </div>`).join('');
@@ -1863,6 +1904,7 @@ window.renderLiquiditeit=async function(){
     ${th('Inkomsten')}
     ${th('Loon+LB')}
     ${th('Vakantiegeld')}
+    ${th('LB Vakantiegeld')}
     ${th('Lease auto')}
     ${th('Rente')}
     ${th('BTW afdracht')}
@@ -1876,7 +1918,8 @@ window.renderLiquiditeit=async function(){
     ${td(fmt(m.bankStart),'var(--ink2)')}
     ${td(fmt(m.inTotaal),'var(--grn)',true)}
     ${td(fmt(m.uitLoon+m.uitLB))}
-    ${td(m.isVakMaand?fmt(m.uitVak):'–','var(--ink3)')}
+    ${td(m.uitVak>0?fmt(m.uitVak):'–','var(--ink3)')}
+    ${td(m.uitLBVak>0?fmt(m.uitLBVak):'–','var(--ink3)')}
     ${td(fmt(m.uitLease))}
     ${td(fmt(m.uitRente))}
     ${td(m.uitBtw>0?fmt(m.uitBtw):'–',m.uitBtw>0?'var(--pur)':'')}
@@ -1892,6 +1935,7 @@ window.renderLiquiditeit=async function(){
     ${td(fmt(totIn),'var(--grn)',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitLoon+m.uitLB,0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitVak,0)),'',true)}
+    ${td(fmt(maanden.reduce((s,m)=>s+m.uitLBVak,0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitLease,0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitRente,0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitBtw,0)),'var(--pur)',true)}
