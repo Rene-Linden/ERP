@@ -291,9 +291,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
       </div>
 
       <div class="page" id="page-klanten">
-        <div class="page-header"><div><div class="page-title">Klantbeheer</div><div class="page-sub">Opdrachtgevers en tarieven</div></div></div>
+        <div class="page-header"><div><div class="page-title">Klantbeheer</div><div class="page-sub">Opdrachtgevers, tarieven en contactgegevens</div></div></div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Nieuwe opdrachtgever</span></div>
+          <div class="card-header" style="background:var(--acc);border-radius:var(--r) var(--r) 0 0"><span class="card-title" style="color:white">+ Nieuwe opdrachtgever</span></div>
           <div class="card-body">
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
               <div class="field">
@@ -431,7 +431,7 @@ const DEFAULT_PWD='ordinatio2024';
 const MO=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 const MOS=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 const DY=['zo','ma','di','wo','do','vr','za'];
-const DEF_CLIENTS=[{name:'Intern',rate:0,color:'#5c6b7a',email:'',phone:'',address:'',city:'',contact:'',btw:0,klantnr:''},{name:'Sitech',rate:115,color:'#2d5a8e',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100107'},{name:'Dysel',rate:110,color:'#1e7a4a',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:''},{name:'Seeder',rate:110,color:'#b85c00',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:''},{name:'HG',rate:110,color:'#7b3f9e',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:''},{name:'Nabuurs',rate:110,color:'#c0392b',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:''}];
+const DEF_CLIENTS=[{name:'Ordinatio Advies B.V.',rate:0,color:'#5c6b7a',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100101',kmRate:0.23},{name:'Dysel EMEA',rate:110,color:'#1e7a4a',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100102',kmRate:0.23},{name:'Resi Leufkens',rate:0,color:'#8a6a1e',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100103',kmRate:0.23},{name:'SeederDeBoer',rate:110,color:'#b85c00',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100104',kmRate:0.23},{name:'HG International B.V.',rate:110,color:'#7b3f9e',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100105',kmRate:0.23},{name:'Luke Recruitement',rate:0,color:'#1a7a8a',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100106',kmRate:0.23},{name:'Sitech Nederland B.V.',rate:115,color:'#2d5a8e',email:'',phone:'',address:'',city:'',contact:'',btw:21,klantnr:'100107',kmRate:0.23}];
 const COLORS=['#2d5a8e','#1e7a4a','#b85c00','#7b3f9e','#c0392b','#1a7a8a','#5c6b7a','#8a6a1e'];
 
 let days={},clients=JSON.parse(localStorage.getItem(CK)||JSON.stringify(DEF_CLIENTS));
@@ -501,7 +501,7 @@ window.showPage=function(name,btn){
   if(name==='dashboard')renderDashboard();
   else if(name==='uren')renderUren();
   else if(name==='opdrachtgevers')renderOpdrachtgevers();
-  else if(name==='klanten')renderKlanten();
+  else if(name==='klanten'){renderKlanten();}
   else if(name==='accordering')renderAccordering();
   else if(name==='facturen')renderFacturen();
   else if(name==='omzet')renderOmzet();
@@ -648,6 +648,12 @@ function renderColorOpts(){
 }
 window.selCol=function(c){selColor=c;document.querySelectorAll('.color-opt').forEach(el=>el.classList.toggle('on',el.style.background===c||el.style.background===hexRgb(c)));};
 function hexRgb(h){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgb(${r}, ${g}, ${b})`;}
+function getNextKlantnr(){
+  const nrs=clients.map(c=>parseInt(c.klantnr)||0).filter(n=>n>0);
+  const max=nrs.length?Math.max(...nrs):100107;
+  return String(max+1);
+}
+
 window.addClient=function(){
   const name=document.getElementById('newName').value.trim();
   const r=parseFloat(document.getElementById('newRate').value)||0;
@@ -658,15 +664,15 @@ window.addClient=function(){
   const city=document.getElementById('newCity').value.trim();
   const contact=document.getElementById('newContact').value.trim();
   const btw=parseInt(document.getElementById('newBtw').value)||21;
-  const klantnr=document.getElementById('newKlantnr').value.trim();
+  const klantnr=getNextKlantnr();
   if(!name){showToast('Voer een naam in','bad');return;}
   if(clients.find(c=>c.name===name)){showToast('Naam bestaat al','bad');return;}
   clients.push({name,rate:r,kmRate,color:selColor,email,phone,address,city,contact,btw,klantnr});
   localStorage.setItem(CK,JSON.stringify(clients));
-  ['newName','newRate','newKmRate','newEmail','newPhone','newAddress','newCity','newContact','newKlantnr'].forEach(id=>document.getElementById(id).value='');
+  ['newName','newRate','newKmRate','newEmail','newPhone','newAddress','newCity','newContact'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('newBtw').value='21';
   document.getElementById('newKmRate').value='0.23';
-  renderKlanten();showToast(`${name} toegevoegd ✓`,'ok');
+  renderKlanten();showToast(`${name} toegevoegd — klantnr ${klantnr}`,'ok');
 }
 window.deleteClient=function(name){
   if(!confirm(`${name} verwijderen?`))return;
@@ -684,6 +690,11 @@ window.editField=function(name,field,val){
 }
 function renderKlanten(){
   renderColorOpts();
+
+  // Update auto klantnr display
+  const autoEl=document.getElementById('autoKlantnr');
+  if(autoEl) autoEl.value=getNextKlantnr();
+
   const el=document.getElementById('clientCards');
   if(!clients.length){
     el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><div>Geen opdrachtgevers</div></div>';
@@ -691,64 +702,117 @@ function renderKlanten(){
   }
   const allBlocks=Object.values(days).flat();
 
-  const inp=(name,field,val,type,placeholder)=>`
-    <div class="field">
-      <label>${placeholder}</label>
-      <input type="${type}" value="${(val||'').replace(/"/g,'&quot;')}" placeholder="–"
-        style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;width:100%;transition:border-color .15s"
-        onchange="editField('${name}','${field}',this.value)"
-        onfocus="this.style.borderColor='var(--acc)'"
-        onblur="this.style.borderColor='var(--line2)'">
-    </div>`;
-
-  el.innerHTML=clients.map(c=>{
-    const mins=allBlocks.filter(b=>b.klant===c.name).reduce((s,b)=>s+bMins(b),0);
-    return`<div class="card" style="border-left:4px solid ${c.color};margin-bottom:14px">
-      <div class="card-header">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
-          <span style="font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)">${c.name}</span>
-          ${mins?`<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--grn);background:var(--grn-l);padding:2px 8px;border-radius:10px">${m2s(mins)} uur</span>`:''}
-        </div>
-        <button class="del-btn" onclick="deleteClient('${c.name}')">Verwijder</button>
-      </div>
-      <div class="card-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-          ${inp(c.name,'contact',c.contact,'text','Contactpersoon')}
-          ${inp(c.name,'email',c.email,'email','Emailadres')}
-          ${inp(c.name,'phone',c.phone,'tel','Telefoon')}
-          ${inp(c.name,'address',c.address,'text','Adres')}
-          ${inp(c.name,'city',c.city,'text','Postcode & Plaats')}
-          ${inp(c.name,'klantnr',c.klantnr,'text','Klantnummer')}
-          <div class="field">
-            <label>Uurtarief (€)</label>
-            <input type="number" value="${c.rate||0}" min="0" step="0.01"
-              style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s"
-              onchange="editField('${c.name}','rate',parseFloat(this.value)||0)"
-              onfocus="this.style.borderColor='var(--acc)'"
-              onblur="this.style.borderColor='var(--line2)'">
-          </div>
-          <div class="field">
-            <label>KM vergoeding (€)</label>
-            <input type="number" value="${c.kmRate||0.23}" min="0" step="0.01"
-              style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s"
-              onchange="editField('${c.name}','kmRate',parseFloat(this.value)||0.23)"
-              onfocus="this.style.borderColor='var(--acc)'"
-              onblur="this.style.borderColor='var(--line2)'">
-          </div>
-          <div class="field">
-            <label>BTW %</label>
-            <select style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none"
-              onchange="editField('${c.name}','btw',parseInt(this.value))">
-              <option value="21"${(c.btw===21||c.btw===undefined)?'selected':''}>21%</option>
-              <option value="0"${c.btw===0?'selected':''}>0%</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  el.innerHTML=`<div class="card" style="overflow:hidden;padding:0">
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:var(--cream);border-bottom:2px solid var(--line)">
+          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600;white-space:nowrap">Nr</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Bedrijfsnaam</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Contactpersoon</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Email</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Telefoon</th>
+          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Adres</th>
+          <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Tarief</th>
+          <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">KM</th>
+          <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">BTW</th>
+          <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Uren</th>
+          <th style="padding:10px 14px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600"></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${clients.map((c,i)=>{
+          const mins=allBlocks.filter(b=>b.klant===c.name).reduce((s,b)=>s+bMins(b),0);
+          const p2=n=>String(n).padStart(2,'0');
+          const urenStr=mins?`${Math.floor(mins/60)}:${p2(mins%60)}`:'–';
+          return`<tr style="border-bottom:1px solid var(--line)" id="row-${i}">
+            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--acc);font-weight:600;white-space:nowrap">${c.klantnr||'–'}</td>
+            <td style="padding:12px 14px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="width:8px;height:8px;border-radius:50%;background:${c.color||'#8a8a84'};flex-shrink:0"></div>
+                <span style="font-weight:600;color:var(--ink);font-size:13px">${c.name}</span>
+              </div>
+            </td>
+            <td style="padding:12px 14px;font-size:13px;color:var(--ink2)">${c.contact||'–'}</td>
+            <td style="padding:12px 14px;font-size:13px;color:var(--ink2)">${c.email?`<a href="mailto:${c.email}" style="color:var(--acc);text-decoration:none">${c.email}</a>`:'–'}</td>
+            <td style="padding:12px 14px;font-size:13px;color:var(--ink2);white-space:nowrap">${c.phone||'–'}</td>
+            <td style="padding:12px 14px;font-size:13px;color:var(--ink2)">${[c.address,c.city].filter(Boolean).join(', ')||'–'}</td>
+            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;text-align:right;white-space:nowrap">${c.rate?'€ '+c.rate:'–'}</td>
+            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;text-align:right;white-space:nowrap">${c.kmRate?'€ '+parseFloat(c.kmRate).toFixed(2):'–'}</td>
+            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;text-align:right">${c.btw!==undefined?c.btw+'%':'21%'}</td>
+            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;text-align:right;color:var(--grn)">${urenStr}</td>
+            <td style="padding:12px 14px;text-align:center">
+              <div style="display:flex;gap:6px;justify-content:flex-end">
+                <button onclick="openEdit(${i})" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Wijzigen</button>
+                <button onclick="deleteClient('${c.name}')" style="background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:5px 10px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+              </div>
+            </td>
+          </tr>
+          <!-- EDIT ROW (hidden) -->
+          <tr id="edit-${i}" style="display:none;background:var(--acc-l);border-bottom:1px solid var(--acc-m)">
+            <td colspan="11" style="padding:16px 20px">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Bedrijfsnaam</div>
+                  <input type="text" value="${c.name.replace(/"/g,'&quot;')}" id="e-name-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Contactpersoon</div>
+                  <input type="text" value="${(c.contact||'').replace(/"/g,'&quot;')}" id="e-contact-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Email</div>
+                  <input type="email" value="${(c.email||'').replace(/"/g,'&quot;')}" id="e-email-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Telefoon</div>
+                  <input type="tel" value="${(c.phone||'').replace(/"/g,'&quot;')}" id="e-phone-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Adres</div>
+                  <input type="text" value="${(c.address||'').replace(/"/g,'&quot;')}" id="e-address-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Postcode & Plaats</div>
+                  <input type="text" value="${(c.city||'').replace(/"/g,'&quot;')}" id="e-city-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Uurtarief (€)</div>
+                  <input type="number" value="${c.rate||0}" id="e-rate-${i}" min="0" step="0.01" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">KM vergoeding (€)</div>
+                  <input type="number" value="${c.kmRate||0.23}" id="e-kmrate-${i}" min="0" step="0.01" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
+                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">BTW %</div>
+                  <select id="e-btw-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none">
+                    <option value="21"${(c.btw===21||c.btw===undefined)?'selected':''}>21%</option>
+                    <option value="0"${c.btw===0?'selected':''}>0%</option>
+                  </select></div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button onclick="saveEdit(${i})" style="background:var(--acc);color:white;border:none;border-radius:var(--rxs);padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
+                <button onclick="closeEdit(${i})" style="background:var(--white);color:var(--ink3);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleer</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
 }
+
+window.openEdit=function(i){
+  // Close all other edit rows first
+  document.querySelectorAll('[id^="edit-"]').forEach(r=>r.style.display='none');
+  document.getElementById('edit-'+i).style.display='table-row';
+  document.getElementById('edit-'+i).scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+window.closeEdit=function(i){
+  document.getElementById('edit-'+i).style.display='none';
+}
+
+window.saveEdit=function(i){
+  const c=clients[i];
+  const oldName=c.name;
+  c.name=document.getElementById(`e-name-${i}`).value.trim()||oldName;
+  c.contact=document.getElementById(`e-contact-${i}`).value.trim();
+  c.email=document.getElementById(`e-email-${i}`).value.trim();
+  c.phone=document.getElementById(`e-phone-${i}`).value.trim();
+  c.address=document.getElementById(`e-address-${i}`).value.trim();
+  c.city=document.getElementById(`e-city-${i}`).value.trim();
+  c.rate=parseFloat(document.getElementById(`e-rate-${i}`).value)||0;
+  c.kmRate=parseFloat(document.getElementById(`e-kmrate-${i}`).value)||0.23;
+  c.btw=parseInt(document.getElementById(`e-btw-${i}`).value)||21;
+  localStorage.setItem(CK,JSON.stringify(clients));
+  renderKlanten();
+  showToast(`${c.name} opgeslagen ✓`,'ok');
+}
+
 
 // INSTELLINGEN
 function renderInstellingen(){
