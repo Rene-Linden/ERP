@@ -818,12 +818,125 @@ async function renderFacturen(){
         <td class="muted">${datum}</td>
         <td class="mono" style="text-align:right;font-weight:600">${euro(incl2)}</td>
         <td><span style="background:var(--grn-l);color:var(--grn);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">✓ Verstuurd</span></td>
-        <td><a href="factuur.html" style="font-size:12px;color:var(--acc);text-decoration:none;border:1px solid var(--acc-m);border-radius:var(--rxs);padding:4px 10px">Nieuw ↗</a></td>
+        <td>
+          <button onclick="printFactuurAdmin('${d.id}')" style="font-size:12px;color:var(--grn);background:var(--grn-l);border:1px solid rgba(30,122,74,.25);border-radius:var(--rxs);padding:4px 10px;cursor:pointer;font-family:'DM Sans',sans-serif">🖨 Afdrukken</button>
+        </td>
       </tr>`;
     }).join('')}</tbody>`;
 
   }catch(e){
     el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Laden mislukt</td></tr>';
+    console.error(e);
+  }
+}
+
+// ── PRINT FACTUUR VANUIT BEHEER ───────────────
+window.printFactuurAdmin = async function(factuurId) {
+  try {
+    const snap = await getDoc(doc(db,'facturen',factuurId));
+    if(!snap.exists()){showToast('Factuur niet gevonden','bad');return;}
+    const d = snap.data();
+
+    // Rebuild factuur HTML
+    const MO_F=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+    const MOS_S=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+    const DY_S=['zo','ma','di','wo','do','vr','za'];
+    const p2_=n=>String(n).padStart(2,'0');
+    const tM_=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
+    const bM_=b=>Math.max(0,(tM_(b.end)-tM_(b.start))-(parseInt(b.brk)||0));
+    const m2s_=m=>`${Math.floor(m/60)}:${p2_(m%60)}`;
+
+    const regels = d.regels||[];
+    const tarief = d.tarief||0;
+    const kmTarief = d.kmTarief||0.23;
+    const totalMins = regels.reduce((s,r)=>s+bM_(r),0);
+    const totalHours = totalMins/60;
+    const totalKm = regels.reduce((s,r)=>s+(r.km||0),0);
+    const subtotaalUren = totalHours * tarief;
+    const subtotaalKm = totalKm * kmTarief;
+    const extraKosten = d.extraKosten||[];
+    const subtotaalExtra = extraKosten.reduce((s,k)=>s+(parseFloat(k.bedrag)||0),0);
+    const subtotaalExcl = subtotaalUren + subtotaalKm + subtotaalExtra;
+    const btwPct = d.btwPct||21;
+    const btw = subtotaalExcl * (btwPct/100);
+    const totaalIncl = subtotaalExcl + btw;
+    const klantData = d.klantData||{};
+    const termijn = d.termijn||21;
+
+    const factuurDatum = d.datum ? new Date(d.datum) : new Date(d.verstuurd_datum);
+    const betaalDatum = new Date(factuurDatum);
+    betaalDatum.setDate(betaalDatum.getDate()+termijn);
+    const datumStr = `${factuurDatum.getDate()}-${p2_(factuurDatum.getMonth()+1)}-${factuurDatum.getFullYear()}`;
+    const maandStr = d.spec ? MOS_S[d.spec.maand]+'-'+String(d.spec.jaar).slice(2) : '–';
+    const fmt = n => n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+    const html = `<div style="max-width:700px;margin:0 auto;font-family:Arial,sans-serif;font-size:13px;color:#1a1a18">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
+        <div style="width:60px;height:60px;background:#1a1a18;border-radius:8px;display:flex;align-items:center;justify-content:center">
+          <span style="color:white;font-size:28px;font-weight:700;font-family:serif">R</span>
+        </div>
+        <div style="text-align:right;line-height:1.6;font-size:13px;color:#4a4a46">
+          <div style="font-weight:700;color:#1a1a18;font-size:14px">Rene van der Linden Holding</div>
+          <div>Adelheidstraat 40</div><div>5231 VB 's-Hertogenbosch</div>
+          <div>info@renevanderlinden.com</div><div>NL32 RABO 0136 6243 67</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #e8e7e2">
+        <div style="line-height:1.8">
+          <div style="font-weight:700">${d.klant}</div>
+          ${klantData.contact?`<div>T.a.v. ${klantData.contact}</div>`:''}
+          ${klantData.address?`<div>${klantData.address}</div>`:''}
+          ${klantData.city?`<div>${klantData.city}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="color:#8a8a84">Klantnummer:</div>
+          <div style="font-weight:600">${klantData.klantnr||'–'}</div>
+        </div>
+      </div>
+      <div style="background:#f8f7f4;border:1px solid #e8e7e2;border-radius:8px;padding:16px 20px;margin-bottom:20px">
+        <div style="font-size:20px;font-weight:700;margin-bottom:12px">INVOICE</div>
+        <table style="width:100%;font-size:13px">
+          <tr><td style="padding:3px 0;color:#8a8a84;width:160px">Invoice number:</td><td style="font-weight:600;font-family:monospace">${d.nummer}</td></tr>
+          <tr><td style="padding:3px 0;color:#8a8a84">Date invoice:</td><td>${datumStr}</td></tr>
+          <tr><td style="padding:3px 0;color:#8a8a84">Invoice month:</td><td>${maandStr}</td></tr>
+          <tr><td style="padding:3px 0;color:#8a8a84">Description:</td><td>${d.omschrijving||'–'}</td></tr>
+          ${d.ref?`<tr><td style="padding:3px 0;color:#8a8a84">Your reference:</td><td>${d.ref}</td></tr>`:''}
+        </table>
+      </div>
+      <div style="border-bottom:2px solid #1a1a18;padding-bottom:4px;margin-bottom:16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8a8a84">Description:</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+        <tr style="background:#f0f0ec"><td colspan="2" style="padding:8px 10px;font-weight:600">Aantal interim uren te factureren:</td><td style="padding:8px 10px;text-align:right;font-weight:600;font-family:monospace">${totalHours.toFixed(2)}</td></tr>
+        <tr><td style="padding:6px 10px;color:#4a4a46">Tarief per uur</td><td style="padding:6px 10px;text-align:right;color:#4a4a46">€</td><td style="padding:6px 10px;text-align:right;font-family:monospace">${tarief.toFixed(2)}</td></tr>
+        <tr style="background:#f8f7f4;border-top:1px solid #e8e7e2"><td colspan="2" style="padding:8px 10px;font-weight:600">Totaal uren:</td><td style="padding:8px 10px;text-align:right;font-weight:700;font-family:monospace">€ ${fmt(subtotaalUren)}</td></tr>
+      </table>
+      ${totalKm>0?`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+        <tr><td style="padding:6px 10px;color:#4a4a46">Kilometervergoeding, aantal km</td><td style="padding:6px 10px;text-align:right;font-family:monospace">${totalKm}</td></tr>
+        <tr><td style="padding:6px 10px;color:#4a4a46">Kilometervergoeding per km</td><td style="padding:6px 10px;text-align:right;font-family:monospace">€ ${kmTarief.toFixed(2)}</td></tr>
+        <tr style="background:#f8f7f4;border-top:1px solid #e8e7e2"><td style="padding:8px 10px;font-weight:600">Totaal km:</td><td style="padding:8px 10px;text-align:right;font-weight:700;font-family:monospace">€ ${fmt(subtotaalKm)}</td></tr>
+      </table>`:''}
+      ${extraKosten.length>0?`<div style="border-top:1px solid #e8e7e2;padding-top:12px;margin-bottom:20px">
+        <div style="font-weight:600;margin-bottom:8px;color:#8a8a84;font-size:12px;text-transform:uppercase">Overige onkosten</div>
+        ${extraKosten.map(k=>`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px"><tr><td style="padding:5px 10px;color:#4a4a46">${k.omschr}</td><td style="padding:5px 10px;text-align:right;font-family:monospace">€ ${fmt(parseFloat(k.bedrag||0))}</td></tr></table>`).join('')}
+      </div>`:''}
+      <div style="border-top:2px solid #1a1a18;padding-top:16px">
+        <table style="width:100%;font-size:13px">
+          <tr><td style="padding:4px 10px;color:#4a4a46">Sub total excl. BTW:</td><td style="padding:4px 10px;text-align:right;font-family:monospace">€ ${fmt(subtotaalExcl)}</td></tr>
+          <tr><td style="padding:4px 10px;color:#4a4a46">VAT ${btwPct}%:</td><td style="padding:4px 10px;text-align:right;font-family:monospace">€ ${fmt(btw)}</td></tr>
+          <tr style="border-top:1px solid #e8e7e2;font-weight:700;font-size:14px"><td style="padding:8px 10px">Total invoice incl. BTW:</td><td style="padding:8px 10px;text-align:right;font-family:monospace">€ ${fmt(totaalIncl)}</td></tr>
+        </table>
+      </div>
+      <div style="margin-top:28px;padding-top:16px;border-top:1px solid #e8e7e2;font-size:13px;color:#4a4a46">
+        <div style="margin-bottom:6px"><em>To be payed within <strong>${termijn} days</strong> after invoice date.</em></div>
+        <table style="font-size:13px"><tr><td style="padding:2px 0;color:#8a8a84;width:120px">Account name:</td><td style="font-weight:600">Rene van der Linden Holding</td></tr><tr><td style="padding:2px 0;color:#8a8a84">IBAN:</td><td style="font-family:monospace">NL32 RABO 0136 6243 67</td></tr></table>
+      </div>
+    </div>`;
+
+    // Print
+    const printWin = window.open('','_blank','width=800,height=600');
+    printWin.document.write(`<!DOCTYPE html><html><head><title>Factuur ${d.nummer}</title><style>body{margin:40px;font-family:Arial,sans-serif}@media print{body{margin:20px}}</style></head><body>${html}<script>window.onload=function(){window.print();}<\/script></body></html>`);
+    printWin.document.close();
+  } catch(e) {
+    showToast('Fout: '+e.message,'bad');
     console.error(e);
   }
 }
