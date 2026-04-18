@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f8f7f4">
+<title>Urenspecificatie accorderen — Ordinatio Groep</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#f8f7f4;--white:#fff;--ink:#1a1a18;--ink2:#4a4a46;--ink3:#8a8a84;
+  --line:#e8e7e2;--line2:#d4d3cc;
+  --acc:#2d5a8e;--acc-l:#edf3f9;--acc-m:#c8daf0;
+  --grn:#1e7a4a;--grn-l:#eaf5ee;
+  --red:#c0392b;--red-l:#fdf0ee;
+  --r:12px;--rsm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.08);
+}
+html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+.wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.logo-bar{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.logo-icon{width:38px;height:38px;background:var(--acc);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:20px;height:20px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.logo-name{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink)}
+.logo-sub{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
+
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:32px;width:100%;max-width:560px;box-shadow:var(--shadow)}
+
+/* LOADING */
+.state{display:none;text-align:center;padding:20px 0}
+.state.on{display:block}
+.spinner{width:40px;height:40px;border:3px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* CONTENT */
+.spec-header{margin-bottom:20px}
+.spec-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.spec-sub{font-size:14px;color:var(--ink3)}
+.spec-meta{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.meta-item{background:var(--cream);border:1px solid var(--line);border-radius:var(--rsm);padding:8px 14px}
+.meta-label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:2px}
+.meta-val{font-size:14px;font-weight:600;color:var(--ink)}
+
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+thead th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;padding:8px 12px;text-align:left;border-bottom:2px solid var(--line);background:var(--cream)}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--cream)}
+.mono{font-family:'DM Mono',monospace;font-size:12px}
+
+.total-row{background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.total-label{font-size:13px;font-weight:600;color:var(--acc)}
+.total-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:600;color:var(--acc)}
+
+.akkoord-section{border-top:1px solid var(--line);padding-top:20px}
+.akkoord-text{font-size:14px;color:var(--ink2);line-height:1.6;margin-bottom:20px}
+.akkoord-btn{width:100%;background:var(--grn);color:white;border:none;border-radius:var(--rsm);padding:16px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:10px}
+.akkoord-btn:hover{background:#165c38}
+.akkoord-btn:active{transform:scale(.99)}
+.akkoord-btn:disabled{opacity:.5;cursor:not-allowed}
+.akkoord-btn svg{width:20px;height:20px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* SUCCESS */
+.success-icon{width:64px;height:64px;background:var(--grn-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.success-icon svg{width:32px;height:32px;stroke:var(--grn);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.success-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.success-text{font-size:14px;color:var(--ink3);line-height:1.6}
+.success-detail{background:var(--grn-l);border:1px solid rgba(30,122,74,.2);border-radius:var(--rsm);padding:12px 16px;margin:16px 0;font-size:13px;color:var(--grn);font-weight:500}
+
+/* ERROR */
+.error-icon{width:64px;height:64px;background:var(--red-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.error-icon svg{width:32px;height:32px;stroke:var(--red);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.error-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.error-text{font-size:14px;color:var(--ink3);line-height:1.6}
+
+/* ALREADY */
+.already-icon{width:64px;height:64px;background:var(--acc-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.already-icon svg{width:32px;height:32px;stroke:var(--acc);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo-bar">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></div>
+    <div><div class="logo-name">Ordinatio Groep</div><div class="logo-sub">Urenspecificatie</div></div>
+  </div>
+
+  <div class="card">
+    <!-- LOADING -->
+    <div class="state on" id="stateLoading">
+      <div class="spinner"></div>
+      <p style="font-size:14px;color:var(--ink3)">Urenspecificatie laden…</p>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="state" id="stateContent">
+      <div class="spec-header">
+        <div class="spec-title" id="specTitle">Urenspecificatie</div>
+        <div class="spec-sub" id="specSub">–</div>
+      </div>
+      <div class="spec-meta">
+        <div class="meta-item"><div class="meta-label">Opdrachtgever</div><div class="meta-val" id="metaKlant">–</div></div>
+        <div class="meta-item"><div class="meta-label">Periode</div><div class="meta-val" id="metaMaand">–</div></div>
+        <div class="meta-item"><div class="meta-label">Totaal uren</div><div class="meta-val" id="metaUren">–</div></div>
+      </div>
+      <table id="specTable">
+        <thead><tr><th>Datum</th><th>Start</th><th>Eind</th><th>Pauze</th><th style="text-align:right">Uren</th></tr></thead>
+        <tbody id="specBody"></tbody>
+      </table>
+      <div class="total-row">
+        <span class="total-label">Totaal gewerkte uren</span>
+        <span class="total-val" id="totalUren">–</span>
+      </div>
+      <div class="akkoord-section">
+        <p class="akkoord-text">Door op <strong>Akkoord</strong> te klikken bevestigt u dat bovenstaande urenregistratie correct is. Uw akkoord wordt digitaal vastgelegd.</p>
+        <button class="akkoord-btn" id="akkoordBtn" onclick="geefAkkoord()">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          Akkoord met urenspecificatie
+        </button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="state" id="stateSuccess" style="text-align:center">
+      <div class="success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <div class="success-title">Akkoord ontvangen!</div>
+      <div class="success-text">Bedankt voor uw bevestiging. De urenspecificatie is goedgekeurd en uw akkoord is digitaal vastgelegd.</div>
+      <div class="success-detail" id="successDetail">–</div>
+      <p style="font-size:13px;color:var(--ink3);margin-top:16px">U kunt dit venster sluiten.</p>
+    </div>
+
+    <!-- ALREADY APPROVED -->
+    <div class="state" id="stateAlready" style="text-align:center">
+      <div class="already-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);margin-bottom:8px">Al geaccordeerd</div>
+      <div style="font-size:14px;color:var(--ink3);line-height:1.6">Deze urenspecificatie is al eerder geaccordeerd.</div>
+      <div style="background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:12px 16px;margin:16px 0;font-size:13px;color:var(--acc);font-weight:500" id="alreadyDetail">–</div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="state" id="stateError" style="text-align:center">
+      <div class="error-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+      <div class="error-title">Niet gevonden</div>
+      <div class="error-text">Deze urenspecificatie link is ongeldig of verlopen. Neem contact op met Rene van der Linden via <a href="mailto:info@renevanderlinden.com" style="color:var(--acc)">info@renevanderlinden.com</a>.</div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:var(--ink3);margin-top:20px;text-align:center">Ordinatio Groep · info@renevanderlinden.com</p>
+</div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,doc,getDoc,updateDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
+const fbApp=initializeApp(FB);
+const db=getFirestore(fbApp);
+
+const MO=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const MOS=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const DY=['zo','ma','di','wo','do','vr','za'];
+
+function p2(n){return String(n).padStart(2,'0')}
+function m2s(m){return`${Math.floor(m/60)}:${p2(m%60)}`}
+function tMins(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m}
+function bMins(b){return Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.brk)||0))}
+function isoD(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)}
+function showState(id){document.querySelectorAll('.state').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on')}
+
+// Get spec ID from URL
+const params=new URLSearchParams(window.location.search);
+const specId=params.get('id');
+let specData=null;
+
+async function loadSpec(){
+  if(!specId){showState('stateError');return;}
+  try{
+    const snap=await getDoc(doc(db,'specs',specId));
+    if(!snap.exists()){showState('stateError');return;}
+    specData=snap.data();
+
+    // Already approved?
+    if(specData.akkoord){
+      const d=new Date(specData.akkoord_datum);
+      document.getElementById('alreadyDetail').textContent=`Geaccordeerd op ${d.getDate()} ${MOS[d.getMonth()]} ${d.getFullYear()} om ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+      showState('stateAlready');return;
+    }
+
+    // Show content
+    const maandStr=`${MO[specData.maand]} ${specData.jaar}`;
+    document.getElementById('specTitle').textContent=`Urenspecificatie ${maandStr}`;
+    document.getElementById('specSub').textContent=`Opgesteld door Rene van der Linden · Ordinatio Groep`;
+    document.getElementById('metaKlant').textContent=specData.klant;
+    document.getElementById('metaMaand').textContent=maandStr;
+
+    // Build table
+    const rows=specData.regels||[];
+    const totalMins=rows.reduce((s,r)=>s+bMins(r),0);
+    document.getElementById('metaUren').textContent=m2s(totalMins);
+    document.getElementById('totalUren').textContent=m2s(totalMins);
+
+    document.getElementById('specBody').innerHTML=rows.map(r=>{
+      const d=isoD(r.date);
+      return`<tr>
+        <td><strong>${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]}</strong></td>
+        <td class="mono">${r.start}</td>
+        <td class="mono">${r.end}</td>
+        <td class="mono" style="color:var(--ink3)">${r.brk||0}min</td>
+        <td class="mono" style="text-align:right;font-weight:600;color:var(--acc)">${m2s(bMins(r))}</td>
+      </tr>`;
+    }).join('');
+
+    showState('stateContent');
+  }catch(e){showState('stateError');}
+}
+
+window.geefAkkoord=async function(){
+  if(!specData||!specId)return;
+  const btn=document.getElementById('akkoordBtn');
+  btn.disabled=true;
+  btn.textContent='Verwerken…';
+  try{
+    const now=new Date();
+    await updateDoc(doc(db,'specs',specId),{
+      akkoord:true,
+      akkoord_datum:now.toISOString(),
+      akkoord_ip:'client'
+    });
+    const maandStr=`${MO[specData.maand]} ${specData.jaar}`;
+    document.getElementById('successDetail').textContent=`${specData.klant} · ${maandStr} · ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}`;
+    showState('stateSuccess');
+  }catch(e){
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="20 6 9 17 4 12"/></svg> Akkoord met urenspecificatie';
+    alert('Fout bij verwerken. Probeer opnieuw.');
+  }
+}
+
+loadSpec();
+</script>
+</body>
+</html>

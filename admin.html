@@ -191,6 +191,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
       <button class="nav-item" onclick="showPage('klanten',this)">
         <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Klantbeheer
       </button>
+      <button class="nav-item" onclick="showPage('accordering',this)">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>Accordering
+      </button>
       <button class="nav-item" onclick="showPage('instellingen',this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Instellingen
       </button>
@@ -275,6 +278,15 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
         <div class="card">
           <div class="card-header"><span class="card-title">Opdrachtgevers</span></div>
           <table class="data-table" id="clientsTable"></table>
+        </div>
+      </div>
+
+      <div class="page" id="page-accordering">
+        <div class="page-header"><div><div class="page-title">Accordering</div><div class="page-sub">Verstuurde urenspecificaties en akkoordstatus</div></div></div>
+        <div class="kpi-grid" id="acc-kpis"></div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Alle specificaties</span></div>
+          <table class="data-table" id="acc-table"></table>
         </div>
       </div>
 
@@ -396,6 +408,7 @@ window.showPage=function(name,btn){
   else if(name==='uren')renderUren();
   else if(name==='opdrachtgevers')renderOpdrachtgevers();
   else if(name==='klanten')renderKlanten();
+  else if(name==='accordering')renderAccordering();
   else if(name==='instellingen')renderInstellingen();
 }
 
@@ -583,6 +596,53 @@ window.exportData=function(){
   const blob=new Blob([JSON.stringify({days,clients},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`dagstaat_backup_${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);
   showToast('Backup gedownload ✓','ok');
+}
+
+// ── ACCORDERING ──────────────────────────────
+import{collection,query,orderBy,getDocs,doc,getDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+async function renderAccordering(){
+  const el=document.getElementById('acc-table');
+  const kpis=document.getElementById('acc-kpis');
+  try{
+    const q=query(collection(db,'specs'),orderBy('verstuurd_datum','desc'));
+    const snap=await getDocs(q);
+    const docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const total=docs.length;
+    const akkoord=docs.filter(d=>d.akkoord).length;
+    const wacht=total-akkoord;
+
+    kpis.innerHTML=`
+      <div class="kpi"><div class="kpi-label">Verstuurd</div><div class="kpi-val blue">${total}</div></div>
+      <div class="kpi"><div class="kpi-label">Geaccordeerd</div><div class="kpi-val green">${akkoord}</div></div>
+      <div class="kpi"><div class="kpi-label">Wacht op akkoord</div><div class="kpi-val amber">${wacht}</div></div>`;
+
+    if(!docs.length){el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Geen specificaties verstuurd</td></tr>';return;}
+
+    el.innerHTML=`<thead><tr>
+      <th>Opdrachtgever</th><th>Periode</th><th>Ontvanger</th><th>Verstuurd</th><th>Uren</th><th>Status</th><th></th>
+    </tr></thead><tbody>${docs.map(d=>{
+      const MO_F=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+      const MOS_S=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+      const vd=new Date(d.verstuurd_datum);
+      const maandStr=`${MO_F[d.maand]} ${d.jaar}`;
+      const totalMins=(d.regels||[]).reduce((s,r)=>s+Math.max(0,(tMins(r.end)-tMins(r.start))-(parseInt(r.brk)||0)),0);
+      const statusColor=d.akkoord?'var(--grn)':'var(--amb)';
+      const statusBg=d.akkoord?'var(--grn-l)':'var(--amb-l)';
+      const statusText=d.akkoord?'✓ Akkoord':'⏳ Wacht';
+      const akkDatum=d.akkoord_datum?new Date(d.akkoord_datum).toLocaleDateString('nl-NL'):'–';
+      const link=`https://rene-linden.github.io/ERP/accordeer.html?id=${d.id}`;
+      return`<tr>
+        <td class="bold">${d.klant}</td>
+        <td>${maandStr}</td>
+        <td class="muted">${d.email}</td>
+        <td class="muted">${vd.getDate()} ${MOS_S[vd.getMonth()]} ${vd.getFullYear()}</td>
+        <td class="mono">${m2s(totalMins)}</td>
+        <td><span style="background:${statusBg};color:${statusColor};font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">${statusText}</span>${d.akkoord?`<div style="font-size:11px;color:var(--ink3);margin-top:2px">${akkDatum}</div>`:''}</td>
+        <td><a href="${link}" target="_blank" style="font-size:12px;color:var(--acc);text-decoration:none;border:1px solid var(--acc-m);border-radius:var(--rxs);padding:4px 10px">Link ↗</a></td>
+      </tr>`;
+    }).join('')}</tbody>`;
+  }catch(e){el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Laden mislukt</td></tr>';}
 }
 
 window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}

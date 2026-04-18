@@ -146,6 +146,7 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
     <div class="tabs">
       <button class="tab on" onclick="switchTab('invoer',this)">Invoer</button>
       <button class="tab" onclick="switchTab('overzicht',this)">Overzicht</button>
+      <button class="tab" onclick="switchTab('verstuur',this)">Verstuur</button>
     </div>
   </header>
   <div class="main">
@@ -191,11 +192,51 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
       <div style="height:14px"></div>
       <p class="sec">Alle registraties</p>
       <div class="entries-table" id="entriesTable"></div>
+    <div class="pane" id="pane-verstuur">
+      <p class="sec">Urenspecificatie versturen</p>
+      <div style="background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm)">
+        <div class="fg">
+          <div class="field full">
+            <label>Opdrachtgever</label>
+            <select id="v-klant">
+              <option value="">Kies opdrachtgever…</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label>Email ontvanger</label>
+            <input type="email" id="v-email" placeholder="naam@bedrijf.nl" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;padding:9px 11px;width:100%;outline:none;transition:border-color .15s">
+          </div>
+          <div class="field">
+            <label>Maand</label>
+            <select id="v-maand"></select>
+          </div>
+          <div class="field">
+            <label>Jaar</label>
+            <select id="v-jaar"></select>
+          </div>
+        </div>
+        <div id="v-preview" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:12px;margin-bottom:12px;display:none">
+          <p style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:8px">Overzicht</p>
+          <div id="v-preview-content"></div>
+        </div>
+        <button class="save-btn" id="v-send-btn" onclick="verstuurSpec()" style="margin-top:0">
+          Verstuur urenspecificatie
+          <div class="spin"></div>
+        </button>
+      </div>
+
+      <p class="sec" style="margin-top:8px">Verstuurde specificaties</p>
+      <div id="v-history" style="background:var(--white);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)">
+        <div class="empty-state"><div class="empty-icon">📨</div><div class="empty-text">Nog niets verstuurd</div></div>
+      </div>
+    </div>
     </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('LVecJZWPqdswbZbga');</script>
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getFirestore,doc,setDoc,getDoc,onSnapshot}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -365,6 +406,177 @@ window.gotoDate=function(iso){
 }
 
 window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
+
+// ── IMPORT FIRESTORE EXTRAS ───────────────────
+import{collection,addDoc,query,where,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const MO_FULL=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+
+// ── INIT VERSTUUR TAB ─────────────────────────
+function initVerstuur(){
+  // Fill klant dropdown
+  const sel=document.getElementById('v-klant');
+  sel.innerHTML='<option value="">Kies opdrachtgever…</option>'+
+    KLANTEN.filter(k=>k!=='Intern').map(k=>`<option value="${k}">${k}</option>`).join('');
+
+  // Fill maand
+  const mSel=document.getElementById('v-maand');
+  mSel.innerHTML=MO_FULL.map((m,i)=>`<option value="${i}"${i===new Date().getMonth()?' selected':''}>${m}</option>`).join('');
+
+  // Fill jaar
+  const now=new Date();
+  const ySel=document.getElementById('v-jaar');
+  ySel.innerHTML=[0,1,2].map(d=>`<option value="${now.getFullYear()-d}"${d===0?' selected':''}>${now.getFullYear()-d}</option>`).join('');
+
+  // Change listeners for preview
+  ['v-klant','v-maand','v-jaar'].forEach(id=>document.getElementById(id).addEventListener('change',updatePreview));
+
+  loadVerstuurHistory();
+}
+
+function updatePreview(){
+  const klant=document.getElementById('v-klant').value;
+  const maand=parseInt(document.getElementById('v-maand').value);
+  const jaar=parseInt(document.getElementById('v-jaar').value);
+  const preview=document.getElementById('v-preview');
+  const content=document.getElementById('v-preview-content');
+  if(!klant){preview.style.display='none';return;}
+
+  const pfx=`${jaar}-${p2(maand+1)}`;
+  const mDays=Object.keys(days).filter(d=>d.startsWith(pfx)).sort();
+  const klantBlocks=mDays.flatMap(k=>days[k].filter(b=>b.klant===klant).map(b=>({...b,date:k})));
+
+  if(!klantBlocks.length){
+    content.innerHTML=`<p style="font-size:13px;color:var(--ink3)">Geen registraties voor ${klant} in ${MO_FULL[maand]} ${jaar}.</p>`;
+    preview.style.display='block';
+    return;
+  }
+
+  const totalMins=klantBlocks.reduce((s,b)=>s+bMins(b),0);
+  content.innerHTML=`
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:600;color:var(--ink)">${klant} · ${MO_FULL[maand]} ${jaar}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--acc)">${m2s(totalMins)}</span>
+    </div>
+    <p style="font-size:12px;color:var(--ink3)">${klantBlocks.length} registratie${klantBlocks.length!==1?'s':''}</p>`;
+  preview.style.display='block';
+}
+
+window.verstuurSpec=async function(){
+  const klant=document.getElementById('v-klant').value;
+  const email=document.getElementById('v-email').value.trim();
+  const maand=parseInt(document.getElementById('v-maand').value);
+  const jaar=parseInt(document.getElementById('v-jaar').value);
+
+  if(!klant){showToast('Kies een opdrachtgever','bad');return;}
+  if(!email||!email.includes('@')){showToast('Voer een geldig emailadres in','bad');return;}
+
+  const pfx=`${jaar}-${p2(maand+1)}`;
+  const mDays=Object.keys(days).filter(d=>d.startsWith(pfx)).sort();
+  const klantBlocks=mDays.flatMap(k=>days[k].filter(b=>b.klant===klant).map(b=>({...b,date:k})));
+
+  if(!klantBlocks.length){showToast('Geen registraties voor deze periode','bad');return;}
+
+  const btn=document.getElementById('v-send-btn');
+  btn.classList.add('loading');btn.disabled=true;
+
+  try{
+    // Save spec to Firebase
+    const totalMins=klantBlocks.reduce((s,b)=>s+bMins(b),0);
+    const specRef=await addDoc(collection(db,'specs'),{
+      klant,maand,jaar,email,
+      regels:klantBlocks,
+      totaal_mins:totalMins,
+      verstuurd_datum:new Date().toISOString(),
+      akkoord:false,
+      akkoord_datum:null
+    });
+
+    const specId=specRef.id;
+    const akkoordLink=`https://rene-linden.github.io/ERP/accordeer.html?id=${specId}`;
+    const maandStr=`${MO_FULL[maand]} ${jaar}`;
+
+    // Build HTML table for email
+    const DY_SHORT=['zo','ma','di','wo','do','vr','za'];
+    const MOS=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+    const tabelHTML=`<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px">
+      <thead><tr style="background:#f0f4f8">
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #c8daf0;color:#2d5a8e">Datum</th>
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #c8daf0;color:#2d5a8e">Start</th>
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #c8daf0;color:#2d5a8e">Eind</th>
+        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #c8daf0;color:#2d5a8e">Pauze</th>
+        <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #c8daf0;color:#2d5a8e">Uren</th>
+      </tr></thead>
+      <tbody>${klantBlocks.map((b,i)=>{
+        const d=new Date(b.date);const mins=bMins(b);
+        return`<tr style="background:${i%2===0?'#ffffff':'#f8f7f4'}">
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;font-weight:600">${DY_SHORT[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;font-family:monospace">${b.start}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;font-family:monospace">${b.end}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;color:#8a8a84">${b.brk||0}min</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;text-align:right;font-weight:600;font-family:monospace;color:#2d5a8e">${m2s(mins)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+    // Send via EmailJS
+    await emailjs.send('service_rpek59r','template_p4r2rkp',{
+      to_email: email,
+      klant: klant,
+      naam: 'Rene van der Linden',
+      maand: maandStr,
+      tabel: tabelHTML,
+      totaal_uren: m2s(totalMins),
+      akkoord_link: akkoordLink,
+      email: 'info@renevanderlinden.com'
+    });
+
+    showToast(`Email verstuurd naar ${email} ✓`,'ok');
+    loadVerstuurHistory();
+    document.getElementById('v-email').value='';
+  }catch(e){
+    showToast('Fout bij versturen: '+e.message,'bad');
+    console.error(e);
+  }finally{
+    btn.classList.remove('loading');btn.disabled=false;
+  }
+}
+
+async function loadVerstuurHistory(){
+  const el=document.getElementById('v-history');
+  try{
+    const q=query(collection(db,'specs'),orderBy('verstuurd_datum','desc'));
+    const snap=await getDocs(q);
+    if(snap.empty){
+      el.innerHTML='<div class="empty-state"><div class="empty-icon">📨</div><div class="empty-text">Nog niets verstuurd</div></div>';
+      return;
+    }
+    el.innerHTML=snap.docs.map(doc=>{
+      const d=doc.data();
+      const vd=new Date(d.verstuurd_datum);
+      const maandStr=`${MO_FULL[d.maand]} ${d.jaar}`;
+      const statusColor=d.akkoord?'var(--grn)':'var(--amb)';
+      const statusBg=d.akkoord?'var(--grn-l)':'var(--amb-l)';
+      const statusText=d.akkoord?'✓ Akkoord':'⏳ Wacht';
+      return`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">${d.klant} · ${maandStr}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px">${d.email} · ${vd.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][vd.getMonth()]}</div>
+        </div>
+        <div style="background:${statusBg};color:${statusColor};font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">${statusText}</div>
+      </div>`;
+    }).join('')+'<div style="height:1px"></div>';
+  }catch(e){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">📨</div><div class="empty-text">Laden mislukt</div></div>';
+  }
+}
+
+// Override switchTab to init verstuur
+const origSwitch=window.switchTab;
+window.switchTab=function(name,btn){
+  origSwitch(name,btn);
+  if(name==='verstuur'){initVerstuur();updatePreview();}
+}
 
 init();
 </script>
