@@ -66,7 +66,7 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
 .nav-item.on{color:var(--acc);background:var(--acc-l);border-left:3px solid var(--acc)}
 .nav-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 
-.content{flex:1;padding:28px;max-width:1100px}
+.content{flex:1;padding:28px;max-width:1400px;overflow-x:auto}
 .page{display:none}
 .page.on{display:block}
 
@@ -377,9 +377,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
           </div>
         </div>
         <div class="kpi-grid" id="omzet-kpis"></div>
-        <div class="card" style="overflow-x:auto">
+        <div class="card" style="overflow:hidden">
           <div class="card-header"><span class="card-title">Factuuroverzicht</span></div>
-          <table class="data-table" id="omzet-table" style="min-width:900px"></table>
+          <table class="data-table" id="omzet-table" style="width:100%;border-collapse:collapse"></table>
           <div id="omzet-totaal" style="padding:14px 16px;border-top:2px solid var(--line);background:var(--cream)"></div>
         </div>
       </div>
@@ -1067,39 +1067,44 @@ async function renderOmzet(){
       return;
     }
 
-    el.innerHTML = `<thead><tr style="background:var(--cream)">
-      <th>Nummer</th>
-      <th>Maand</th>
-      <th>Klant</th>
-      <th>Factuurdatum</th>
-      <th style="text-align:right">Uren</th>
-      <th style="text-align:right">Tarief</th>
-      <th style="text-align:right">Subtotaal uren</th>
-      <th style="text-align:right">KM</th>
-      <th style="text-align:right">€/km</th>
-      <th style="text-align:right">Subtotaal KM</th>
-      <th style="text-align:right">Overig</th>
-      <th style="text-align:right">Excl. BTW</th>
-      <th style="text-align:right">BTW %</th>
-      <th style="text-align:right">BTW</th>
-      <th style="text-align:right;font-weight:700;color:var(--acc)">Incl. BTW</th>
+    const th = (label, align='left', width='') =>
+      `<th style="text-align:${align};white-space:nowrap;padding:10px 14px;${width?'width:'+width:''}">${label}</th>`;
+    const td = (val, align='left', bold=false, color='') =>
+      `<td style="text-align:${align};padding:10px 14px;white-space:nowrap;font-family:'DM Mono',monospace;font-size:13px;${bold?'font-weight:700;':''}${color?'color:'+color+';':''}">${val}</td>`;
+
+    el.innerHTML = `<thead><tr>
+      ${th('Factuurnummer','left','140px')}
+      ${th('Maand','left','90px')}
+      ${th('Klant','left','120px')}
+      ${th('Factuurdatum','left','110px')}
+      ${th('Uren','right','70px')}
+      ${th('Tarief','right','80px')}
+      ${th('Subtotaal uren','right','120px')}
+      ${th('KM','right','60px')}
+      ${th('€/km','right','60px')}
+      ${th('Subtotaal KM','right','110px')}
+      ${th('Overig','right','90px')}
+      ${th('Excl. BTW','right','110px')}
+      ${th('BTW%','right','60px')}
+      ${th('BTW','right','100px')}
+      ${th('Incl. BTW','right','120px')}
     </tr></thead>
-    <tbody>${rows.map(r => `<tr>
-      <td style="font-family:'DM Mono',monospace;font-weight:600;color:var(--acc)">${r.d.nummer||'–'}</td>
-      <td>${r.maandStr}</td>
-      <td class="bold">${r.d.klant||'–'}</td>
-      <td class="muted">${r.factuurDatum}</td>
-      <td class="mono" style="text-align:right">${r.uren.toFixed(2)}</td>
-      <td class="mono" style="text-align:right">€ ${r.tarief.toFixed(2)}</td>
-      <td class="mono" style="text-align:right">${fmt(r.subtotaalUren)}</td>
-      <td class="mono" style="text-align:right">${r.totalKm||'–'}</td>
-      <td class="mono" style="text-align:right">€ ${r.kmTarief.toFixed(2)}</td>
-      <td class="mono" style="text-align:right">${r.subtotaalKm>0?fmt(r.subtotaalKm):'–'}</td>
-      <td class="mono" style="text-align:right">${r.extra>0?fmt(r.extra):'–'}</td>
-      <td class="mono" style="text-align:right">${fmt(r.subtotaalExcl)}</td>
-      <td class="mono" style="text-align:right">${r.btwPct}%</td>
-      <td class="mono" style="text-align:right">${fmt(r.btw)}</td>
-      <td class="mono" style="text-align:right;font-weight:700;color:var(--acc)">${fmt(r.totaalIncl)}</td>
+    <tbody>${rows.map((r,i) => `<tr style="background:${i%2===0?'var(--white)':'var(--cream)'}">
+      ${td(r.d.nummer||'–','left',true,'var(--acc)')}
+      ${td(r.maandStr,'left',false,'var(--ink2)')}
+      ${td(r.d.klant||'–','left',true,'var(--ink)')}
+      ${td(r.factuurDatum,'left',false,'var(--ink3)')}
+      ${td(r.uren.toFixed(2),'right')}
+      ${td('€ '+r.tarief.toFixed(2),'right')}
+      ${td(fmt(r.subtotaalUren),'right')}
+      ${td(r.totalKm||'–','right')}
+      ${td('€ '+r.kmTarief.toFixed(2),'right')}
+      ${td(r.subtotaalKm>0?fmt(r.subtotaalKm):'–','right')}
+      ${td(r.extra>0?fmt(r.extra):'–','right')}
+      ${td(fmt(r.subtotaalExcl),'right',true)}
+      ${td(r.btwPct+'%','right')}
+      ${td(fmt(r.btw),'right')}
+      ${td(fmt(r.totaalIncl),'right',true,'var(--acc)')}
     </tr>`).join('')}</tbody>`;
 
     // Totaalrij
