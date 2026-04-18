@@ -5,247 +5,191 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1a1a18">
-<title>Ordinatio — Dagstaat</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f8f7f4">
+<title>Ordinatio Groep</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#1a1a18;
-  --surface:#242420;
-  --surface2:#2e2e2a;
-  --line:rgba(255,255,255,.08);
-  --acc:#4a8fd4;
-  --acc-l:rgba(74,143,212,.15);
-  --grn:#2ecf7a;
-  --grn-l:rgba(46,207,122,.12);
-  --amb:#f5a623;
-  --amb-l:rgba(245,166,35,.12);
-  --pur:#a78bfa;
-  --pur-l:rgba(167,139,250,.12);
-  --txt:#f0ede8;
-  --txt2:#9a9890;
-  --txt3:#5a5856;
+  --cream:#f8f7f4;--white:#fff;--ink:#1a1a18;--ink2:#4a4a46;--ink3:#8a8a84;--ink4:#c8c8c2;
+  --line:#e8e7e2;--line2:#d4d3cc;
+  --acc:#2d5a8e;--acc-l:#edf3f9;--acc-m:#c8daf0;
+  --grn:#1e7a4a;--grn-l:#eaf5ee;
+  --amb:#b85c00;--amb-l:#fdf3e8;
+  --red:#c0392b;--red-l:#fdf0ee;
+  --r:12px;--rsm:8px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04);
 }
-html,body{
-  background:var(--bg);
-  color:var(--txt);
-  font-family:'DM Sans',system-ui,sans-serif;
-  min-height:100vh;
-  min-height:100dvh;
-  overscroll-behavior:none;
-  -webkit-font-smoothing:antialiased;
-}
-.app{
-  max-width:430px;
-  margin:0 auto;
-  min-height:100vh;
-  min-height:100dvh;
-  display:flex;
-  flex-direction:column;
-  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-}
+html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-bottom:32px;padding-top:env(safe-area-inset-top)}
 
-/* ── HEADER ── */
-.header{padding:32px 24px 20px}
-.header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.org-name{font-family:'Fraunces',serif;font-size:22px;font-weight:600;letter-spacing:-.5px;color:var(--txt)}
-.date-chip{
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:20px;
-  padding:5px 12px;
-  font-family:'DM Mono',monospace;
-  font-size:11px;
-  color:var(--txt2);
-}
-.date-chip b{color:var(--acc);font-weight:500}
-.header-sub{font-size:13px;color:var(--txt3)}
-
-/* ── SYNC STATUS ── */
-.sync-bar{
-  margin:0 24px 20px;
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:10px;
-  padding:10px 14px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
-.sync-left{display:flex;align-items:center;gap:8px}
-.sync-dot{width:7px;height:7px;border-radius:50%}
-.sync-dot.ok{background:var(--grn)}
-.sync-dot.err{background:#ff5252}
+/* HEADER */
+header{background:var(--white);border-bottom:1px solid var(--line);padding:16px 20px;position:sticky;top:0;z-index:100}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:36px;height:36px;background:var(--acc);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.brand-icon svg{width:19px;height:19px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.brand-name{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink)}
+.brand-sub{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+.sync-pill{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:500}
+.sync-pill.ok{background:var(--grn-l);border:1px solid rgba(30,122,74,.2);color:var(--grn)}
+.sync-pill.wait{background:var(--amb-l);border:1px solid rgba(184,92,0,.2);color:var(--amb)}
+.sync-pill.err{background:var(--red-l);border:1px solid rgba(192,57,43,.2);color:var(--red)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.sync-dot.wait{background:var(--amb);animation:pulse .8s infinite}
-.sync-label{font-size:12px;font-weight:500}
-.sync-label.ok{color:var(--grn)}
-.sync-label.err{color:#ff5252}
-.sync-label.wait{color:var(--amb)}
-.sync-counts{font-size:11px;color:var(--txt3)}
+.sync-pill.wait .sync-dot{animation:pulse .8s infinite}
 
-/* ── QUICK STATS ── */
-.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 24px;margin-bottom:24px}
-.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
-.stat-val{font-family:'Fraunces',serif;font-size:20px;font-weight:600;line-height:1;margin-bottom:3px}
+/* MAIN */
+.main{flex:1;padding:20px}
+
+/* DATUM STRIP */
+.date-strip{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-sm)}
+.date-left .date-day{font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--ink);line-height:1}
+.date-left .date-weekday{font-size:13px;font-weight:500;color:var(--acc);margin-top:2px}
+.date-right{text-align:right}
+.date-month{font-size:14px;font-weight:500;color:var(--ink)}
+.date-year{font-size:12px;color:var(--ink3);margin-top:1px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-val{font-family:'Fraunces',serif;font-size:22px;font-weight:600;line-height:1;margin-bottom:3px}
 .stat-val.blue{color:var(--acc)}
 .stat-val.green{color:var(--grn)}
 .stat-val.amber{color:var(--amb)}
-.stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--txt3);font-weight:500}
+.stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:500}
 
-/* ── SECTION LABEL ── */
-.sec-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--txt3);font-weight:600;padding:0 24px;margin-bottom:10px}
+/* PROGRESS */
+.progress-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:20px;box-shadow:var(--shadow-sm)}
+.progress-header{display:flex;justify-content:space-between;margin-bottom:10px}
+.progress-label{font-size:13px;font-weight:500;color:var(--ink)}
+.progress-val{font-size:12px;color:var(--ink3);font-family:'DM Mono',monospace}
+.progress-track{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--grn));border-radius:3px;transition:width .6s ease}
 
-/* ── APP CARDS ── */
-.cards{padding:0 24px;display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+/* SECTION */
+.sec{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:10px}
 
+/* APP CARDS */
 .app-card{
-  background:var(--surface);
+  background:var(--white);
   border:1px solid var(--line);
-  border-radius:16px;
-  padding:18px 20px;
+  border-radius:var(--r);
+  padding:16px;
   display:flex;
   align-items:center;
-  gap:16px;
+  gap:14px;
   text-decoration:none;
-  color:var(--txt);
+  color:var(--ink);
+  margin-bottom:10px;
+  box-shadow:var(--shadow-sm);
   transition:all .15s;
   position:relative;
-  overflow:hidden;
 }
-.app-card:active{transform:scale(.98);opacity:.9}
-.app-card::before{
-  content:'';
-  position:absolute;
-  inset:0;
-  border-radius:16px;
-  opacity:0;
-  transition:opacity .15s;
-}
-.app-card:active::before{opacity:1}
+.app-card:active{transform:scale(.99);background:var(--cream)}
+.app-card.accent-blue{border-left:4px solid var(--acc)}
+.app-card.accent-green{border-left:4px solid var(--grn)}
+.app-card.accent-amber{border-left:4px solid var(--amb)}
 
-.app-card.primary{border-color:rgba(74,143,212,.3);background:linear-gradient(135deg,var(--surface) 0%,rgba(74,143,212,.08) 100%)}
-.app-card.primary::before{background:rgba(74,143,212,.05)}
-.app-card.green{border-color:rgba(46,207,122,.25);background:linear-gradient(135deg,var(--surface) 0%,rgba(46,207,122,.06) 100%)}
-.app-card.amber{border-color:rgba(245,166,35,.25);background:linear-gradient(135deg,var(--surface) 0%,rgba(245,166,35,.06) 100%)}
-.app-card.purple{border-color:rgba(167,139,250,.25);background:linear-gradient(135deg,var(--surface) 0%,rgba(167,139,250,.06) 100%)}
-
-.card-icon{
-  width:48px;height:48px;border-radius:13px;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-}
-.card-icon svg{width:24px;height:24px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.card-icon.blue{background:linear-gradient(135deg,#2d5a8e,#4a8fd4)}
-.card-icon.green{background:linear-gradient(135deg,#1e7a4a,#2ecf7a)}
-.card-icon.amber{background:linear-gradient(135deg,#b85c00,#f5a623)}
-.card-icon.purple{background:linear-gradient(135deg,#6d28d9,#a78bfa)}
+.card-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-icon svg{width:22px;height:22px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.card-icon.blue{background:var(--acc)}
+.card-icon.green{background:var(--grn)}
+.card-icon.amber{background:var(--amb)}
 
 .card-body{flex:1;min-width:0}
-.card-title{font-size:16px;font-weight:600;color:var(--txt);letter-spacing:-.2px;margin-bottom:3px}
-.card-desc{font-size:12px;color:var(--txt3);line-height:1.4}
-.card-badge{
-  font-size:11px;font-weight:600;
-  border-radius:20px;padding:3px 10px;
-  flex-shrink:0;white-space:nowrap;
-}
+.card-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.card-desc{font-size:12px;color:var(--ink3);line-height:1.4}
+
+.card-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .card-badge.blue{background:var(--acc-l);color:var(--acc)}
 .card-badge.green{background:var(--grn-l);color:var(--grn)}
 .card-badge.amber{background:var(--amb-l);color:var(--amb)}
-.card-badge.purple{background:var(--pur-l);color:var(--pur)}
-.card-arrow{color:var(--txt3);font-size:18px;flex-shrink:0}
 
-/* ── BEHEER LINK ── */
-.beheer-link{
-  margin:0 24px 24px;
-  background:var(--surface2);
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:14px 18px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  text-decoration:none;
-  transition:all .15s;
-}
-.beheer-link:active{transform:scale(.99)}
-.beheer-left{display:flex;align-items:center;gap:10px}
-.beheer-icon{width:32px;height:32px;background:var(--surface);border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center}
-.beheer-icon svg{width:16px;height:16px;stroke:var(--txt2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.beheer-label{font-size:14px;font-weight:500;color:var(--txt2)}
-.beheer-sub{font-size:11px;color:var(--txt3);margin-top:1px}
-.beheer-arrow{color:var(--txt3);font-size:16px}
+.card-arrow{color:var(--ink4);font-size:16px;margin-left:4px}
 
-/* ── MONTH PROGRESS ── */
-.month-bar{margin:0 24px 20px}
-.month-bar-header{display:flex;justify-content:space-between;margin-bottom:8px}
-.month-bar-label{font-size:12px;color:var(--txt3);font-weight:500}
-.month-bar-val{font-size:12px;color:var(--txt2);font-family:'DM Mono',monospace}
-.progress-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--grn));border-radius:2px;transition:width .5s ease}
-
-/* ── RECENT DAYS ── */
-.recent{padding:0 24px;margin-bottom:32px}
-.recent-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+/* RECENT */
+.recent-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:20px}
+.recent-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)}
 .recent-item:last-child{border-bottom:none}
-.recent-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.recent-date{font-size:13px;font-weight:500;color:var(--txt);min-width:80px}
-.recent-clients{font-size:12px;color:var(--txt3);flex:1}
+.recent-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.recent-date{font-size:13px;font-weight:500;color:var(--ink);min-width:76px}
+.recent-clients{font-size:12px;color:var(--ink3);flex:1}
 .recent-hours{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--acc)}
+
+/* BEHEER */
+.beheer-link{
+  background:var(--white);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
+  text-decoration:none;box-shadow:var(--shadow-sm);transition:all .15s;
+}
+.beheer-link:active{background:var(--cream)}
+.beheer-left{display:flex;align-items:center;gap:12px}
+.beheer-icon{width:38px;height:38px;background:var(--cream);border:1px solid var(--line2);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.beheer-icon svg{width:18px;height:18px;stroke:var(--ink3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.beheer-title{font-size:14px;font-weight:600;color:var(--ink)}
+.beheer-sub{font-size:11px;color:var(--ink3);margin-top:1px}
+.beheer-arrow{color:var(--ink4);font-size:16px}
+
+.empty-small{font-size:13px;color:var(--ink3);padding:16px 14px}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="header">
+  <header>
     <div class="header-top">
-      <div class="org-name">Ordinatio</div>
-      <div class="date-chip" id="datechip">–</div>
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">Ordinatio Groep</div>
+          <div class="brand-sub">Dagstaat & Facturatie</div>
+        </div>
+      </div>
+      <div class="sync-pill wait" id="syncPill">
+        <div class="sync-dot"></div>
+        <span id="syncTxt">Verbinden…</span>
+      </div>
     </div>
-    <div class="header-sub">Dagstaat & Facturatie</div>
-  </div>
+  </header>
 
-  <!-- SYNC STATUS -->
-  <div class="sync-bar">
-    <div class="sync-left">
-      <div class="sync-dot wait" id="syncDot"></div>
-      <span class="sync-label wait" id="syncLabel">Verbinden…</span>
-    </div>
-    <span class="sync-counts" id="syncCounts">–</span>
-  </div>
+  <div class="main">
 
-  <!-- STATS DEZE MAAND -->
-  <div class="stats">
-    <div class="stat">
-      <div class="stat-val blue" id="stat-days">–</div>
-      <div class="stat-lbl">Dagen</div>
+    <!-- DATUM -->
+    <div class="date-strip">
+      <div class="date-left">
+        <div class="date-day" id="dateDay">–</div>
+        <div class="date-weekday" id="dateWeekday">–</div>
+      </div>
+      <div class="date-right">
+        <div class="date-month" id="dateMonth">–</div>
+        <div class="date-year" id="dateYear">–</div>
+      </div>
     </div>
-    <div class="stat">
-      <div class="stat-val green" id="stat-hours">–</div>
-      <div class="stat-lbl">Uren</div>
-    </div>
-    <div class="stat">
-      <div class="stat-val amber" id="stat-open">–</div>
-      <div class="stat-lbl">Te sturen</div>
-    </div>
-  </div>
 
-  <!-- MAAND VOORTGANG -->
-  <div class="month-bar">
-    <div class="month-bar-header">
-      <span class="month-bar-label" id="monthLabel">–</span>
-      <span class="month-bar-val" id="monthProgress">–</span>
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-val blue" id="stat-days">–</div><div class="stat-lbl">Dagen</div></div>
+      <div class="stat"><div class="stat-val green" id="stat-hours">–</div><div class="stat-lbl">Uren</div></div>
+      <div class="stat"><div class="stat-val amber" id="stat-open">–</div><div class="stat-lbl">Te sturen</div></div>
     </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progressFill" style="width:0%"></div>
-    </div>
-  </div>
 
-  <!-- APPS -->
-  <div class="sec-label">Dagelijks gebruik</div>
-  <div class="cards">
-    <a href="index.html" class="app-card primary">
+    <!-- MAAND VOORTGANG -->
+    <div class="progress-card">
+      <div class="progress-header">
+        <span class="progress-label" id="progressLabel">–</span>
+        <span class="progress-val" id="progressVal">–</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- DAGELIJKS -->
+    <p class="sec">Dagelijks gebruik</p>
+    <a href="index.html" class="app-card accent-blue">
       <div class="card-icon blue">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
       </div>
@@ -253,14 +197,13 @@ html,body{
         <div class="card-title">Dagstaat</div>
         <div class="card-desc">Uren per dag registreren per opdrachtgever</div>
       </div>
-      <div class="card-badge blue" id="badge-today">Vandaag</div>
+      <div class="card-badge blue" id="badge-today">–</div>
       <div class="card-arrow">›</div>
     </a>
-  </div>
 
-  <div class="sec-label">Maandafsluiting</div>
-  <div class="cards">
-    <a href="verstuur.html" class="app-card green">
+    <!-- MAANDAFSLUITING -->
+    <p class="sec">Maandafsluiting</p>
+    <a href="verstuur.html" class="app-card accent-green">
       <div class="card-icon green">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>
       </div>
@@ -272,7 +215,7 @@ html,body{
       <div class="card-arrow">›</div>
     </a>
 
-    <a href="factuur.html" class="app-card amber">
+    <a href="factuur.html" class="app-card accent-amber">
       <div class="card-icon amber">
         <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>
       </div>
@@ -283,146 +226,133 @@ html,body{
       <div class="card-badge amber" id="badge-factuur">–</div>
       <div class="card-arrow">›</div>
     </a>
-  </div>
 
-  <!-- RECENTE DAGEN -->
-  <div class="sec-label">Recente registraties</div>
-  <div class="recent" id="recentList">
-    <div style="font-size:13px;color:var(--txt3);padding:12px 0">Laden…</div>
-  </div>
-
-  <!-- BEHEER -->
-  <a href="admin.html" class="beheer-link">
-    <div class="beheer-left">
-      <div class="beheer-icon">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </div>
-      <div>
-        <div class="beheer-label">Beheerscherm</div>
-        <div class="beheer-sub">Dashboard, overzichten, klanten & facturen</div>
-      </div>
+    <!-- RECENT -->
+    <p class="sec">Recente registraties</p>
+    <div class="recent-card" id="recentCard">
+      <div class="empty-small">Laden…</div>
     </div>
-    <div class="beheer-arrow">›</div>
-  </a>
+
+    <!-- BEHEER -->
+    <p class="sec">Beheer</p>
+    <a href="admin.html" class="beheer-link">
+      <div class="beheer-left">
+        <div class="beheer-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div>
+          <div class="beheer-title">Beheerscherm</div>
+          <div class="beheer-sub">Dashboard, overzichten, klanten & facturen</div>
+        </div>
+      </div>
+      <div class="beheer-arrow">›</div>
+    </a>
+
+  </div>
 </div>
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getFirestore,doc,onSnapshot,collection,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const FB={
-  apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",
-  authDomain:"dagstaat-ordinatio.firebaseapp.com",
-  projectId:"dagstaat-ordinatio",
-  storageBucket:"dagstaat-ordinatio.firebasestorage.app",
-  messagingSenderId:"841107130686",
-  appId:"1:841107130686:web:f91211f83a8e031746846f"
-};
-const fbApp = initializeApp(FB);
-const db = getFirestore(fbApp);
+const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
+const fbApp=initializeApp(FB);
+const db=getFirestore(fbApp);
 
-const MO = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-const MOS = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
-const DY = ['zo','ma','di','wo','do','vr','za'];
-const CC = {Intern:'#5c6b7a',Sitech:'#2d5a8e',Dysel:'#1e7a4a',Seeder:'#b85c00',HG:'#7b3f9e',Nabuurs:'#c0392b'};
+const MO=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const MOS=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const DYL=['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
+const DYS=['zo','ma','di','wo','do','vr','za'];
+const CC={Intern:'#5c6b7a',Sitech:'#2d5a8e',Dysel:'#1e7a4a',Seeder:'#b85c00',HG:'#7b3f9e',Nabuurs:'#c0392b'};
 
-const p2 = n => String(n).padStart(2,'0');
-const m2s = m => `${Math.floor(m/60)}:${p2(m%60)}`;
-const tMins = t => { if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; };
-const bMins = b => Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.brk)||0));
-const cc = n => CC[n] || '#8a8a84';
+const p2=n=>String(n).padStart(2,'0');
+const m2s=m=>`${Math.floor(m/60)}:${p2(m%60)}`;
+const tMins=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
+const bMins=b=>Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.brk)||0));
+const cc=n=>{const c=JSON.parse(localStorage.getItem('dgs_clients_v1')||'[]').find(x=>x.name===n);return c?c.color:(CC[n]||'#8a8a84')};
 
-// Date header
-const now = new Date();
-const days = ['zo','ma','di','wo','do','vr','za'];
-document.getElementById('datechip').innerHTML = `<b>${days[now.getDay()]}</b> ${now.getDate()} ${MOS[now.getMonth()]}`;
+// Date
+const now=new Date();
+const yr=now.getFullYear(),mo=now.getMonth(),dy=now.getDate();
+document.getElementById('dateDay').textContent=dy;
+document.getElementById('dateWeekday').textContent=DYL[now.getDay()];
+document.getElementById('dateMonth').textContent=`${MO[mo]} ${yr}`;
+document.getElementById('dateYear').textContent=`Dag ${dy} van ${new Date(yr,mo+1,0).getDate()}`;
 
-// Month progress (working days in month)
-const year = now.getFullYear();
-const month = now.getMonth();
-const daysInMonth = new Date(year, month+1, 0).getDate();
-const dayOfMonth = now.getDate();
-const pct = Math.round((dayOfMonth/daysInMonth)*100);
-document.getElementById('monthLabel').textContent = `${MO[month]} ${year}`;
-document.getElementById('monthProgress').textContent = `dag ${dayOfMonth} van ${daysInMonth}`;
-document.getElementById('progressFill').style.width = pct + '%';
+// Month progress
+const daysInMonth=new Date(yr,mo+1,0).getDate();
+const pct=Math.round((dy/daysInMonth)*100);
+document.getElementById('progressLabel').textContent=`${MO[mo]} ${yr}`;
+document.getElementById('progressVal').textContent=`${pct}% van de maand`;
+document.getElementById('progressFill').style.width=pct+'%';
 
-// Load Firebase data
-onSnapshot(doc(db,'dagstaat','data'), async snap => {
-  const days_data = snap.exists() ? (snap.data().days || {}) : {};
+function setSync(s,t){
+  const p=document.getElementById('syncPill');
+  p.className=`sync-pill ${s}`;
+  document.getElementById('syncTxt').textContent=t;
+}
 
-  // Set sync status
-  document.getElementById('syncDot').className = 'sync-dot ok';
-  document.getElementById('syncLabel').className = 'sync-label ok';
-  document.getElementById('syncLabel').textContent = 'Gesynchroniseerd';
+onSnapshot(doc(db,'dagstaat','data'),async snap=>{
+  const days=snap.exists()?(snap.data().days||{}):{};
+  setSync('ok','Gesynchroniseerd');
 
-  // This month stats
-  const pfx = `${year}-${p2(month+1)}`;
-  const monthDays = Object.keys(days_data).filter(d=>d.startsWith(pfx)).sort();
-  const allBlocks = monthDays.flatMap(k=>days_data[k].map(b=>({...b,date:k})));
-  const totalMins = allBlocks.reduce((s,b)=>s+bMins(b),0);
+  // This month
+  const pfx=`${yr}-${p2(mo+1)}`;
+  const mDays=Object.keys(days).filter(d=>d.startsWith(pfx)).sort();
+  const allBlocks=mDays.flatMap(k=>days[k].map(b=>({...b,date:k})));
+  const totalMins=allBlocks.reduce((s,b)=>s+bMins(b),0);
 
-  document.getElementById('stat-days').textContent = monthDays.length;
-  document.getElementById('stat-hours').textContent = m2s(totalMins);
+  document.getElementById('stat-days').textContent=mDays.length;
+  document.getElementById('stat-hours').textContent=m2s(totalMins);
 
-  // Check today badge
-  const todayISO = `${year}-${p2(month+1)}-${p2(now.getDate())}`;
-  const todayData = days_data[todayISO];
-  const todayBadge = document.getElementById('badge-today');
-  if (todayData && todayData.length) {
-    const todayMins = todayData.reduce((s,b)=>s+bMins(b),0);
-    todayBadge.textContent = m2s(todayMins);
-    todayBadge.className = 'card-badge green';
+  // Today badge
+  const todayISO=`${yr}-${p2(mo+1)}-${p2(dy)}`;
+  const todayBlocks=days[todayISO]||[];
+  const todayMins=todayBlocks.reduce((s,b)=>s+bMins(b),0);
+  const tb=document.getElementById('badge-today');
+  if(todayMins>0){tb.textContent=m2s(todayMins)+' uur';tb.className='card-badge green';}
+  else{tb.textContent='Nog niet';tb.className='card-badge amber';}
+
+  // Recent days
+  const recent=Object.keys(days).sort().slice(-5).reverse();
+  const rc=document.getElementById('recentCard');
+  if(!recent.length){
+    rc.innerHTML='<div class="empty-small">Geen registraties</div>';
   } else {
-    todayBadge.textContent = 'Nog niet';
-    todayBadge.className = 'card-badge amber';
-  }
-
-  // Sync counts
-  document.getElementById('syncCounts').textContent = `${monthDays.length} dagen deze maand`;
-
-  // Recent days (last 5)
-  const recent = Object.keys(days_data).sort().slice(-5).reverse();
-  const recentEl = document.getElementById('recentList');
-  if (!recent.length) {
-    recentEl.innerHTML = '<div style="font-size:13px;color:var(--txt3);padding:12px 0">Nog geen registraties</div>';
-  } else {
-    recentEl.innerHTML = recent.map(d => {
-      const dt = new Date(d);
-      const bs = days_data[d];
-      const totalM = bs.reduce((s,b)=>s+bMins(b),0);
-      const clientNames = [...new Set(bs.map(b=>b.klant))];
-      const dotColor = cc(clientNames[0]);
-      return `<div class="recent-item">
-        <div class="recent-dot" style="background:${dotColor}"></div>
-        <div class="recent-date">${DY[dt.getDay()]} ${dt.getDate()} ${MOS[dt.getMonth()]}</div>
-        <div class="recent-clients">${clientNames.join(', ')}</div>
+    rc.innerHTML=recent.map(d=>{
+      const dt=new Date(d);
+      const bs=days[d];
+      const totalM=bs.reduce((s,b)=>s+bMins(b),0);
+      const klanten=[...new Set(bs.map(b=>b.klant))];
+      return`<div class="recent-item">
+        <div class="recent-dot" style="background:${cc(klanten[0])}"></div>
+        <div class="recent-date">${DYS[dt.getDay()]} ${dt.getDate()} ${MOS[dt.getMonth()]}</div>
+        <div class="recent-clients">${klanten.join(', ')}</div>
         <div class="recent-hours">${m2s(totalM)}</div>
       </div>`;
     }).join('');
   }
 
-  // Load specs and facturen counts
-  try {
-    const specsSnap = await getDocs(query(collection(db,'specs'), orderBy('verstuurd_datum','desc')));
-    const specs = specsSnap.docs.map(d=>({id:d.id,...d.data()}));
-    const openSpecs = specs.filter(s => s.akkoord && !s.factuur_verstuurd).length;
-    const waitSpecs = specs.filter(s => !s.akkoord).length;
+  // Specs en facturen
+  try{
+    const specsSnap=await getDocs(query(collection(db,'specs'),orderBy('verstuurd_datum','desc')));
+    const specs=specsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const wacht=specs.filter(s=>!s.akkoord).length;
+    const klaarVoorFactuur=specs.filter(s=>s.akkoord&&!s.factuur_verstuurd).length;
 
-    document.getElementById('stat-open').textContent = waitSpecs;
-    document.getElementById('badge-specs').textContent = waitSpecs > 0 ? `${waitSpecs} wacht` : 'Verstuur';
-    document.getElementById('badge-specs').className = waitSpecs > 0 ? 'card-badge amber' : 'card-badge green';
-    document.getElementById('badge-factuur').textContent = openSpecs > 0 ? `${openSpecs} klaar` : 'Aanmaken';
-    document.getElementById('badge-factuur').className = openSpecs > 0 ? 'card-badge amber' : 'card-badge amber';
-  } catch(e) {
-    document.getElementById('stat-open').textContent = '–';
+    document.getElementById('stat-open').textContent=wacht;
+    const sb=document.getElementById('badge-specs');
+    if(wacht>0){sb.textContent=`${wacht} wacht op akkoord`;sb.className='card-badge amber';}
+    else{sb.textContent='Verstuur specificatie';sb.className='card-badge green';}
+
+    const fb=document.getElementById('badge-factuur');
+    if(klaarVoorFactuur>0){fb.textContent=`${klaarVoorFactuur} klaar`;fb.className='card-badge amber';}
+    else{fb.textContent='Aanmaken';fb.className='card-badge amber';}
+  }catch(e){
+    document.getElementById('stat-open').textContent='–';
   }
 
-}, err => {
-  document.getElementById('syncDot').className = 'sync-dot err';
-  document.getElementById('syncLabel').className = 'sync-label err';
-  document.getElementById('syncLabel').textContent = 'Offline';
-});
+},err=>setSync('err','Offline'));
 </script>
 </body>
 </html>
