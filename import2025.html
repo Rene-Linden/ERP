@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import 2025 — Eenmalig</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:#f8f7f4;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.card{background:white;border:1px solid #e8e7e2;border-radius:12px;padding:32px;max-width:560px;width:100%;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+h1{font-family:Georgia,serif;font-size:22px;color:#1a1a18;margin-bottom:8px}
+p{font-size:14px;color:#8a8a84;margin-bottom:20px;line-height:1.5}
+.btn{width:100%;background:#2d5a8e;color:white;border:none;border-radius:8px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn:hover{background:#234d7a}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.log{margin-top:16px;background:#f8f7f4;border:1px solid #e8e7e2;border-radius:8px;padding:14px;font-family:monospace;font-size:12px;max-height:320px;overflow-y:auto;line-height:1.8}
+.log-ok{color:#1e7a4a}
+.log-err{color:#c0392b}
+.log-info{color:#2d5a8e}
+.done{background:#eaf5ee;border:1px solid rgba(30,122,74,.2);border-radius:8px;padding:14px;font-size:14px;color:#1e7a4a;font-weight:600;margin-top:12px;display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Import Omzet 2025</h1>
+  <p>Dit importeert de 10 facturen van 2025 in Firebase. Druk éénmalig op de knop. Daarna kun je deze pagina verwijderen van GitHub.</p>
+
+  <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+    <thead><tr style="background:#f8f7f4;border-bottom:2px solid #e8e7e2">
+      <th style="padding:8px;text-align:left;color:#8a8a84;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Nummer</th>
+      <th style="padding:8px;text-align:left;color:#8a8a84;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Maand</th>
+      <th style="padding:8px;text-align:left;color:#8a8a84;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Klant</th>
+      <th style="padding:8px;text-align:right;color:#8a8a84;font-size:11px;text-transform:uppercase;letter-spacing:.5px">Incl. BTW</th>
+    </tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #e8e7e2"><td style="padding:8px">ORDGR-2025001</td><td style="padding:8px">Januari</td><td style="padding:8px">Luke Recruitement</td><td style="padding:8px;text-align:right;font-family:monospace">€ 19.582,35</td></tr>
+      <tr style="border-bottom:1px solid #e8e7e2;background:#f8f7f4"><td style="padding:8px">ORDGR-2025002</td><td style="padding:8px">Februari</td><td style="padding:8px">Luke Recruitement</td><td style="padding:8px;text-align:right;font-family:monospace">€ 8.518,40</td></tr>
+      <tr style="border-bottom:1px solid #e8e7e2"><td style="padding:8px">ORDGR-2025003</td><td style="padding:8px">Mei</td><td style="padding:8px">Sitech Nederland B.V.</td><td style="padding:8px;text-align:right;font-family:monospace">€ 20.722,10</td></tr>
+      <tr style="border-bottom:1px solid #e8e7e2;background:#f8f7f4"><td style="padding:8px">ORDGR-2025004</td><td style="padding:8px">Juni</td><td style="padding:8px">Sitech Nederland B.V.</td><td style="padding:8px;text-align:right;font-family:monospace">€ 20.601,47</td></tr>
+      <tr style="border-bottom:1px solid #e8e7e2"><td style="padding:8px">ORDGR-2025005</td><td style="padding:8px">Juli</td><td style="padding:8px">Sitech Nederland B.V.</td><td style="padding:8px;text-align:right;font-family:monospace">€ 14.324,61</td></tr>
+      <tr style="border-bottom:1px solid #e8e7e2;background:#f8f7f4"><td style="padding:8px">ORDGR-2025006</td><td style="padding:8px">Augustus</td><td style="padding:8px">Sitech Nederland B.V.</td><td style="padding:8px;text-align:right;font-family:monospace">€ 22.824,59</td></tr>
+      <tr style="border-bottom:1px solid #e8e7e2"><td style="padding:8px">ORDGR-2025007</td><td style="padding:8px">September</td><td style="padding:8px">Sitech Nederland B.V.</td><td style="padding:8px;text-align:right;font-family:monospace">€ 23.357,26</td></tr>
+      <tr style="border-bottom:1px solid #e8e7e2;background:#f8f7f4"><td style="padding:8px">ORDGR-2025008</td><td style="padding:8px">Oktober</td><td style="padding:8px">Sitech Nederland B.V.</td><td style="padding:8px;text-align:right;font-family:monospace">€ 25.875,31</td></tr>
+      <tr style="border-bottom:1px solid #e8e7e2"><td style="padding:8px">ORDGR-2025009</td><td style="padding:8px">November</td><td style="padding:8px">Sitech Nederland B.V.</td><td style="padding:8px;text-align:right;font-family:monospace">€ 14.640,98</td></tr>
+      <tr><td style="padding:8px">ORDGR-2025010</td><td style="padding:8px">December</td><td style="padding:8px">Sitech Nederland B.V.</td><td style="padding:8px;text-align:right;font-family:monospace">€ 15.263,87</td></tr>
+    </tbody>
+    <tfoot><tr style="border-top:2px solid #2d5a8e;background:#edf3f9">
+      <td colspan="3" style="padding:10px 8px;font-weight:700;color:#2d5a8e">Totaal 2025</td>
+      <td style="padding:10px 8px;text-align:right;font-family:monospace;font-weight:700;color:#2d5a8e">€ 185.710,94</td>
+    </tr></tfoot>
+  </table>
+
+  <button class="btn" id="importBtn" onclick="startImport()">▶ Start import in Firebase</button>
+  <div class="log" id="log" style="display:none"></div>
+  <div class="done" id="done">✓ Import voltooid! Je kunt deze pagina nu verwijderen van GitHub en de omzet 2025 bekijken in het beheerscherm.</div>
+</div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,collection,addDoc,getDocs,query,where}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
+const fbApp=initializeApp(FB);
+const db=getFirestore(fbApp);
+
+const facturen2025=[
+  {nummer:'ORDGR-2025001',klant:'Luke Recruitement',spec:{maand:0,jaar:2025},datum:'2025-01-31',uren:144.25,tarief:110,km:1506,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim werkzaamheden januari 2025',verstuurd_datum:'2025-01-31T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025002',klant:'Luke Recruitement',spec:{maand:1,jaar:2025},datum:'2025-02-28',uren:64,tarief:110,km:0,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim werkzaamheden februari 2025',verstuurd_datum:'2025-02-28T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025003',klant:'Sitech Nederland B.V.',spec:{maand:4,jaar:2025},datum:'2025-05-31',uren:144.5,tarief:115,km:2420,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager mei 2025',verstuurd_datum:'2025-05-31T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025004',klant:'Sitech Nederland B.V.',spec:{maand:5,jaar:2025},datum:'2025-06-30',uren:143.75,tarief:115,km:2356,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager juni 2025',verstuurd_datum:'2025-06-30T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025005',klant:'Sitech Nederland B.V.',spec:{maand:6,jaar:2025},datum:'2025-07-31',uren:100,tarief:115,km:1612,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager juli 2025',verstuurd_datum:'2025-07-31T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025006',klant:'Sitech Nederland B.V.',spec:{maand:7,jaar:2025},datum:'2025-08-31',uren:159.5,tarief:115,km:2480,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager augustus 2025',verstuurd_datum:'2025-08-31T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025007',klant:'Sitech Nederland B.V.',spec:{maand:8,jaar:2025},datum:'2025-09-30',uren:160.25,tarief:115,km:2170,kmTarief:0.21,extraKosten:[{omschr:'Reiskosten Duitsland',bedrag:419.07}],btwPct:21,omschrijving:'Interim Operationeel Manager september 2025',verstuurd_datum:'2025-09-30T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025008',klant:'Sitech Nederland B.V.',spec:{maand:9,jaar:2025},datum:'2025-10-31',uren:181.25,tarief:115,km:2480,kmTarief:0.21,extraKosten:[{omschr:'Overige kosten',bedrag:20}],btwPct:21,omschrijving:'Interim Operationeel Manager oktober 2025',verstuurd_datum:'2025-10-31T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025009',klant:'Sitech Nederland B.V.',spec:{maand:10,jaar:2025},datum:'2025-11-30',uren:102.5,tarief:115,km:1488,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager november 2025',verstuurd_datum:'2025-11-30T12:00:00.000Z',status:'verstuurd'},
+  {nummer:'ORDGR-2025010',klant:'Sitech Nederland B.V.',spec:{maand:11,jaar:2025},datum:'2025-12-31',uren:106.75,tarief:115,km:1612,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager december 2025',verstuurd_datum:'2025-12-31T12:00:00.000Z',status:'verstuurd'},
+];
+
+function log(msg, type='info'){
+  const el=document.getElementById('log');
+  el.style.display='block';
+  el.innerHTML+=`<div class="log-${type}">${msg}</div>`;
+  el.scrollTop=el.scrollHeight;
+}
+
+window.startImport=async function(){
+  const btn=document.getElementById('importBtn');
+  btn.disabled=true;btn.textContent='Bezig…';
+  log('Start import 2025 facturen…','info');
+
+  let ok=0,skip=0,err=0;
+
+  for(const f of facturen2025){
+    try{
+      // Check if already exists
+      const existing=await getDocs(query(collection(db,'facturen'),where('nummer','==',f.nummer)));
+      if(!existing.empty){
+        log(`⚠ ${f.nummer} bestaat al — overgeslagen`,'info');
+        skip++;continue;
+      }
+      await addDoc(collection(db,'facturen'),f);
+      log(`✓ ${f.nummer} — ${f.klant} — ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][f.spec.maand]} ${f.spec.jaar}`,'ok');
+      ok++;
+      await new Promise(r=>setTimeout(r,200));
+    }catch(e){
+      log(`✗ ${f.nummer} — Fout: ${e.message}`,'err');
+      err++;
+    }
+  }
+
+  log(`──────────────────`,'info');
+  log(`Klaar: ${ok} ingevoerd, ${skip} overgeslagen, ${err} fouten`,'info');
+  btn.textContent='✓ Import voltooid';
+  if(err===0) document.getElementById('done').style.display='block';
+}
+</script>
+</body>
+</html>
