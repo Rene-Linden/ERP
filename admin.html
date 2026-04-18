@@ -267,23 +267,46 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
         <div class="card">
           <div class="card-header"><span class="card-title">Nieuwe opdrachtgever</span></div>
           <div class="card-body">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-              <div class="field"><label>Naam</label><input type="text" id="newName" placeholder="Bijv. Sitech Nederland B.V."></div>
-              <div class="field"><label>Contactpersoon</label><input type="text" id="newContact" placeholder="Jan de Vries"></div>
-              <div class="field"><label>Email</label><input type="email" id="newEmail" placeholder="inkoop@bedrijf.nl"></div>
-              <div class="field"><label>Telefoon</label><input type="tel" id="newPhone" placeholder="+31 6 12345678"></div>
-              <div class="field"><label>Adres</label><input type="text" id="newAddress" placeholder="Straat 1"></div>
-              <div class="field"><label>Postcode & Plaats</label><input type="text" id="newCity" placeholder="5600 AA Eindhoven"></div>
-              <div class="field"><label>Uurtarief (€)</label><input type="number" id="newRate" placeholder="115" min="0" step="0.01"></div>
-              <div class="field"><label>Kleur</label><div class="color-opts" id="colorOpts" style="margin-top:6px"></div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="field">
+                <label>Bedrijfsnaam *</label>
+                <input type="text" id="newName" placeholder="Sitech Nederland B.V.">
+              </div>
+              <div class="field">
+                <label>Contactpersoon</label>
+                <input type="text" id="newContact" placeholder="Jan de Vries">
+              </div>
+              <div class="field">
+                <label>Uurtarief (€)</label>
+                <input type="number" id="newRate" placeholder="115" min="0" step="0.01">
+              </div>
+              <div class="field">
+                <label>Emailadres</label>
+                <input type="email" id="newEmail" placeholder="inkoop@bedrijf.nl">
+              </div>
+              <div class="field">
+                <label>Telefoon</label>
+                <input type="tel" id="newPhone" placeholder="+31 40 123 4567">
+              </div>
+              <div class="field">
+                <label>Kleur</label>
+                <div class="color-opts" id="colorOpts" style="margin-top:8px"></div>
+              </div>
+              <div class="field">
+                <label>Adres</label>
+                <input type="text" id="newAddress" placeholder="Beatrixlaan 800">
+              </div>
+              <div class="field">
+                <label>Postcode & Plaats</label>
+                <input type="text" id="newCity" placeholder="6134 KT Sittard">
+              </div>
             </div>
-            <button class="add-btn" style="width:100%;height:40px" onclick="addClient()">+ Opdrachtgever toevoegen</button>
+            <div style="border-top:1px solid var(--line);padding-top:14px">
+              <button class="add-btn" style="width:100%;height:42px;font-size:14px" onclick="addClient()">+ Opdrachtgever toevoegen</button>
+            </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Opdrachtgevers</span></div>
-          <table class="data-table" id="clientsTable"></table>
-        </div>
+        <div id="clientCards"></div>
       </div>
 
       <div class="page" id="page-accordering">
@@ -588,23 +611,56 @@ window.editField=function(name,field,val){
 }
 function renderKlanten(){
   renderColorOpts();
-  const el=document.getElementById('clientsTable');
-  if(!clients.length){el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Geen opdrachtgevers</td></tr>';return;}
+  const el=document.getElementById('clientCards');
+  if(!clients.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><div>Geen opdrachtgevers</div></div>';
+    return;
+  }
   const allBlocks=Object.values(days).flat();
-  el.innerHTML=`<thead><tr><th>Naam</th><th>Contact</th><th>Email</th><th>Telefoon</th><th>Adres</th><th>Tarief</th><th>Uren</th><th></th></tr></thead><tbody>${clients.map(c=>{
+
+  const inp=(name,field,val,type,placeholder)=>`
+    <div class="field">
+      <label>${placeholder}</label>
+      <input type="${type}" value="${(val||'').replace(/"/g,'&quot;')}" placeholder="–"
+        style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none;width:100%;transition:border-color .15s"
+        onchange="editField('${name}','${field}',this.value)"
+        onfocus="this.style.borderColor='var(--acc)'"
+        onblur="this.style.borderColor='var(--line2)'">
+    </div>`;
+
+  el.innerHTML=clients.map(c=>{
     const mins=allBlocks.filter(b=>b.klant===c.name).reduce((s,b)=>s+bMins(b),0);
-    const inp=(field,val,type='text',w='120px')=>`<input type="${type}" value="${val||''}" placeholder="–" style="width:${w};background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:5px 8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none" onchange="editField('${c.name}','${field}',this.value)" onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--line2)'">`
-    return`<tr>
-      <td><span class="cdot" style="background:${c.color}"></span><span class="bold">${c.name}</span></td>
-      <td>${inp('contact',c.contact,'text','110px')}</td>
-      <td>${inp('email',c.email,'email','150px')}</td>
-      <td>${inp('phone',c.phone,'tel','110px')}</td>
-      <td><div style="display:flex;flex-direction:column;gap:4px">${inp('address',c.address,'text','130px')}${inp('city',c.city,'text','130px')}</div></td>
-      <td><div style="display:flex;align-items:center;gap:4px"><span style="color:var(--ink3);font-size:12px">€</span>${inp('rate',c.rate,'number','70px')}</div></td>
-      <td class="mono">${m2s(mins)}</td>
-      <td><button class="del-btn" onclick="deleteClient('${c.name}')">✕</button></td>
-    </tr>`;
-  }).join('')}</tbody>`;
+    return`<div class="card" style="border-left:4px solid ${c.color};margin-bottom:14px">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
+          <span style="font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)">${c.name}</span>
+          ${mins?`<span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--grn);background:var(--grn-l);padding:2px 8px;border-radius:10px">${m2s(mins)} uur</span>`:''}
+        </div>
+        <button class="del-btn" onclick="deleteClient('${c.name}')">Verwijder</button>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          ${inp(c.name,'contact',c.contact,'text','Contactpersoon')}
+          ${inp(c.name,'email',c.email,'email','Emailadres')}
+          ${inp(c.name,'phone',c.phone,'tel','Telefoon')}
+          ${inp(c.name,'address',c.address,'text','Adres')}
+          ${inp(c.name,'city',c.city,'text','Postcode & Plaats')}
+          <div class="field">
+            <label>Uurtarief</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:var(--ink3);font-size:14px">€</span>
+              <input type="number" value="${c.rate||0}" min="0" step="0.01"
+                style="flex:1;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 10px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;transition:border-color .15s"
+                onchange="editField('${c.name}','rate',this.value)"
+                onfocus="this.style.borderColor='var(--acc)'"
+                onblur="this.style.borderColor='var(--line2)'">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // INSTELLINGEN
