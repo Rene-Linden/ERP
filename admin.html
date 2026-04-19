@@ -1575,7 +1575,7 @@ window.renderPrognose=async function(){
   const einddatum1=einddatum1Str?new Date(einddatum1Str):new Date(jaar,11,31);
   const startdatum2=startdatum2Str?new Date(startdatum2Str):null;
 
-  // Load werkelijke omzet from Firebase
+  // Load werkelijke omzet from Firebase — ondersteunt regels-array én directe uren/km
   let werkelijkeOmzet={};
   try{
     const q=query(collection(db,'facturen'),orderBy('verstuurd_datum','desc'));
@@ -1585,16 +1585,29 @@ window.renderPrognose=async function(){
       const spec=data.spec||{};
       if(spec.jaar===jaar&&spec.maand!==undefined){
         const regels=data.regels||[];
-        const mins=regels.reduce((s,r)=>{
-          const tM=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
-          return s+Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0));
-        },0);
-        const km=regels.reduce((s,r)=>s+(r.km||0),0);
         const tarief=data.tarief||0;
-        const kmT=data.kmTarief||0.23;
+        const kmT=data.kmTarief||0.21;
         const extra=(data.extraKosten||[]).reduce((s,k)=>s+(parseFloat(k.bedrag)||0),0);
-        const omzetExcl=(mins/60)*tarief+km*kmT+extra;
-        werkelijkeOmzet[spec.maand]={omzetExcl,uren:mins/60,gefactureerd:true};
+        let omzetExcl=0, uren=0;
+        if(regels.length>0){
+          const tM=t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
+          const mins=regels.reduce((s,r)=>s+Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0)),0);
+          const km=regels.reduce((s,r)=>s+(r.km||0),0);
+          uren=mins/60;
+          omzetExcl=uren*tarief+km*kmT+extra;
+        } else {
+          // Directe velden (import formaat 2025/2026)
+          uren=data.uren||0;
+          const km=data.km||0;
+          omzetExcl=uren*tarief+km*kmT+extra;
+        }
+        // Sla op — meerdere facturen per maand optellen
+        if(werkelijkeOmzet[spec.maand]){
+          werkelijkeOmzet[spec.maand].omzetExcl+=omzetExcl;
+          werkelijkeOmzet[spec.maand].uren+=uren;
+        } else {
+          werkelijkeOmzet[spec.maand]={omzetExcl,uren,gefactureerd:true};
+        }
       }
     });
   }catch(e){}
