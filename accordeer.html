@@ -77,6 +77,21 @@ tbody tr:hover td{background:var(--cream)}
 /* ALREADY */
 .already-icon{width:64px;height:64px;background:var(--acc-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
 .already-icon svg{width:32px;height:32px;stroke:var(--acc);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* AFKEUREN */
+.afkeur-btn{width:100%;background:white;color:var(--red);border:2px solid var(--red);border-radius:var(--rsm);padding:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px}
+.afkeur-btn:hover{background:var(--red-l)}
+.afkeur-btn svg{width:18px;height:18px;stroke:var(--red);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.afkeur-form{display:none;margin-top:16px;padding:16px;background:var(--red-l);border:1px solid rgba(192,57,43,.2);border-radius:var(--rsm)}
+.afkeur-form.open{display:block}
+.afkeur-label{font-size:13px;font-weight:600;color:var(--red);margin-bottom:8px}
+.afkeur-textarea{width:100%;min-height:100px;border:1px solid rgba(192,57,43,.3);border-radius:var(--rsm);padding:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:white;outline:none;resize:vertical;box-sizing:border-box}
+.afkeur-submit{background:var(--red);color:white;border:none;border-radius:var(--rsm);padding:12px 24px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;width:100%}
+.afkeur-submit:disabled{opacity:.5;cursor:not-allowed}
+
+/* AFGEKEURD SUCCESS */
+.afgekeurd-icon{width:64px;height:64px;background:var(--red-l);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.afgekeurd-icon svg{width:32px;height:32px;stroke:var(--red);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
@@ -113,11 +128,22 @@ tbody tr:hover td{background:var(--cream)}
         <span class="total-val" id="totalUren">–</span>
       </div>
       <div class="akkoord-section">
-        <p class="akkoord-text">Door op <strong>Akkoord</strong> te klikken bevestigt u dat bovenstaande urenregistratie correct is. Uw akkoord wordt digitaal vastgelegd.</p>
+        <p class="akkoord-text">Klopt de urenregistratie? Geef hieronder uw akkoord of geef aan wat er niet klopt.</p>
         <button class="akkoord-btn" id="akkoordBtn" onclick="geefAkkoord()">
           <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
           Akkoord met urenspecificatie
         </button>
+        <button class="afkeur-btn" id="afkeurBtn" onclick="toggleAfkeurForm()">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Niet akkoord — geef opmerking
+        </button>
+        <div class="afkeur-form" id="afkeurForm">
+          <div class="afkeur-label">Wat klopt er niet? (verplicht)</div>
+          <textarea class="afkeur-textarea" id="afkeurOpmerking" placeholder="Beschrijf hier wat er niet klopt in de urenregistratie…"></textarea>
+          <button class="afkeur-submit" id="afkeurSubmit" onclick="stuurAfkeuring()">
+            Afkeuring versturen naar René
+          </button>
+        </div>
       </div>
     </div>
 
@@ -127,6 +153,15 @@ tbody tr:hover td{background:var(--cream)}
       <div class="success-title">Akkoord ontvangen!</div>
       <div class="success-text">Bedankt voor uw bevestiging. De urenspecificatie is goedgekeurd en uw akkoord is digitaal vastgelegd.</div>
       <div class="success-detail" id="successDetail">–</div>
+      <p style="font-size:13px;color:var(--ink3);margin-top:16px">U kunt dit venster sluiten.</p>
+    </div>
+
+    <!-- AFGEKEURD -->
+    <div class="state" id="stateAfgekeurd" style="text-align:center">
+      <div class="afgekeurd-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>
+      <div class="success-title" style="color:var(--red)">Afkeuring verstuurd</div>
+      <div class="success-text">Uw opmerking is ontvangen. René van der Linden wordt op de hoogte gesteld en neemt contact op.</div>
+      <div class="success-detail" style="background:var(--red-l);border-color:rgba(192,57,43,.2);color:var(--red)" id="afgekeurdDetail">–</div>
       <p style="font-size:13px;color:var(--ink3);margin-top:16px">U kunt dit venster sluiten.</p>
     </div>
 
@@ -149,6 +184,8 @@ tbody tr:hover td{background:var(--cream)}
   <p style="font-size:12px;color:var(--ink3);margin-top:20px;text-align:center">Ordinatio Groep · info@renevanderlinden.com</p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>emailjs.init('LVecJZWPqdswbZbga');</script>
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getFirestore,doc,getDoc,updateDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -213,6 +250,60 @@ async function loadSpec(){
 
     showState('stateContent');
   }catch(e){showState('stateError');}
+}
+
+window.toggleAfkeurForm=function(){
+  const form=document.getElementById('afkeurForm');
+  form.classList.toggle('open');
+  if(form.classList.contains('open')){
+    document.getElementById('afkeurOpmerking').focus();
+  }
+}
+
+window.stuurAfkeuring=async function(){
+  const opmerking=document.getElementById('afkeurOpmerking').value.trim();
+  if(!opmerking){
+    document.getElementById('afkeurOpmerking').style.border='2px solid var(--red)';
+    document.getElementById('afkeurOpmerking').focus();
+    return;
+  }
+
+  const btn=document.getElementById('afkeurSubmit');
+  btn.disabled=true;btn.textContent='Versturen…';
+
+  try{
+    // Mark spec as afgekeurd in Firebase
+    await updateDoc(doc(db,'specs',specId),{
+      afgekeurd: true,
+      afgekeurd_datum: new Date().toISOString(),
+      afgekeurd_opmerking: opmerking
+    });
+
+    // Send email via EmailJS
+    const klant = specData.klant || '–';
+    const maand = specData.maand !== undefined
+      ? ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'][specData.maand]
+      : '–';
+    const jaar = specData.jaar || '';
+
+    await emailjs.send('service_rpek59r','template_afkeuring',{
+      to_email: 'info@renevanderlinden.com',
+      klant: klant,
+      maand: `${maand} ${jaar}`,
+      opmerking: opmerking,
+      spec_id: specId
+    });
+
+    document.getElementById('afgekeurdDetail').textContent=
+      `Afkeuring voor ${klant} — ${maand} ${jaar}`;
+    showState('stateAfgekeurd');
+
+  }catch(e){
+    btn.disabled=false;
+    btn.textContent='Afkeuring versturen naar René';
+    alert('Er ging iets mis: '+e.message+'. Probeer opnieuw of neem direct contact op.');
+    console.error(e);
+  }
 }
 
 window.geefAkkoord=async function(){
