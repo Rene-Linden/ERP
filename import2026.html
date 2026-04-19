@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import 2026 — Correcte data uit PDF</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8f7f4;min-height:100vh;padding:24px}
+.wrap{max-width:860px;margin:0 auto}
+h1{font-size:22px;color:#1a1a18;margin-bottom:6px}
+p{font-size:13px;color:#8a8a84;margin-bottom:20px;line-height:1.5}
+.card{background:white;border:1px solid #e8e7e2;border-radius:12px;padding:24px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#f8f7f4;padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#8a8a84;font-weight:600;border-bottom:2px solid #e8e7e2}
+thead th.r{text-align:right}
+tbody td{padding:9px 12px;border-bottom:1px solid #e8e7e2;color:#4a4a46}
+tbody td.r{text-align:right;font-family:monospace}
+tbody td.b{font-weight:600;color:#1a1a18}
+tfoot td{padding:10px 12px;font-weight:700;color:#2d5a8e;border-top:2px solid #2d5a8e;font-family:monospace;text-align:right}
+tfoot td:first-child{text-align:left}
+.btns{display:flex;gap:10px;margin-bottom:16px}
+.btn{padding:12px 24px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui}
+.btn-red{background:#c0392b;color:white}.btn-red:hover{background:#a93226}
+.btn-blue{background:#2d5a8e;color:white}.btn-blue:hover{background:#234d7a}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.log{background:#1a1a18;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;max-height:240px;overflow-y:auto;line-height:1.9;display:none}
+.ok{color:#2ecf7a}.err{color:#ff6b6b}.info{color:#74b9ff}
+.done{background:#eaf5ee;border:1px solid rgba(30,122,74,.2);border-radius:8px;padding:14px;font-size:14px;color:#1e7a4a;font-weight:600;margin-top:12px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔄 Import 2026 facturen — Correcte data uit PDF</h1>
+  <p>Drie facturen uitgelezen uit PDF. Totaal excl. BTW: <strong>€ 49.265,13</strong> | Incl. BTW: <strong>€ 59.610,81</strong></p>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Nummer</th><th>Klant</th><th>Datum</th><th>Maand</th>
+          <th class="r">Uren</th><th class="r">Tarief</th><th class="r">KM</th>
+          <th class="r">Excl. BTW</th><th class="r">BTW 21%</th><th class="r">Incl. BTW</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="b">ORDGR-2026001</td><td>Sitech Nederland B.V.</td><td>31-01-2026</td><td>Januari</td><td class="r">141,75</td><td class="r">€ 115</td><td class="r">1.860</td><td class="r">€ 16.691,85</td><td class="r">€ 3.505,29</td><td class="r">€ 20.197,14</td></tr>
+        <tr><td class="b">ORDGR-2026002</td><td>Sitech Nederland B.V.</td><td>27-02-2026</td><td>Februari</td><td class="r">123,75</td><td class="r">€ 115</td><td class="r">1.736</td><td class="r">€ 14.595,81</td><td class="r">€ 3.065,12</td><td class="r">€ 17.660,93</td></tr>
+        <tr><td class="b">ORDGR-2026003</td><td>Sitech Nederland B.V.</td><td>31-03-2026</td><td>Maart</td><td class="r">152,25</td><td class="r">€ 115</td><td class="r">2.232</td><td class="r">€ 17.977,47</td><td class="r">€ 3.775,27</td><td class="r">€ 21.752,74</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="7">TOTAAL 3 facturen</td><td>€ 49.265,13</td><td>€ 10.345,68</td><td>€ 59.610,81</td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="btns">
+    <button class="btn btn-red" id="deleteBtn" onclick="deleteExisting()">Stap 1 — Verwijder bestaande 2026 facturen</button>
+    <button class="btn btn-blue" id="importBtn" onclick="startImport()" disabled>Stap 2 — Importeer correcte facturen</button>
+  </div>
+  <div class="log" id="log"></div>
+  <div class="done" id="done">✓ Import geslaagd! Ga naar Beheer → Facturen → kies 2026. Je kunt deze pagina nu verwijderen van GitHub.</div>
+</div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,collection,addDoc,getDocs,deleteDoc,doc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
+const db=getFirestore(initializeApp(FB));
+
+const facturen=[
+  {nummer:'ORDGR-2026001',klant:'Sitech Nederland B.V.',spec:{maand:0,jaar:2026},datum:'2026-01-31',uren:141.75,tarief:115,km:1860,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2026-01-31T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2026002',klant:'Sitech Nederland B.V.',spec:{maand:1,jaar:2026},datum:'2026-02-27',uren:123.75,tarief:115,km:1736,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2026-02-27T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2026003',klant:'Sitech Nederland B.V.',spec:{maand:2,jaar:2026},datum:'2026-03-31',uren:152.25,tarief:115,km:2232,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2026-03-31T12:00:00.000Z',status:'verstuurd',regels:[]},
+];
+
+const fmt=n=>'€ '+n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function log(msg,type='info'){
+  const el=document.getElementById('log');
+  el.style.display='block';
+  el.innerHTML+=`<div class="${type}">${msg}</div>`;
+  el.scrollTop=el.scrollHeight;
+}
+
+window.deleteExisting=async function(){
+  const btn=document.getElementById('deleteBtn');
+  btn.disabled=true;btn.textContent='Bezig…';
+  log('Zoeken naar bestaande 2026 facturen…','info');
+  try{
+    const snap=await getDocs(collection(db,'facturen'));
+    const te2026=snap.docs.filter(d=>{
+      const data=d.data();
+      return (data.spec?.jaar===2026)||(data.nummer||'').includes('-2026');
+    });
+    log(`${te2026.length} facturen gevonden…`,'info');
+    for(const d of te2026){
+      await deleteDoc(doc(db,'facturen',d.id));
+      log(`✓ Verwijderd: ${d.data().nummer}`,'ok');
+      await new Promise(r=>setTimeout(r,80));
+    }
+    log(`Klaar — ${te2026.length} verwijderd. Klik Stap 2.`,'ok');
+    document.getElementById('importBtn').disabled=false;
+    btn.textContent='✓ Klaar';
+  }catch(e){
+    log(`Fout: ${e.message}`,'err');
+    btn.disabled=false;btn.textContent='Stap 1 — Probeer opnieuw';
+  }
+};
+
+window.startImport=async function(){
+  const btn=document.getElementById('importBtn');
+  btn.disabled=true;btn.textContent='Importeren…';
+  log('Start import…','info');
+  let ok=0,err=0;
+  for(const f of facturen){
+    try{
+      await addDoc(collection(db,'facturen'),f);
+      const excl=f.uren*f.tarief+f.km*f.kmTarief;
+      log(`✓ ${f.nummer} — ${f.uren}u × €${f.tarief} + ${f.km}km — ${fmt(excl)} excl | ${fmt(excl*1.21)} incl`,'ok');
+      ok++;
+      await new Promise(r=>setTimeout(r,150));
+    }catch(e){
+      log(`✗ ${f.nummer}: ${e.message}`,'err');err++;
+    }
+  }
+  log(`──── Klaar: ${ok} ingevoerd, ${err} fouten ────`,'info');
+  btn.textContent='✓ Import voltooid';
+  if(err===0)document.getElementById('done').style.display='block';
+};
+</script>
+</body>
+</html>
