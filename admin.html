@@ -514,12 +514,24 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
 
             <!-- MINIMUMDOEL -->
             <div class="card">
-              <div class="card-header"><span class="card-title">🎯 Doelstelling</span></div>
-              <div class="card-body">
+              <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+                <span class="card-title">🎯 Doelstelling</span>
+                <span id="p-doel-basis" style="font-size:11px;color:var(--ink3)">Basis: vorig jaar</span>
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
                 <div class="field" style="margin-bottom:0">
-                  <label>Minimale gewenste omzet (€ excl. BTW)</label>
-                  <input type="number" id="p-doel" value="150000" min="0" step="1000" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);outline:none;width:100%">
+                  <label>Basis: vorig jaar omzet (€ excl. BTW)</label>
+                  <input type="number" id="p-doel-vorig" readonly style="background:var(--line);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink3);outline:none;width:100%;cursor:not-allowed">
                 </div>
+                <div class="field" style="margin-bottom:0">
+                  <label>Extra opslag (€)</label>
+                  <input type="number" id="p-doel-opslag" value="0" min="-50000" step="1000" onchange="renderPrognose()" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);outline:none;width:100%">
+                </div>
+                <div style="background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                  <span style="font-size:12px;font-weight:600;color:var(--acc)">Doelstelling</span>
+                  <span id="p-doel-totaal" style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--acc)">–</span>
+                </div>
+                <input type="hidden" id="p-doel" value="153480">
               </div>
             </div>
           </div>
@@ -1566,7 +1578,45 @@ window.renderPrognose=async function(){
   const tarief2=parseFloat(document.getElementById('p-tarief2').value)||120;
   const vakantie1=parseInt(document.getElementById('p-vakantie').value)||0;
   const vakantie2=parseInt(document.getElementById('p-vakantie2').value)||0;
-  const doel=parseFloat(document.getElementById('p-doel').value)||150000;
+  // Laad vorig jaar omzet als doelstelling basis
+  const prognoseJaarVal = jaar;
+  let vorigJaarOmzet = 0;
+  try {
+    const qv = query(collection(db,'facturen'));
+    const snapv = await getDocs(qv);
+    snapv.docs.forEach(d => {
+      const data = d.data();
+      const spec = data.spec || {};
+      if(spec.jaar === prognoseJaarVal - 1) {
+        const regels = data.regels || [];
+        const tarief = data.tarief || 0;
+        const kmT = data.kmTarief || 0.21;
+        const extra = (data.extraKosten||[]).reduce((s,k)=>s+(parseFloat(k.bedrag)||0),0);
+        let omzet = 0;
+        if(regels.length > 0) {
+          const tM = t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
+          const mins = regels.reduce((s,r)=>s+Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0)),0);
+          const km = regels.reduce((s,r)=>s+(r.km||0),0);
+          omzet = (mins/60)*tarief + km*kmT + extra;
+        } else {
+          omzet = (data.uren||0)*tarief + (data.km||0)*kmT + extra;
+        }
+        vorigJaarOmzet += omzet;
+      }
+    });
+  } catch(e) {}
+
+  const opslag = parseFloat(document.getElementById('p-doel-opslag')?.value)||0;
+  const doel = vorigJaarOmzet > 0 ? vorigJaarOmzet + opslag : (parseFloat(document.getElementById('p-doel').value)||150000);
+
+  // Update UI
+  const vorigEl = document.getElementById('p-doel-vorig');
+  const totaalEl2 = document.getElementById('p-doel-totaal');
+  const basisEl = document.getElementById('p-doel-basis');
+  if(vorigEl) vorigEl.value = vorigJaarOmzet > 0 ? Math.round(vorigJaarOmzet) : '';
+  if(totaalEl2) totaalEl2.textContent = '€ ' + Math.round(doel).toLocaleString('nl-NL');
+  if(basisEl) basisEl.textContent = vorigJaarOmzet > 0 ? `Basis: ${prognoseJaarVal-1} (€ ${Math.round(vorigJaarOmzet).toLocaleString('nl-NL')})` : 'Basis: handmatig';
+  document.getElementById('p-doel').value = doel;
   const klant1=document.getElementById('p-klant1').value||'Huidig contract';
   const klant2=document.getElementById('p-klant2').value||'Volgend contract';
   const urenPerDag1=urenPerWeek1/5;
