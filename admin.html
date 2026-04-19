@@ -1352,14 +1352,11 @@ window.renderOmzet=async function(){
     const q = query(collection(db,'facturen'), orderBy('verstuurd_datum','desc'));
     const snap = await getDocs(q);
     const alleRaw = snap.docs.map(d => ({id:d.id,...d.data()}));
-    const jaarFilter = document.getElementById('facturenJaar')?.value || 'alle';
-    const docs = jaarFilter === 'alle' ? alleRaw : alleRaw.filter(d => {
+    const docs = alleRaw.filter(d => {
       const spec = d.spec || {};
-      const vd = new Date(d.verstuurd_datum);
-      const docJaar = spec.jaar || vd.getFullYear();
-      return docJaar === parseInt(jaarFilter);
+      const docJaar = spec.jaar || new Date(d.verstuurd_datum).getFullYear();
+      return docJaar === jaar;
     });
-    // Sort by nummer descending
     docs.sort((a,b) => (b.nummer||'').localeCompare(a.nummer||''));
 
     // Helper
