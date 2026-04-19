@@ -496,6 +496,7 @@ window.verstuurSpec=async function(){
 
     const specId=specRef.id;
     const akkoordLink=`https://rene-linden.github.io/ERP/accordeer.html?id=${specId}`;
+    const afkeurLink=`https://rene-linden.github.io/ERP/accordeer.html?id=${specId}&actie=afkeuren`;
     const maandStr=`${MO_FULL[maand]} ${jaar}`;
 
     // Build HTML table for email
@@ -530,6 +531,7 @@ window.verstuurSpec=async function(){
       tabel: tabelHTML,
       totaal_uren: m2s(totalMins),
       akkoord_link: akkoordLink,
+      afkeur_link: afkeurLink,
       email: 'info@renevanderlinden.com'
     });
 
