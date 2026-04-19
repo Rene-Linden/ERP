@@ -367,9 +367,7 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
           <div style="display:flex;gap:8px;align-items:center">
             <select id="facturenJaar" onchange="renderFacturen()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none">
               <option value="alle">Alle jaren</option>
-              <option value="2026" selected>2026</option>
-              <option value="2025">2025</option>
-            </select>
+              </select>
             <a href="factuur.html" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px">
               + Nieuwe factuur
             </a>
@@ -433,9 +431,7 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
           <div><div class="page-title">Jaarprognose</div><div class="page-sub">Omzetprognose op basis van huidige en toekomstige contracten</div></div>
           <div style="display:flex;gap:8px;align-items:center">
             <select id="prognoseJaar" onchange="renderPrognose()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none">
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-            </select>
+              </select>
             <button onclick="renderPrognose()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">↺ Herbereken</button>
           </div>
         </div>
@@ -793,10 +789,10 @@ window.showPage=function(name,btn){
   else if(name==='opdrachtgevers')renderOpdrachtgevers();
   else if(name==='klanten'){renderKlanten();}
   else if(name==='accordering')renderAccordering();
-  else if(name==='facturen')renderFacturen();
-  else if(name==='omzet')renderOmzet();
+  else if(name==='facturen'){populeerJaarSelectors().then(()=>renderFacturen());}
+  else if(name==='omzet'){populeerJaarSelectors().then(()=>renderOmzet());}
   else if(name==='historie')renderHistorie();
-  else if(name==='prognose')renderPrognose();
+  else if(name==='prognose'){populeerJaarSelectors().then(()=>renderPrognose());}
   else if(name==='liquiditeit'){renderLiquiditeit();}
   else if(name==='instellingen')renderInstellingen();
 }
@@ -2271,9 +2267,65 @@ window.saveHistorie = function() {
   showToast('Historie opgeslagen ✓', 'ok');
 }
 
+// ── JAAR SELECTORS DYNAMISCH ──────────────────
+async function populeerJaarSelectors() {
+  try {
+    const snap = await getDocs(collection(db,'facturen'));
+    const jaren = new Set();
+    snap.docs.forEach(d => {
+      const spec = d.data().spec || {};
+      if(spec.jaar) jaren.add(spec.jaar);
+      else {
+        const vd = new Date(d.data().verstuurd_datum);
+        if(!isNaN(vd)) jaren.add(vd.getFullYear());
+      }
+    });
+
+    const huidigJaar = new Date().getFullYear();
+    // Voeg altijd huidig jaar + volgend jaar toe voor prognose
+    jaren.add(huidigJaar);
+    jaren.add(huidigJaar + 1);
+
+    const gesorteerd = [...jaren].sort((a,b) => b - a); // nieuwste eerst
+
+    // Omzet selector
+    const omzetSel = document.getElementById('omzetJaar');
+    if(omzetSel) {
+      const huidig = omzetSel.value || String(huidigJaar);
+      omzetSel.innerHTML = gesorteerd.map(j =>
+        `<option value="${j}"${String(j)===huidig?' selected':''}>${j}</option>`
+      ).join('');
+    }
+
+    // Facturen selector
+    const factSel = document.getElementById('facturenJaar');
+    if(factSel) {
+      const huidig = factSel.value || String(huidigJaar);
+      const bestaand = factSel.querySelector('option[value="alle"]')?.outerHTML ||
+        '<option value="alle">Alle jaren</option>';
+      factSel.innerHTML = bestaand + gesorteerd.map(j =>
+        `<option value="${j}"${String(j)===huidig?' selected':''}>${j}</option>`
+      ).join('');
+    }
+
+    // Prognose selector — huidig jaar + volgende 2 jaar
+    const progSel = document.getElementById('prognoseJaar');
+    if(progSel) {
+      const huidig = progSel.value || String(huidigJaar);
+      const progJaren = [...new Set([...gesorteerd, huidigJaar+1, huidigJaar+2])].sort((a,b)=>b-a);
+      progSel.innerHTML = progJaren.map(j =>
+        `<option value="${j}"${String(j)===huidig?' selected':''}>${j}</option>`
+      ).join('');
+    }
+  } catch(e) { console.error('populeerJaarSelectors:', e); }
+}
+
 window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
 
 document.getElementById('loginPwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// Populeer jaar selectors bij laden
+populeerJaarSelectors();
 </script>
 </body>
 </html>
