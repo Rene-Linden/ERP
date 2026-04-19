@@ -1954,10 +1954,10 @@ window.renderLiquiditeit=async function(){
       kort: MO_S[maandIdx],
       jaar,
       maandIdx,
-      inOmzet: inOmzetExcl,
-      inBtw: inBtwOmzet,
+      inOmzetExcl,
+      inBtwOmzet,
       inTotaal,
-      uitLoon, uitLB, uitVak: uitVak+uitLBVak, uitLease, uitRente, uitBtw,
+      uitLoon, uitLB, uitVak, uitLBVak, uitLease, uitRente, uitBtw,
       uitTotaal,
       netto,
       bankStart: bankstand,
@@ -2009,7 +2009,9 @@ window.renderLiquiditeit=async function(){
   const thead = `<thead><tr>
     ${th('Maand','left')}
     ${th('Bank begin')}
-    ${th('Inkomsten')}
+    ${th('Omzet excl. BTW')}
+    ${th('BTW ontvangen')}
+    ${th('Totaal ontvangen')}
     ${th('Loon+LB')}
     ${th('Vakantiegeld')}
     ${th('LB Vakantiegeld')}
@@ -2024,10 +2026,12 @@ window.renderLiquiditeit=async function(){
   const tbody = maanden.map((m,i)=>`<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--white)':'var(--cream)'}">
     ${tdL(`${m.naam} ${m.jaar}`)}
     ${td(fmt(m.bankStart),'var(--ink2)')}
+    ${td(fmt(m.inOmzetExcl),'var(--grn)')}
+    ${td(fmt(m.inBtwOmzet),'var(--grn)')}
     ${td(fmt(m.inTotaal),'var(--grn)',true)}
     ${td(fmt(m.uitLoon+m.uitLB))}
-    ${td(m.uitVak>0?fmt(m.uitVak):'–','var(--ink3)')}
-    ${td(m.uitLBVak>0?fmt(m.uitLBVak):'–','var(--ink3)')}
+    ${td((m.uitVak||0)>0?fmt(m.uitVak):'–','var(--ink3)')}
+    ${td((m.uitLBVak||0)>0?fmt(m.uitLBVak):'–','var(--ink3)')}
     ${td(fmt(m.uitLease))}
     ${td(fmt(m.uitRente))}
     ${td(m.uitBtw>0?fmt(m.uitBtw):'–',m.uitBtw>0?'var(--pur)':'')}
@@ -2040,10 +2044,12 @@ window.renderLiquiditeit=async function(){
   const totaalRij = `<tr style="border-top:2px solid var(--line);background:var(--cream)">
     ${tdL('TOTAAL')}
     ${td('')}
+    ${td(fmt(maanden.reduce((s,m)=>s+(m.inOmzetExcl||0),0)),'var(--grn)',true)}
+    ${td(fmt(maanden.reduce((s,m)=>s+(m.inBtwOmzet||0),0)),'var(--grn)',true)}
     ${td(fmt(totIn),'var(--grn)',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitLoon+m.uitLB,0)),'',true)}
-    ${td(fmt(maanden.reduce((s,m)=>s+m.uitVak,0)),'',true)}
-    ${td(fmt(maanden.reduce((s,m)=>s+m.uitLBVak,0)),'',true)}
+    ${td(fmt(maanden.reduce((s,m)=>s+(m.uitVak||0),0)),'',true)}
+    ${td(fmt(maanden.reduce((s,m)=>s+(m.uitLBVak||0),0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitLease,0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitRente,0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitBtw,0)),'var(--pur)',true)}
