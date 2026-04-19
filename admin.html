@@ -669,7 +669,7 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
         <div class="card" style="overflow:hidden">
           <div class="card-header"><span class="card-title">Maandoverzicht cashflow</span></div>
           <div style="overflow-x:auto">
-            <table id="liq-table" style="width:100%;border-collapse:collapse;min-width:900px"></table>
+            <table id="liq-table" style="width:100%;border-collapse:collapse"></table>
           </div>
         </div>
       </div>
@@ -2002,20 +2002,18 @@ window.renderLiquiditeit=async function(){
     </div>`).join('');
 
   // Tabel
-  const th = (label,align='right') => `<th style="padding:9px 12px;text-align:${align};font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);font-weight:600;white-space:nowrap;background:var(--cream)">${label}</th>`;
-  const td = (val,color='',bold=false) => `<td style="padding:9px 12px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;${bold?'font-weight:700;':''}${color?'color:'+color+';':''}">${val}</td>`;
-  const tdL = (val,color='') => `<td style="padding:9px 12px;text-align:left;font-size:13px;font-weight:600;${color?'color:'+color+';color:var(--ink)':''}">${val}</td>`;
+  const th = (label,align='right') => `<th style="padding:6px 8px;text-align:${align};font-size:9px;text-transform:uppercase;letter-spacing:.3px;color:var(--ink3);font-weight:600;white-space:nowrap;background:var(--cream);line-height:1.3">${label}</th>`;
+  const td = (val,color='',bold=false) => `<td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;font-size:11px;white-space:nowrap;${bold?'font-weight:700;':''}${color?'color:'+color+';':''}">${val}</td>`;
+  const tdL = (val,color='') => `<td style="padding:5px 8px;text-align:left;font-size:11px;font-weight:600;white-space:nowrap;min-width:90px;${color?'color:'+color+';color:var(--ink)':''}">${val}</td>`;
 
   const thead = `<thead><tr>
     ${th('Maand','left')}
-    ${th('Bank begin')}
-    ${th('Omzet excl. BTW')}
-    ${th('BTW ontvangen')}
-    ${th('Totaal ontvangen')}
+    ${th('Ontvangen')}
+    ${th('w.v. BTW')}
     ${th('Loon+LB')}
-    ${th('Vakantiegeld')}
-    ${th('LB Vakantiegeld')}
-    ${th('Lease auto')}
+    ${th('Vakantie')}
+    ${th('LB Vak.')}
+    ${th('Lease')}
     ${th('Rente')}
     ${th('BTW afdracht')}
     ${th('Totaal uit')}
@@ -2023,12 +2021,13 @@ window.renderLiquiditeit=async function(){
     ${th('Bank einde')}
   </tr></thead>`;
 
-  const tbody = maanden.map((m,i)=>`<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--white)':'var(--cream)'}">
-    ${tdL(`${m.naam} ${m.jaar}`)}
-    ${td(fmt(m.bankStart),'var(--ink2)')}
-    ${td(fmt(m.inOmzetExcl),'var(--grn)')}
-    ${td(fmt(m.inBtwOmzet),'var(--grn)')}
+  const tbody = maanden.map((m,i)=>`<tr style="border-bottom:1px solid var(--line);background:${i%2===0?'var(--white)':'var(--cream)'};line-height:1.2">
+    <td style="padding:5px 8px;text-align:left;font-size:11px;font-weight:600;white-space:nowrap;min-width:80px">
+        <div>${m.naam} ${m.jaar}</div>
+        <div style="font-size:9px;color:var(--ink3);font-weight:400;font-family:'DM Mono',monospace">${fmt(m.bankStart)}</div>
+      </td>
     ${td(fmt(m.inTotaal),'var(--grn)',true)}
+    ${td(fmt(m.inBtwOmzet),'var(--grn)')}
     ${td(fmt(m.uitLoon+m.uitLB))}
     ${td((m.uitVak||0)>0?fmt(m.uitVak):'–','var(--ink3)')}
     ${td((m.uitLBVak||0)>0?fmt(m.uitLBVak):'–','var(--ink3)')}
@@ -2043,10 +2042,8 @@ window.renderLiquiditeit=async function(){
   // Totaalrij
   const totaalRij = `<tr style="border-top:2px solid var(--line);background:var(--cream)">
     ${tdL('TOTAAL')}
-    ${td('')}
-    ${td(fmt(maanden.reduce((s,m)=>s+(m.inOmzetExcl||0),0)),'var(--grn)',true)}
-    ${td(fmt(maanden.reduce((s,m)=>s+(m.inBtwOmzet||0),0)),'var(--grn)',true)}
     ${td(fmt(totIn),'var(--grn)',true)}
+    ${td(fmt(maanden.reduce((s,m)=>s+(m.inBtwOmzet||0),0)),'var(--grn)',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+m.uitLoon+m.uitLB,0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+(m.uitVak||0),0)),'',true)}
     ${td(fmt(maanden.reduce((s,m)=>s+(m.uitLBVak||0),0)),'',true)}
