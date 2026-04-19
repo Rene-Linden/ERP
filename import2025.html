@@ -3,32 +3,72 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Import 2025 — Eenmalig</title>
+<title>Import 2025 — Correcte data uit PDF</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:#f8f7f4;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-.card{background:white;border:1px solid #e8e7e2;border-radius:12px;padding:32px;max-width:600px;width:100%;box-shadow:0 2px 12px rgba(0,0,0,.08)}
-h1{font-size:20px;color:#1a1a18;margin-bottom:6px}
+body{font-family:system-ui,sans-serif;background:#f8f7f4;min-height:100vh;padding:24px}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-size:22px;color:#1a1a18;margin-bottom:6px}
 p{font-size:13px;color:#8a8a84;margin-bottom:20px;line-height:1.5}
-.btn{width:100%;background:#2d5a8e;color:white;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px}
-.btn:hover{background:#234d7a}
+.card{background:white;border:1px solid #e8e7e2;border-radius:12px;padding:24px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#f8f7f4;padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#8a8a84;font-weight:600;border-bottom:2px solid #e8e7e2}
+thead th.r{text-align:right}
+tbody td{padding:9px 12px;border-bottom:1px solid #e8e7e2;color:#4a4a46}
+tbody td.r{text-align:right;font-family:monospace}
+tbody td.bold{font-weight:600;color:#1a1a18}
+tfoot td{padding:10px 12px;font-weight:700;color:#2d5a8e;border-top:2px solid #2d5a8e;font-family:monospace;text-align:right}
+tfoot td:first-child{text-align:left}
+.btns{display:flex;gap:10px;margin-bottom:16px}
+.btn{padding:12px 24px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:system-ui}
+.btn-red{background:#c0392b;color:white}
+.btn-red:hover{background:#a93226}
+.btn-blue{background:#2d5a8e;color:white}
+.btn-blue:hover{background:#234d7a}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.btn.red{background:#c0392b}
-.btn.red:hover{background:#a93226}
-.log{margin-top:14px;background:#f8f7f4;border:1px solid #e8e7e2;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;max-height:280px;overflow-y:auto;line-height:1.8;display:none}
-.ok{color:#1e7a4a}.err{color:#c0392b}.info{color:#2d5a8e}
-.done{background:#eaf5ee;border:1px solid rgba(30,122,74,.2);border-radius:8px;padding:12px;font-size:13px;color:#1e7a4a;font-weight:600;margin-top:10px;display:none}
+.log{background:#1a1a18;border-radius:8px;padding:16px;font-family:monospace;font-size:12px;max-height:240px;overflow-y:auto;line-height:1.9;display:none}
+.ok{color:#2ecf7a}.err{color:#ff6b6b}.info{color:#74b9ff}
+.done{background:#eaf5ee;border:1px solid rgba(30,122,74,.2);border-radius:8px;padding:14px;font-size:14px;color:#1e7a4a;font-weight:600;margin-top:12px;display:none}
 </style>
 </head>
 <body>
-<div class="card">
-  <h1>🔄 Re-import Omzet 2025</h1>
-  <p>Dit verwijdert de bestaande (lege) 2025 facturen en importeert ze opnieuw met de correcte uren en bedragen.</p>
+<div class="wrap">
+  <h1>🔄 Import 2025 facturen — Correcte data uit PDF</h1>
+  <p>Alle bedragen zijn direct uit de PDF facturen gelezen. Totaal excl. BTW: <strong>€ 153.480,11</strong> | Incl. BTW: <strong>€ 185.710,94</strong></p>
 
-  <button class="btn red" id="deleteBtn" onclick="deleteExisting()">Stap 1: Verwijder bestaande 2025 facturen</button>
-  <button class="btn" id="importBtn" onclick="startImport()" disabled>Stap 2: Importeer correct</button>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Nummer</th><th>Klant</th><th>Datum</th><th>Maand</th>
+          <th class="r">Uren</th><th class="r">Tarief</th><th class="r">KM</th>
+          <th class="r">Extra</th><th class="r">Excl. BTW</th><th class="r">Incl. BTW</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="bold">ORDGR-2025001</td><td>Luke Recruitement</td><td>01-01-2025</td><td>Januari</td><td class="r">144,25</td><td class="r">€ 110</td><td class="r">1.506</td><td class="r">–</td><td class="r">€ 16.183,76</td><td class="r">€ 19.582,35</td></tr>
+        <tr><td class="bold">ORDGR-2025002</td><td>Luke Recruitement</td><td>28-02-2025</td><td>Februari</td><td class="r">64,00</td><td class="r">€ 110</td><td class="r">0</td><td class="r">–</td><td class="r">€ 7.040,00</td><td class="r">€ 8.518,40</td></tr>
+        <tr><td class="bold">ORDGR-2025003</td><td>Sitech Nederland B.V.</td><td>30-05-2025</td><td>Mei</td><td class="r">144,50</td><td class="r">€ 115</td><td class="r">2.420</td><td class="r">–</td><td class="r">€ 17.125,70</td><td class="r">€ 20.722,10</td></tr>
+        <tr><td class="bold">ORDGR-2025004</td><td>Sitech Nederland B.V.</td><td>30-06-2025</td><td>Juni</td><td class="r">143,75</td><td class="r">€ 115</td><td class="r">2.356</td><td class="r">–</td><td class="r">€ 17.026,01</td><td class="r">€ 20.601,47</td></tr>
+        <tr><td class="bold">ORDGR-2025005</td><td>Sitech Nederland B.V.</td><td>31-07-2025</td><td>Juli</td><td class="r">100,00</td><td class="r">€ 115</td><td class="r">1.612</td><td class="r">–</td><td class="r">€ 11.838,52</td><td class="r">€ 14.324,61</td></tr>
+        <tr><td class="bold">ORDGR-2025006</td><td>Sitech Nederland B.V.</td><td>31-08-2025</td><td>Augustus</td><td class="r">159,50</td><td class="r">€ 115</td><td class="r">2.480</td><td class="r">–</td><td class="r">€ 18.863,30</td><td class="r">€ 22.824,59</td></tr>
+        <tr><td class="bold">ORDGR-2025007</td><td>Sitech Nederland B.V.</td><td>30-09-2025</td><td>September</td><td class="r">160,25</td><td class="r">€ 115</td><td class="r">2.170</td><td class="r">€ 419,07</td><td class="r">€ 19.303,52</td><td class="r">€ 23.357,26</td></tr>
+        <tr><td class="bold">ORDGR-2025008</td><td>Sitech Nederland B.V.</td><td>31-10-2025</td><td>Oktober</td><td class="r">181,25</td><td class="r">€ 115</td><td class="r">2.480</td><td class="r">€ 20,00</td><td class="r">€ 21.384,55</td><td class="r">€ 25.875,31</td></tr>
+        <tr><td class="bold">ORDGR-2025009</td><td>Sitech Nederland B.V.</td><td>30-11-2025</td><td>November</td><td class="r">102,50</td><td class="r">€ 115</td><td class="r">1.488</td><td class="r">–</td><td class="r">€ 12.099,98</td><td class="r">€ 14.640,98</td></tr>
+        <tr><td class="bold">ORDGR-2025010</td><td>Sitech Nederland B.V.</td><td>31-12-2025</td><td>December</td><td class="r">106,75</td><td class="r">€ 115</td><td class="r">1.612</td><td class="r">–</td><td class="r">€ 12.614,77</td><td class="r">€ 15.263,87</td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="8">TOTAAL 10 facturen</td><td>€ 153.480,11</td><td>€ 185.710,94</td></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="btns">
+    <button class="btn btn-red" id="deleteBtn" onclick="deleteExisting()">Stap 1 — Verwijder bestaande 2025 facturen</button>
+    <button class="btn btn-blue" id="importBtn" onclick="startImport()" disabled>Stap 2 — Importeer correcte facturen</button>
+  </div>
   <div class="log" id="log"></div>
-  <div class="done" id="done">✓ Klaar! Ga naar Beheer → Omzet → kies 2025 om de resultaten te zien. Verwijder deze pagina van GitHub.</div>
+  <div class="done" id="done">✓ Import geslaagd! Ga naar Beheer → Facturen → kies 2025. Je kunt deze pagina verwijderen van GitHub.</div>
 </div>
 
 <script type="module">
@@ -39,83 +79,73 @@ const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-
 const fbApp=initializeApp(FB);
 const db=getFirestore(fbApp);
 
-// Helper to build regels array from uren/km (so renderOmzet works correctly)
-function maakRegels(uren, tarief, km) {
-  // Store as single regel with direct values for backward compat
-  // We store uren and km directly on the doc (not in regels array)
-  return [];
-}
-
-const facturen2025 = [
-  {nummer:'ORDGR-2025001',klant:'Luke Recruitement',spec:{maand:0,jaar:2025},datum:'2025-01-31',uren:144.25,tarief:110,km:1506,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim werkzaamheden januari 2025',verstuurd_datum:'2025-01-31T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025002',klant:'Luke Recruitement',spec:{maand:1,jaar:2025},datum:'2025-02-28',uren:64,tarief:110,km:0,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim werkzaamheden februari 2025',verstuurd_datum:'2025-02-28T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025003',klant:'Sitech Nederland B.V.',spec:{maand:4,jaar:2025},datum:'2025-05-31',uren:144.5,tarief:115,km:2420,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager mei 2025',verstuurd_datum:'2025-05-31T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025004',klant:'Sitech Nederland B.V.',spec:{maand:5,jaar:2025},datum:'2025-06-30',uren:143.75,tarief:115,km:2356,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager juni 2025',verstuurd_datum:'2025-06-30T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025005',klant:'Sitech Nederland B.V.',spec:{maand:6,jaar:2025},datum:'2025-07-31',uren:100,tarief:115,km:1612,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager juli 2025',verstuurd_datum:'2025-07-31T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025006',klant:'Sitech Nederland B.V.',spec:{maand:7,jaar:2025},datum:'2025-08-31',uren:159.5,tarief:115,km:2480,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager augustus 2025',verstuurd_datum:'2025-08-31T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025007',klant:'Sitech Nederland B.V.',spec:{maand:8,jaar:2025},datum:'2025-09-30',uren:160.25,tarief:115,km:2170,kmTarief:0.21,extraKosten:[{omschr:'Reiskosten Duitsland',bedrag:419.07}],btwPct:21,omschrijving:'Interim Operationeel Manager september 2025',verstuurd_datum:'2025-09-30T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025008',klant:'Sitech Nederland B.V.',spec:{maand:9,jaar:2025},datum:'2025-10-31',uren:181.25,tarief:115,km:2480,kmTarief:0.21,extraKosten:[{omschr:'Overige kosten',bedrag:20}],btwPct:21,omschrijving:'Interim Operationeel Manager oktober 2025',verstuurd_datum:'2025-10-31T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025009',klant:'Sitech Nederland B.V.',spec:{maand:10,jaar:2025},datum:'2025-11-30',uren:102.5,tarief:115,km:1488,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager november 2025',verstuurd_datum:'2025-11-30T12:00:00.000Z',status:'verstuurd',regels:[]},
-  {nummer:'ORDGR-2025010',klant:'Sitech Nederland B.V.',spec:{maand:11,jaar:2025},datum:'2025-12-31',uren:106.75,tarief:115,km:1612,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager december 2025',verstuurd_datum:'2025-12-31T12:00:00.000Z',status:'verstuurd',regels:[]},
+const facturen2025=[
+  {nummer:'ORDGR-2025001',klant:'Luke Recruitement',spec:{maand:0,jaar:2025},datum:'2025-01-01',uren:144.25,tarief:110,km:1506,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Project Manager',verstuurd_datum:'2025-01-31T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025002',klant:'Luke Recruitement',spec:{maand:1,jaar:2025},datum:'2025-02-28',uren:64,tarief:110,km:0,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Project Manager',verstuurd_datum:'2025-02-28T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025003',klant:'Sitech Nederland B.V.',spec:{maand:4,jaar:2025},datum:'2025-05-30',uren:144.5,tarief:115,km:2420,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2025-05-31T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025004',klant:'Sitech Nederland B.V.',spec:{maand:5,jaar:2025},datum:'2025-06-30',uren:143.75,tarief:115,km:2356,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2025-06-30T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025005',klant:'Sitech Nederland B.V.',spec:{maand:6,jaar:2025},datum:'2025-07-31',uren:100,tarief:115,km:1612,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2025-07-31T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025006',klant:'Sitech Nederland B.V.',spec:{maand:7,jaar:2025},datum:'2025-08-31',uren:159.5,tarief:115,km:2480,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2025-08-31T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025007',klant:'Sitech Nederland B.V.',spec:{maand:8,jaar:2025},datum:'2025-09-30',uren:160.25,tarief:115,km:2170,kmTarief:0.21,extraKosten:[{omschr:'Reiskosten Sitech Duitsland',bedrag:419.07}],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2025-09-30T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025008',klant:'Sitech Nederland B.V.',spec:{maand:9,jaar:2025},datum:'2025-10-31',uren:181.25,tarief:115,km:2480,kmTarief:0.21,extraKosten:[{omschr:'Reiskosten Sitech Duitsland',bedrag:20}],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2025-10-31T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025009',klant:'Sitech Nederland B.V.',spec:{maand:10,jaar:2025},datum:'2025-11-30',uren:102.5,tarief:115,km:1488,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2025-11-30T12:00:00.000Z',status:'verstuurd',regels:[]},
+  {nummer:'ORDGR-2025010',klant:'Sitech Nederland B.V.',spec:{maand:11,jaar:2025},datum:'2025-12-31',uren:106.75,tarief:115,km:1612,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2025-12-31T12:00:00.000Z',status:'verstuurd',regels:[]},
 ];
 
-function log(msg, type='info'){
+function log(msg,type='info'){
   const el=document.getElementById('log');
   el.style.display='block';
   el.innerHTML+=`<div class="${type}">${msg}</div>`;
   el.scrollTop=el.scrollHeight;
 }
 
-window.deleteExisting = async function(){
+window.deleteExisting=async function(){
   const btn=document.getElementById('deleteBtn');
-  btn.disabled=true; btn.textContent='Bezig met verwijderen…';
+  btn.disabled=true;btn.textContent='Bezig…';
   log('Zoeken naar bestaande 2025 facturen…','info');
   try{
     const snap=await getDocs(collection(db,'facturen'));
-    const to2025=snap.docs.filter(d=>{
+    const te2025=snap.docs.filter(d=>{
       const data=d.data();
-      const spec=data.spec||{};
-      return spec.jaar===2025 || (data.nummer||'').includes('2025');
+      return (data.spec?.jaar===2025)||(data.nummer||'').includes('-2025');
     });
-    log(`${to2025.length} facturen gevonden om te verwijderen…`,'info');
-    for(const d of to2025){
+    log(`${te2025.length} facturen gevonden…`,'info');
+    for(const d of te2025){
       await deleteDoc(doc(db,'facturen',d.id));
       log(`✓ Verwijderd: ${d.data().nummer}`,'ok');
-      await new Promise(r=>setTimeout(r,100));
+      await new Promise(r=>setTimeout(r,80));
     }
-    log(`──────────────────`,'info');
-    log(`Klaar — ${to2025.length} verwijderd. Klik nu op Stap 2.`,'ok');
+    log(`Klaar — ${te2025.length} verwijderd. Klik nu Stap 2.`,'ok');
     document.getElementById('importBtn').disabled=false;
-    btn.textContent='✓ Verwijderd';
+    btn.textContent='✓ Klaar';
   }catch(e){
     log(`Fout: ${e.message}`,'err');
-    btn.disabled=false;
-    btn.textContent='Stap 1: Verwijder bestaande 2025 facturen';
+    btn.disabled=false;btn.textContent='Stap 1 — Probeer opnieuw';
   }
 };
 
-window.startImport = async function(){
+window.startImport=async function(){
   const btn=document.getElementById('importBtn');
-  btn.disabled=true; btn.textContent='Importeren…';
-  log('Start import met correcte uren en bedragen…','info');
-  let ok=0, err=0;
+  btn.disabled=true;btn.textContent='Importeren…';
+  log('Start import correcte factuurdata…','info');
+  let ok=0,err=0;
+  const fmt=n=>'€ '+n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
   for(const f of facturen2025){
     try{
       await addDoc(collection(db,'facturen'),f);
-      const subtotaal=(f.uren*f.tarief)+(f.km*f.kmTarief)+(f.extraKosten.reduce((s,k)=>s+(k.bedrag||0),0));
-      const incl=subtotaal*1.21;
-      log(`✓ ${f.nummer} — ${f.uren}u × €${f.tarief} — Incl. BTW: € ${incl.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}`,'ok');
+      const excl=f.uren*f.tarief+f.km*f.kmTarief+f.extraKosten.reduce((s,k)=>s+(k.bedrag||0),0);
+      const incl=excl*1.21;
+      log(`✓ ${f.nummer} — ${f.uren}u × €${f.tarief} + ${f.km}km — ${fmt(excl)} excl | ${fmt(incl)} incl`,'ok');
       ok++;
-      await new Promise(r=>setTimeout(r,150));
+      await new Promise(r=>setTimeout(r,120));
     }catch(e){
-      log(`✗ ${f.nummer}: ${e.message}`,'err');
-      err++;
+      log(`✗ ${f.nummer}: ${e.message}`,'err');err++;
     }
   }
-  log(`──────────────────`,'info');
+  log(`──────────────`,'info');
   log(`Klaar: ${ok} ingevoerd, ${err} fouten`,'info');
   btn.textContent='✓ Import voltooid';
-  if(err===0) document.getElementById('done').style.display='block';
+  if(err===0)document.getElementById('done').style.display='block';
 };
 </script>
 </body>

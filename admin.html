@@ -364,9 +364,16 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
             <div class="page-title">Facturen</div>
             <div class="page-sub">Overzicht en beheer van alle facturen</div>
           </div>
-          <a href="factuur.html" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px">
-            + Nieuwe factuur
-          </a>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="facturenJaar" onchange="renderFacturen()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none">
+              <option value="alle">Alle jaren</option>
+              <option value="2026" selected>2026</option>
+              <option value="2025">2025</option>
+            </select>
+            <a href="factuur.html" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px">
+              + Nieuwe factuur
+            </a>
+          </div>
         </div>
         <div class="kpi-grid" id="fact-kpis"></div>
         <div class="card">
@@ -1174,7 +1181,7 @@ window.renderFacturen=async function(){
     }, 0);
 
     kpis.innerHTML = `
-      <div class="kpi"><div class="kpi-label">Facturen</div><div class="kpi-val blue">${total}</div></div>
+      <div class="kpi"><div class="kpi-label" id="fact-kpi-label">Facturen</div><div class="kpi-val blue">${total}</div></div>
       <div class="kpi"><div class="kpi-label">Totaal gefactureerd</div><div class="kpi-val green">${euro(totalBedrag)}</div><div class="kpi-sub">incl. BTW</div></div>`;
 
     if(!docs.length){
