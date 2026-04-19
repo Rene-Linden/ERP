@@ -1164,58 +1164,60 @@ window.renderFacturen=async function(){
   try{
     const q = query(collection(db,'facturen'), orderBy('verstuurd_datum','desc'));
     const snap = await getDocs(q);
-    const docs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const alleRaw = snap.docs.map(d=>({id:d.id,...d.data()}));
 
-    const total = docs.length;
-    const totalBedrag = docs.reduce((s,d)=>{
-      if(!d.regels) return s;
-      const regels = d.regels||[];
-      const tarief = d.tarief||0;
-      const kmTarief = d.kmTarief||0.23;
-      const totalMins = regels.reduce((s2,r)=>s2+Math.max(0,(tMins(r.end)-tMins(r.start))-(parseInt(r.brk)||0)),0);
-      const totalKm = regels.reduce((s2,r)=>s2+(r.km||0),0);
-      const extraTotal = (d.extraKosten||[]).reduce((s2,k)=>s2+(parseFloat(k.bedrag)||0),0);
-      const excl = (totalMins/60)*tarief + totalKm*kmTarief + extraTotal;
-      const btw = excl * ((d.btwPct||21)/100);
-      return s + excl + btw;
-    }, 0);
+    // Jaar filter
+    const jaarFilter = document.getElementById('facturenJaar')?.value || '2026';
+    const docs = jaarFilter === 'alle' ? alleRaw : alleRaw.filter(d => {
+      const spec = d.spec || {};
+      return spec.jaar === parseInt(jaarFilter);
+    });
+    docs.sort((a,b) => (b.nummer||'').localeCompare(a.nummer||''));
+
+    // Bereken bedrag (ondersteunt beide formaten: regels-array én direct uren/km)
+    const berekenIncl = d => {
+      const regels = d.regels || [];
+      const tarief = d.tarief || 0;
+      const kmTarief = d.kmTarief || 0.21;
+      const extra = (d.extraKosten||[]).reduce((s,k)=>s+(parseFloat(k.bedrag)||0),0);
+      let excl;
+      if(regels.length > 0){
+        const tM = t=>{if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m};
+        const mins = regels.reduce((s,r)=>s+Math.max(0,(tM(r.end)-tM(r.start))-(parseInt(r.brk)||0)),0);
+        const km = regels.reduce((s,r)=>s+(r.km||0),0);
+        excl = (mins/60)*tarief + km*kmTarief + extra;
+      } else {
+        excl = (d.uren||0)*tarief + (d.km||0)*kmTarief + extra;
+      }
+      return { excl, incl: excl * (1 + ((d.btwPct||21)/100)) };
+    };
+
+    const euro = n => '€ ' + n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const totalBedrag = docs.reduce((s,d)=>s+berekenIncl(d).incl, 0);
+    const MO_F=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 
     kpis.innerHTML = `
-      <div class="kpi"><div class="kpi-label" id="fact-kpi-label">Facturen</div><div class="kpi-val blue">${total}</div></div>
+      <div class="kpi"><div class="kpi-label">Facturen ${jaarFilter==='alle'?'totaal':jaarFilter}</div><div class="kpi-val blue">${docs.length}</div></div>
       <div class="kpi"><div class="kpi-label">Totaal gefactureerd</div><div class="kpi-val green">${euro(totalBedrag)}</div><div class="kpi-sub">incl. BTW</div></div>`;
 
     if(!docs.length){
-      el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Nog geen facturen</td></tr>';
+      el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Geen facturen gevonden</td></tr>';
       return;
     }
 
     el.innerHTML = `<thead><tr>
       <th>Nummer</th><th>Opdrachtgever</th><th>Periode</th><th>Datum</th><th style="text-align:right">Bedrag</th><th>Status</th><th></th>
     </tr></thead><tbody>${docs.map(d=>{
-      const MO_F=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-      const MOS_S=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
-      const vd=new Date(d.verstuurd_datum);
-
-      // Calculate total
-      const regels = d.regels||[];
-      const tarief = d.tarief||0;
-      const kmTarief2 = d.kmTarief||0.23;
-      const totalMins2 = regels.reduce((s,r)=>s+Math.max(0,(tMins(r.end)-tMins(r.start))-(parseInt(r.brk)||0)),0);
-      const totalKm2 = regels.reduce((s,r)=>s+(r.km||0),0);
-      const extra2 = (d.extraKosten||[]).reduce((s,k)=>s+(parseFloat(k.bedrag)||0),0);
-      const excl2 = (totalMins2/60)*tarief + totalKm2*kmTarief2 + extra2;
-      const incl2 = excl2 * (1 + ((d.btwPct||21)/100));
-
+      const {excl,incl} = berekenIncl(d);
       const spec = d.spec||{};
       const maandStr = spec.maand!==undefined ? MO_F[spec.maand]+' '+spec.jaar : '–';
       const datum = d.datum ? new Date(d.datum).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '–';
-
       return`<tr>
         <td style="font-family:'DM Mono',monospace;font-weight:600;color:var(--acc)">${d.nummer||'–'}</td>
         <td class="bold">${d.klant||'–'}</td>
         <td>${maandStr}</td>
         <td class="muted">${datum}</td>
-        <td class="mono" style="text-align:right;font-weight:600">${euro(incl2)}</td>
+        <td class="mono" style="text-align:right;font-weight:600">${euro(incl)}</td>
         <td><span style="background:var(--grn-l);color:var(--grn);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px">✓ Verstuurd</span></td>
         <td>
           <button onclick="printFactuurAdmin('${d.id}')" style="font-size:12px;color:var(--grn);background:var(--grn-l);border:1px solid rgba(30,122,74,.25);border-radius:var(--rxs);padding:4px 10px;cursor:pointer;font-family:'DM Sans',sans-serif">🖨 Afdrukken</button>
@@ -1229,7 +1231,6 @@ window.renderFacturen=async function(){
   }
 }
 
-// ── PRINT FACTUUR VANUIT BEHEER ───────────────
 window.printFactuurAdmin = async function(factuurId) {
   try {
     const snap = await getDoc(doc(db,'facturen',factuurId));
@@ -1350,11 +1351,16 @@ window.renderOmzet=async function(){
   try {
     const q = query(collection(db,'facturen'), orderBy('verstuurd_datum','desc'));
     const snap = await getDocs(q);
-    const alle = snap.docs.map(d => ({id:d.id,...d.data()}));
-    const docs = alle.filter(d => {
+    const alleRaw = snap.docs.map(d => ({id:d.id,...d.data()}));
+    const jaarFilter = document.getElementById('facturenJaar')?.value || 'alle';
+    const docs = jaarFilter === 'alle' ? alleRaw : alleRaw.filter(d => {
+      const spec = d.spec || {};
       const vd = new Date(d.verstuurd_datum);
-      return vd.getFullYear() === jaar;
+      const docJaar = spec.jaar || vd.getFullYear();
+      return docJaar === parseInt(jaarFilter);
     });
+    // Sort by nummer descending
+    docs.sort((a,b) => (b.nummer||'').localeCompare(a.nummer||''));
 
     // Helper
     const fmt = n => n > 0 ? '€ ' + n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2}) : '–';
