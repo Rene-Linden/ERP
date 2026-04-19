@@ -2003,8 +2003,7 @@ const HIST_DEFAULT = {
   2022: [216.95,165.73,202.30,355.30,null,21442.52,14920.22,12146.88,20470.32,17320.32,18219.18,14957.46],
   2023: [19416.38,13570.22,21518.14,16306.91,16061.64,17091.36,17597.60,17168.60,15717.75,21611.20,21135.50,16665.80],
   2024: [17142,18030.90,19101.97,8651.56,-8651.56,6271.76,10726.76,4583.72,12151.06,14844.70,16590.18,12821.86],
-  2025: [16183.76,14595.81,17977.47,10179.15,null,null,null,null,null,null,null,null],
-  2026: [16691.85,14595.81,17977.47,null,null,null,null,null,null,null,null,null]
+  // 2025 en 2026 worden gevuld via Firebase sync — geen defaults
 };
 
 let historieData = {};
@@ -2016,8 +2015,10 @@ function loadHistorieData() {
     historieData = JSON.parse(stored);
   } else {
     historieData = JSON.parse(JSON.stringify(HIST_DEFAULT));
-    localStorage.setItem(HIST_KEY, JSON.stringify(historieData));
   }
+  // 2025 en 2026 worden altijd opnieuw gevuld via Firebase — verwijder stale cache
+  delete historieData[2025];
+  delete historieData[2026];
 }
 
 function saveHistorieData() {
@@ -2029,6 +2030,15 @@ async function syncFacturenToHistorie() {
   try {
     const q = query(collection(db,'facturen'), orderBy('verstuurd_datum','desc'));
     const snap = await getDocs(q);
+
+    // Reset Firebase-jaren (2025+) zodat verwijderde facturen ook verdwijnen
+    const firebaseJaren = new Set();
+    snap.docs.forEach(d => {
+      const jaar = d.data().spec?.jaar;
+      if (jaar >= 2025) firebaseJaren.add(jaar);
+    });
+    firebaseJaren.forEach(j => { historieData[j] = new Array(12).fill(null); });
+
     snap.docs.forEach(d => {
       const data = d.data();
       const spec = data.spec || {};
@@ -2036,7 +2046,7 @@ async function syncFacturenToHistorie() {
       const maand = spec.maand;
       if (!jaar || maand === undefined) return;
 
-      // Calculate omzet excl BTW
+      // Bereken omzet excl BTW — ondersteunt beide formaten
       let omzet = 0;
       if (data.regels && data.regels.length > 0) {
         const tM = t => { if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; };
