@@ -408,7 +408,8 @@ async function verstuur() {
       note
     });
 
-    const akkoordLink = `https://rene-linden.github.io/ERP/accordeer.html?id=${specRef.id}`;
+    const specDocId = specRef.id;
+    const akkoordLink = `https://rene-linden.github.io/ERP/accordeer.html?id=${specDocId}`;
 
     // Build email table
     const noteHTML = note ? `<p style="font-family:Arial,sans-serif;font-size:14px;color:#4a4a46;margin:0 0 16px;font-style:italic">${note}</p>` : '';
@@ -440,6 +441,7 @@ async function verstuur() {
       tabel: tabelHTML,
       totaal_uren: m2s(totalMins),
       akkoord_link: akkoordLink,
+      spec_id: specDocId,
       email: 'info@renevanderlinden.com'
     });
 
