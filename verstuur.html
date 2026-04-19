@@ -431,7 +431,16 @@ async function verstuur() {
           <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;text-align:right;font-weight:600;font-family:monospace;color:#2d5a8e">${m2s(bMins(r))}</td>
         </tr>`;
       }).join('')}</tbody>
-    </table>`;
+    </table>
+    <div style="text-align:center;margin-top:16px">
+      <a href="https://rene-linden.github.io/ERP/accordeer.html?id=${specDocId}&amp;actie=afkeuren"
+         style="display:inline-block;padding:12px 28px;background:white;color:#c0392b;border:2px solid #c0392b;border-radius:6px;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;text-decoration:none">
+        ✕ Niet akkoord
+      </a>
+    </div>
+    <p style="text-align:center;font-size:12px;color:#8a8a84;margin:8px 0 0">
+      Kloppen de uren niet? Klik op "Niet akkoord" om een toelichting te geven.
+    </p>`;
 
     await emailjs.send('service_rpek59r','template_p4r2rkp', {
       to_email: email,
