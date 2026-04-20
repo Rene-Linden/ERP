@@ -372,6 +372,25 @@ async function init() {
   // BTW listener
   document.getElementById('f-btw').addEventListener('change', berekenTotaal);
   document.getElementById('f-termijn').addEventListener('change', () => {});
+
+  // Als er een spec-ID in de URL staat: automatisch klant + periode voorselecteren
+  const urlParams = new URLSearchParams(window.location.search);
+  const preSpecId = urlParams.get('spec');
+  if (preSpecId) {
+    const preSpec = specs.find(s => s.id === preSpecId);
+    if (preSpec) {
+      // Klant selecteren — dit triggert onKlantChange die de specs-dropdown vult
+      kSel.value = preSpec.klant;
+      await onKlantChange();
+      // Spec in dropdown selecteren
+      const sSel = document.getElementById('f-spec');
+      sSel.value = preSpecId;
+      // Handmatig onSpecChange triggeren om uren te laden en totalen te berekenen
+      onSpecChange();
+    } else {
+      toast('Spec niet gevonden of al gefactureerd', 'bad');
+    }
+  }
 }
 
 // ── KLANT CHANGE ──────────────────────────────
