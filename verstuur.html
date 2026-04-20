@@ -378,8 +378,7 @@ async function verstuur() {
   if (!regels.length) { toast('Geen registraties voor deze periode', 'bad'); return; }
 
   // Check if already an approved spec exists for this klant+maand+jaar
-  const bestaandQ = query(collection(db,'specs'),
-    orderBy('verstuurd_datum','desc'));
+  const bestaandQ = query(collection(db,'specs'), orderBy('verstuurd_datum','desc'));
   const bestaandSnap = await getDocs(bestaandQ);
   const alGeaccordeerd = bestaandSnap.docs.some(d => {
     const data = d.data();
@@ -410,8 +409,10 @@ async function verstuur() {
 
     const specDocId = specRef.id;
     const akkoordLink = `https://rene-linden.github.io/ERP/accordeer.html?id=${specDocId}`;
+    const afkeurLink = `https://rene-linden.github.io/ERP/accordeer.html?id=${specDocId}&actie=afkeuren`;
 
-    // Build email table
+    // Build email table (ALLEEN tabel + optionele noot — geen Niet akkoord-knop!
+    // De knop staat in de EmailJS-template zelf via {{afkeur_link}})
     const noteHTML = note ? `<p style="font-family:Arial,sans-serif;font-size:14px;color:#4a4a46;margin:0 0 16px;font-style:italic">${note}</p>` : '';
     const tabelHTML = noteHTML + `<table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Arial,sans-serif">
       <thead><tr style="background:#edf3f9">
@@ -431,16 +432,7 @@ async function verstuur() {
           <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;text-align:right;font-weight:600;font-family:monospace;color:#2d5a8e">${m2s(bMins(r))}</td>
         </tr>`;
       }).join('')}</tbody>
-    </table>
-    <div style="text-align:center;margin-top:16px">
-      <a href="https://rene-linden.github.io/ERP/accordeer.html?id=${specDocId}&amp;actie=afkeuren"
-         style="display:inline-block;padding:12px 28px;background:white;color:#c0392b;border:2px solid #c0392b;border-radius:6px;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;text-decoration:none">
-        ✕ Niet akkoord
-      </a>
-    </div>
-    <p style="text-align:center;font-size:12px;color:#8a8a84;margin:8px 0 0">
-      Kloppen de uren niet? Klik op "Niet akkoord" om een toelichting te geven.
-    </p>`;
+    </table>`;
 
     await emailjs.send('service_rpek59r','template_p4r2rkp', {
       to_email: email,
@@ -450,8 +442,8 @@ async function verstuur() {
       tabel: tabelHTML,
       totaal_uren: m2s(totalMins),
       akkoord_link: akkoordLink,
+      afkeur_link: afkeurLink,
       spec_id: specDocId,
-      afkeur_link: 'https://rene-linden.github.io/ERP/accordeer.html?id=' + specDocId + '&actie=afkeuren',
       email: 'info@renevanderlinden.com'
     });
 
@@ -494,11 +486,9 @@ async function loadHistory() {
         ? new Date(data.akkoord_datum).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'})
         : '';
 
-      // Create item element
       const item = document.createElement('div');
       item.className = 'hist-item';
 
-      // Header
       const header = document.createElement('div');
       header.className = 'hist-header';
       header.innerHTML = `
@@ -509,18 +499,15 @@ async function loadHistory() {
         <div class="status-pill ${data.akkoord?'ok':'wait'}">${data.akkoord?'✓ Akkoord':'⏳ Wacht'}</div>
         <span style="color:var(--ink3);font-size:14px;margin-left:6px">›</span>`;
 
-      // Detail
       const detail = document.createElement('div');
       detail.className = 'hist-detail';
       detail.id = 'det-' + id;
 
-      // Build detail content
       let detHTML = '';
       if (data.akkoord && akkDatum) {
         detHTML += `<div style="font-size:12px;color:var(--grn);margin-bottom:10px;font-weight:500">✓ Geaccordeerd op ${akkDatum}</div>`;
       }
 
-      // Table of regels
       detHTML += `<table class="det-table">
         <thead><tr><th>Datum</th><th>Start</th><th>Eind</th><th>Pauze</th><th style="text-align:right">Uren</th></tr></thead>
         <tbody>${(data.regels||[]).map(r => {
@@ -535,7 +522,6 @@ async function loadHistory() {
         }).join('')}</tbody>
       </table>`;
 
-      // Action buttons
       detHTML += '<div class="act-row">';
       if (data.akkoord) {
         detHTML += `<span class="acc-badge">✓ Geaccordeerd — aanpassen niet mogelijk</span>`;
@@ -548,12 +534,10 @@ async function loadHistory() {
 
       detail.innerHTML = detHTML;
 
-      // Toggle detail on header click
       header.addEventListener('click', () => {
         detail.classList.toggle('on');
       });
 
-      // Action button handlers
       detail.querySelectorAll('[data-action]').forEach(btn => {
         btn.addEventListener('click', async e => {
           e.stopPropagation();
@@ -573,7 +557,6 @@ async function loadHistory() {
             loadHistory();
 
           } else if (action === 'herstuur') {
-            // Load data back into form
             const snap2 = await getDoc(doc(db,'specs',specId));
             if (!snap2.exists()) return;
             const d2 = snap2.data();
