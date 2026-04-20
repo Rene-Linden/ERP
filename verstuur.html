@@ -99,6 +99,27 @@ textarea{resize:vertical;min-height:80px;font-size:14px;line-height:1.5}
 .sync-dot.wait{background:var(--amb)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .sync-dot.syncing{animation:pulse .8s infinite;background:var(--amb)}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;animation:fadeIn .15s ease}
+.modal-backdrop.on{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:var(--white);border-radius:var(--r);max-width:440px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25);overflow:hidden;animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{padding:20px 20px 0;display:flex;gap:14px;align-items:flex-start}
+.modal-icon{width:44px;height:44px;border-radius:50%;background:var(--amb-l);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modal-icon svg{width:22px;height:22px;stroke:var(--amb);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.modal-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.modal-body{padding:12px 20px 20px 78px;font-size:14px;color:var(--ink2);line-height:1.55}
+.modal-body .detail-line{font-size:13px;color:var(--ink3);margin-top:6px}
+.modal-actions{padding:14px 20px;background:var(--cream);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.mbtn{width:100%;padding:11px 14px;border-radius:var(--rsm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .15s;text-align:center}
+.mbtn.primary{background:var(--acc);color:white;border-color:var(--acc)}
+.mbtn.primary:hover{background:#234d7a}
+.mbtn.danger{background:var(--red);color:white;border-color:var(--red)}
+.mbtn.danger:hover{background:#a02e23}
+.mbtn.ghost{background:var(--white);color:var(--ink2);border-color:var(--line2)}
+.mbtn.ghost:hover{background:var(--cream);color:var(--ink)}
 </style>
 </head>
 <body>
@@ -198,6 +219,26 @@ textarea{resize:vertical;min-height:80px;font-size:14px;line-height:1.5}
   </div>
 </div>
 <div class="toast" id="toast"></div>
+
+<!-- DUPLICATE WARNING MODAL -->
+<div class="modal-backdrop" id="dupModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div style="flex:1">
+        <div class="modal-title">Bestaande specificatie</div>
+      </div>
+    </div>
+    <div class="modal-body" id="dupModalBody">–</div>
+    <div class="modal-actions">
+      <button class="mbtn danger" id="dupBtnReplace">Oude vervangen en opnieuw versturen</button>
+      <button class="mbtn primary" id="dupBtnExtra">Extra versturen (oude behouden)</button>
+      <button class="mbtn ghost" id="dupBtnCancel">Annuleren</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -364,7 +405,6 @@ async function verstuur() {
   const email = document.getElementById('v-email').value.trim();
   const maand = parseInt(document.getElementById('v-maand').value);
   const jaar = parseInt(document.getElementById('v-jaar').value);
-  const note = document.getElementById('v-note').value.trim();
 
   if (!klant) { toast('Kies een opdrachtgever', 'bad'); return; }
   if (!email || !email.includes('@')) { toast('Voer een geldig emailadres in', 'bad'); return; }
@@ -377,17 +417,93 @@ async function verstuur() {
 
   if (!regels.length) { toast('Geen registraties voor deze periode', 'bad'); return; }
 
-  // Check if already an approved spec exists for this klant+maand+jaar
+  // Check of er al specs bestaan voor deze klant+maand+jaar
   const bestaandQ = query(collection(db,'specs'), orderBy('verstuurd_datum','desc'));
   const bestaandSnap = await getDocs(bestaandQ);
-  const alGeaccordeerd = bestaandSnap.docs.some(d => {
+  const matches = bestaandSnap.docs.filter(d => {
     const data = d.data();
-    return data.klant === klant && data.maand === maand && data.jaar === jaar && data.akkoord === true;
+    return data.klant === klant && data.maand === maand && data.jaar === jaar;
   });
-  if (alGeaccordeerd) {
+
+  // Als er al een geaccordeerde is: blokkeren
+  const geaccordeerd = matches.find(d => d.data().akkoord === true);
+  if (geaccordeerd) {
     toast('Er is al een geaccordeerde specificatie voor deze periode', 'bad');
     return;
   }
+
+  // Als er al een niet-geaccordeerde is: dialoog tonen
+  const openstaand = matches.filter(d => d.data().akkoord !== true);
+  if (openstaand.length > 0) {
+    const laatste = openstaand[0].data();
+    const vd = new Date(laatste.verstuurd_datum);
+    const datumStr = `${vd.getDate()} ${MOS[vd.getMonth()]} ${vd.getFullYear()} om ${p2(vd.getHours())}:${p2(vd.getMinutes())}`;
+    const aantalStr = openstaand.length > 1 ? `Er zijn al ${openstaand.length} openstaande specificaties` : 'Er is al een openstaande specificatie';
+    document.getElementById('dupModalBody').innerHTML =
+      `${aantalStr} voor <strong>${klant} — ${MO[maand]} ${jaar}</strong> die nog niet is geaccordeerd.` +
+      `<div class="detail-line">Laatste verstuurd: ${datumStr} naar ${laatste.email}</div>`;
+    toonDupModal(openstaand.map(d => d.id));
+    return;
+  }
+
+  // Geen bestaande specs: gewoon versturen
+  doSend();
+}
+
+// ── TOON DUPLICAAT-DIALOOG ────────────────────
+function toonDupModal(openstaandeIds) {
+  const modal = document.getElementById('dupModal');
+  const btnReplace = document.getElementById('dupBtnReplace');
+  const btnExtra = document.getElementById('dupBtnExtra');
+  const btnCancel = document.getElementById('dupBtnCancel');
+
+  // Bestaande handlers verwijderen (prevent stacking bij herhaaldelijk openen)
+  const newReplace = btnReplace.cloneNode(true);
+  const newExtra = btnExtra.cloneNode(true);
+  const newCancel = btnCancel.cloneNode(true);
+  btnReplace.replaceWith(newReplace);
+  btnExtra.replaceWith(newExtra);
+  btnCancel.replaceWith(newCancel);
+
+  newReplace.addEventListener('click', async () => {
+    modal.classList.remove('on');
+    toast('Oude specificatie(s) verwijderen…', 'info');
+    try {
+      for (const id of openstaandeIds) {
+        await deleteDoc(doc(db,'specs',id));
+      }
+      doSend();
+    } catch(e) {
+      console.error(e);
+      toast('Verwijderen mislukt: ' + e.message, 'bad');
+    }
+  });
+
+  newExtra.addEventListener('click', () => {
+    modal.classList.remove('on');
+    doSend();
+  });
+
+  newCancel.addEventListener('click', () => {
+    modal.classList.remove('on');
+  });
+
+  modal.classList.add('on');
+}
+
+// ── DAADWERKELIJKE VERZENDING ─────────────────
+async function doSend() {
+  const klant = document.getElementById('v-klant').value;
+  const email = document.getElementById('v-email').value.trim();
+  const maand = parseInt(document.getElementById('v-maand').value);
+  const jaar = parseInt(document.getElementById('v-jaar').value);
+  const note = document.getElementById('v-note').value.trim();
+
+  const pfx = `${jaar}-${p2(maand+1)}`;
+  const regels = Object.keys(days)
+    .filter(d => d.startsWith(pfx))
+    .sort()
+    .flatMap(k => days[k].filter(b => b.klant === klant).map(b => ({...b, date:k})));
 
   const btn = document.getElementById('sendBtn');
   btn.classList.add('loading'); btn.disabled = true;
