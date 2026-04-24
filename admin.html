@@ -919,11 +919,105 @@ function renderUren(){
     <div class="kpi"><div class="kpi-label">KM totaal</div><div class="kpi-val purple">${tKm}</div></div>`;
   const el=document.getElementById('urenTable');
   if(!sorted.length){el.innerHTML='<tr><td style="text-align:center;padding:24px;color:var(--ink3)">Geen data</td></tr>';return;}
-  el.innerHTML=`<thead><tr><th>Datum</th><th>Opdrachtgever</th><th>Start</th><th>Eind</th><th>Pauze</th><th style="text-align:right">Uren</th><th style="text-align:right">KM</th></tr></thead><tbody>${[...sorted].reverse().flatMap(k=>days[k].map(b=>{
+
+  // Klant options voor edit-dropdown
+  const klantOpts = clients.map(c=>c.name);
+
+  const rows = [...sorted].reverse().flatMap(k=>days[k].map((b,idx)=>{
     const d=isoD(k);
-    return`<tr><td class="bold">${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]} ${d.getFullYear()}</td><td><span class="cdot" style="background:${cc(b.klant)}"></span>${b.klant}</td><td class="mono">${b.start}</td><td class="mono">${b.end}</td><td class="mono muted">${b.brk||0}min</td><td class="mono" style="text-align:right">${m2s(bMins(b))}</td><td class="mono muted" style="text-align:right">${b.km||'–'}</td></tr>`;
-  })).join('')}</tbody>`;
+    const rowId = `u-${k}-${idx}`;
+    return`<tr id="row-${rowId}"><td class="bold">${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]} ${d.getFullYear()}</td><td><span class="cdot" style="background:${cc(b.klant)}"></span>${b.klant}</td><td class="mono">${b.start}</td><td class="mono">${b.end}</td><td class="mono muted">${b.brk||0}min</td><td class="mono" style="text-align:right">${m2s(bMins(b))}</td><td class="mono muted" style="text-align:right">${b.km||'–'}</td>
+    <td style="text-align:right;white-space:nowrap">
+      <button onclick="openUrenEdit('${k}',${idx})" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:4px 10px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;margin-right:4px">Wijzigen</button>
+      <button onclick="deleteBlock('${k}',${idx})" style="background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:4px 9px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'DM Sans',sans-serif" title="Verwijderen">✕</button>
+    </td></tr>
+    <tr id="edit-${rowId}" style="display:none;background:var(--acc-l)"><td colspan="8" style="padding:14px 18px">
+      <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Opdrachtgever</div>
+          <select id="eu-klant-${rowId}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:7px 9px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif">
+            ${klantOpts.map(n=>`<option${n===b.klant?' selected':''}>${n}</option>`).join('')}
+          </select></div>
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Start</div>
+          <input type="time" id="eu-start-${rowId}" value="${b.start}" step="300" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:7px 9px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Eind</div>
+          <input type="time" id="eu-eind-${rowId}" value="${b.end}" step="300" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:7px 9px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Pauze (min)</div>
+          <input type="number" id="eu-brk-${rowId}" value="${b.brk||0}" min="0" max="240" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:7px 9px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
+        <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">KM</div>
+          <input type="number" id="eu-km-${rowId}" value="${b.km||0}" min="0" max="9999" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:7px 9px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
+        <div style="display:flex;gap:6px">
+          <button onclick="saveBlockEdit('${k}',${idx})" style="background:var(--acc);color:white;border:none;border-radius:var(--rxs);padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
+          <button onclick="closeUrenEdit('${k}',${idx})" style="background:var(--white);color:var(--ink3);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleer</button>
+        </div>
+      </div>
+    </td></tr>`;
+  })).join('');
+
+  el.innerHTML=`<thead><tr><th>Datum</th><th>Opdrachtgever</th><th>Start</th><th>Eind</th><th>Pauze</th><th style="text-align:right">Uren</th><th style="text-align:right">KM</th><th style="text-align:right">Acties</th></tr></thead><tbody>${rows}</tbody>`;
 }
+
+// ── BLOK BEWERKEN/VERWIJDEREN ─────────────────
+window.openUrenEdit = function(dateKey, idx) {
+  // Sluit eventuele andere open edit-rijen
+  document.querySelectorAll('[id^="edit-u-"]').forEach(r => r.style.display = 'none');
+  const rowId = `u-${dateKey}-${idx}`;
+  const edit = document.getElementById('edit-' + rowId);
+  if (edit) {
+    edit.style.display = 'table-row';
+    edit.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+};
+
+window.closeUrenEdit = function(dateKey, idx) {
+  const rowId = `u-${dateKey}-${idx}`;
+  const edit = document.getElementById('edit-' + rowId);
+  if (edit) edit.style.display = 'none';
+};
+
+window.saveBlockEdit = async function(dateKey, idx) {
+  if (!days[dateKey] || !days[dateKey][idx]) {
+    showToast('Registratie niet gevonden', 'bad');
+    return;
+  }
+  const rowId = `u-${dateKey}-${idx}`;
+  const blok = days[dateKey][idx];
+  blok.klant = document.getElementById(`eu-klant-${rowId}`).value;
+  blok.start = document.getElementById(`eu-start-${rowId}`).value;
+  blok.end = document.getElementById(`eu-eind-${rowId}`).value;
+  blok.brk = parseInt(document.getElementById(`eu-brk-${rowId}`).value) || 0;
+  blok.km = parseInt(document.getElementById(`eu-km-${rowId}`).value) || 0;
+
+  try {
+    setSyncStatus('syncing','Opslaan…');
+    await setDoc(doc(db,'dagstaat','data'), {days});
+    setSyncStatus('synced','Live');
+    showToast('Registratie opgeslagen ✓', 'ok');
+    // onSnapshot triggert automatisch een re-render
+  } catch(e) {
+    setSyncStatus('offline','Offline');
+    showToast('Opslaan mislukt: ' + e.message, 'bad');
+  }
+};
+
+window.deleteBlock = async function(dateKey, idx) {
+  if (!days[dateKey] || !days[dateKey][idx]) return;
+  const blok = days[dateKey][idx];
+  if (!confirm(`Registratie verwijderen?\n\n${blok.klant} · ${blok.start}–${blok.end} op ${dateKey}`)) return;
+
+  days[dateKey].splice(idx, 1);
+  if (days[dateKey].length === 0) delete days[dateKey];
+
+  try {
+    setSyncStatus('syncing','Opslaan…');
+    await setDoc(doc(db,'dagstaat','data'), {days});
+    setSyncStatus('synced','Live');
+    showToast('Registratie verwijderd', 'info');
+    // onSnapshot triggert automatisch een re-render
+  } catch(e) {
+    setSyncStatus('offline','Offline');
+    showToast('Verwijderen mislukt: ' + e.message, 'bad');
+  }
+};
 
 // OPDRACHTGEVERS
 window.setOpPeriod=function(p,btn){opPeriod=p;opOff=0;document.querySelectorAll('#page-opdrachtgevers .period-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderOpdrachtgevers();}
