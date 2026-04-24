@@ -664,7 +664,13 @@ async function loadHistorie() {
         sortKey: d.data().uploaded || ''
       });
     });
-    items.sort((a,b) => b.sortKey.localeCompare(a.sortKey));
+    // Sorteren: nieuwste bovenaan. Gebruik Date() voor robuuste vergelijking;
+    // items zonder datum komen onderaan.
+    items.sort((a, b) => {
+      const ta = a.sortKey ? new Date(a.sortKey).getTime() : 0;
+      const tb = b.sortKey ? new Date(b.sortKey).getTime() : 0;
+      return tb - ta;
+    });
 
     if (!items.length) {
       el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nog geen contracten opgeslagen of geüpload</div></div>';
