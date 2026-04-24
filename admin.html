@@ -756,9 +756,23 @@ onSnapshot(doc(db,'dagstaat','data'),(snap)=>{
 },(err)=>{setSyncStatus('offline','Offline');});
 
 // AUTH
+const AUTH_KEY = 'dgs_auth_v1';
+
+function isAuthed() {
+  try { return sessionStorage.getItem(AUTH_KEY) === '1'; } catch(e) { return false; }
+}
+
+function setAuthed(on) {
+  try {
+    if (on) sessionStorage.setItem(AUTH_KEY, '1');
+    else sessionStorage.removeItem(AUTH_KEY);
+  } catch(e){}
+}
+
 window.doLogin=function(){
   const pwd=document.getElementById('loginPwd').value;
   if(pwd===getPwd()){
+    setAuthed(true);
     document.getElementById('loginWrap').style.display='none';
     document.getElementById('adminWrap').classList.add('on');
     renderDashboard();renderInstellingen();
@@ -769,6 +783,7 @@ window.doLogin=function(){
 }
 
 window.doLogout=function(){
+  setAuthed(false);
   document.getElementById('adminWrap').classList.remove('on');
   document.getElementById('loginWrap').style.display='flex';
   document.getElementById('loginPwd').value='';
@@ -2351,6 +2366,14 @@ document.getElementById('loginPwd').addEventListener('keydown',e=>{if(e.key==='E
 
 // Populeer jaar selectors bij laden
 populeerJaarSelectors();
+
+// Auto-login als sessie al actief is (bijv. terugkomen van contract.html)
+if (isAuthed()) {
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('adminWrap').classList.add('on');
+  renderDashboard();
+  renderInstellingen();
+}
 </script>
 </body>
 </html>
