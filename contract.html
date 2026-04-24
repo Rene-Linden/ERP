@@ -238,10 +238,63 @@ select{cursor:pointer}
 
     <!-- GESCHIEDENIS -->
     <div class="pane" id="pane-historie">
-      <p class="sec">Opgeslagen contracten</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <p class="sec" style="margin:0">Opgeslagen contracten</p>
+        <button class="btn btn-primary" style="flex:0 0 auto;min-width:0;padding:9px 16px;font-size:13px" onclick="openUploadModal()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Ondertekend contract uploaden
+        </button>
+      </div>
       <div class="card" style="padding:0;overflow:hidden" id="histList">
         <div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Laden…</div></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div id="uploadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--white);border-radius:var(--r);max-width:480px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink)" id="uploadModalTitle">Ondertekend contract uploaden</div>
+      <button onclick="closeUploadModal()" style="background:none;border:none;cursor:pointer;color:var(--ink3);font-size:22px;line-height:1;padding:4px 8px">&times;</button>
+    </div>
+    <div style="padding:20px">
+      <div id="uploadLinkedInfo" style="display:none;background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--acc)"></div>
+      <div class="field" id="uploadKlantField">
+        <label>Opdrachtgever *</label>
+        <select id="u-klant">
+          <option value="">Kies opdrachtgever…</option>
+        </select>
+      </div>
+      <div class="fg2" id="uploadDateFields">
+        <div class="field">
+          <label>Startdatum</label>
+          <input type="date" id="u-start">
+        </div>
+        <div class="field">
+          <label>Einddatum</label>
+          <input type="date" id="u-eind">
+        </div>
+      </div>
+      <div class="field" id="uploadOmschrField">
+        <label>Omschrijving (optioneel)</label>
+        <input type="text" id="u-omschr" placeholder="Bijv. Contract 2023 verlenging">
+      </div>
+      <div class="field">
+        <label>Bestand (PDF, max 10 MB) *</label>
+        <input type="file" id="u-file" accept="application/pdf,.pdf" style="padding:8px 10px;background:var(--white);cursor:pointer">
+      </div>
+      <div id="uploadProgress" style="display:none;margin-top:14px">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px" id="uploadProgressText">Uploaden…</div>
+        <div style="height:4px;background:var(--cream);border-radius:2px;overflow:hidden">
+          <div id="uploadProgressBar" style="height:100%;background:var(--acc);width:0%;transition:width .2s"></div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:14px 20px;background:var(--cream);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" style="flex:0 0 auto;min-width:0;padding:9px 16px;font-size:13px" onclick="closeUploadModal()">Annuleren</button>
+      <button class="btn btn-primary" style="flex:0 0 auto;min-width:0;padding:9px 16px;font-size:13px" id="uploadSubmitBtn" onclick="doUpload()">Upload</button>
     </div>
   </div>
 </div>
@@ -250,7 +303,8 @@ select{cursor:pointer}
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,doc,getDoc,deleteDoc,collection,addDoc,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,getDoc,deleteDoc,updateDoc,collection,addDoc,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getStorage,ref as storageRef,uploadBytes,getDownloadURL,deleteObject}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const FB={
   apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",
@@ -263,6 +317,7 @@ const FB={
 
 const app = initializeApp(FB);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 const MO = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 const MOS = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
@@ -577,36 +632,87 @@ async function loadHistorie() {
   const el = document.getElementById('histList');
   el.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Laden…</div></div>';
   try {
-    const q = query(collection(db,'contracten'), orderBy('aangemaakt','desc'));
-    const snap = await getDocs(q);
+    // Load zowel gegenereerde contracten als losse uploads
+    const qGen = query(collection(db,'contracten'), orderBy('aangemaakt','desc'));
+    const qLos = query(collection(db,'ondertekende_contracten'), orderBy('uploaded','desc'));
+    const [snapGen, snapLos] = await Promise.all([getDocs(qGen), getDocs(qLos)]);
 
-    if (snap.empty) {
-      el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nog geen contracten opgeslagen</div></div>';
+    // Combineer beide in één tijdlijn
+    const items = [];
+    snapGen.docs.forEach(d => {
+      items.push({
+        id: d.id,
+        source: 'gegenereerd',
+        data: d.data(),
+        sortKey: d.data().aangemaakt || ''
+      });
+    });
+    snapLos.docs.forEach(d => {
+      items.push({
+        id: d.id,
+        source: 'upload',
+        data: d.data(),
+        sortKey: d.data().uploaded || ''
+      });
+    });
+    items.sort((a,b) => b.sortKey.localeCompare(a.sortKey));
+
+    if (!items.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nog geen contracten opgeslagen of geüpload</div></div>';
       return;
     }
 
     el.innerHTML = '';
-    snap.docs.forEach(d => {
-      const id = d.id;
-      const data = d.data();
-      const startFmt = data.velden?.STARTDATUM || '–';
-      const eindFmt = data.velden?.EINDDATUM || '–';
-      const aangemaakt = new Date(data.aangemaakt);
-
+    items.forEach(it => {
       const item = document.createElement('div');
       item.className = 'hist-item';
-      item.innerHTML = `
-        <div class="hist-header">
-          <div class="hist-body-text">
-            <div class="hist-title">${data.klant || '–'} — ${data.velden?.ROL || 'contract'}</div>
-            <div class="hist-sub">${startFmt} tot ${eindFmt} · opgesteld ${aangemaakt.getDate()} ${MOS[aangemaakt.getMonth()]} ${aangemaakt.getFullYear()}</div>
-          </div>
-          <div class="hist-actions">
-            <button class="abtn" data-id="${id}" data-action="word">Word</button>
-            <button class="abtn" data-id="${id}" data-action="pdf">PDF</button>
-            <button class="abtn del" data-id="${id}" data-action="del">✕</button>
-          </div>`;
 
+      if (it.source === 'gegenereerd') {
+        const d = it.data;
+        const startFmt = d.velden?.STARTDATUM || '–';
+        const eindFmt = d.velden?.EINDDATUM || '–';
+        const aangemaakt = new Date(d.aangemaakt);
+        const hasSigned = !!d.ondertekend_url;
+
+        item.innerHTML = `
+          <div class="hist-header">
+            <div class="hist-body-text">
+              <div class="hist-title">${d.klant || '–'} — ${d.velden?.ROL || 'contract'}
+                ${hasSigned ? '<span style="display:inline-block;margin-left:8px;background:var(--grn-l);color:var(--grn);font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid rgba(30,122,74,.2);vertical-align:middle">✓ Ondertekend</span>' : ''}
+              </div>
+              <div class="hist-sub">${startFmt} tot ${eindFmt} · opgesteld ${aangemaakt.getDate()} ${MOS[aangemaakt.getMonth()]} ${aangemaakt.getFullYear()}</div>
+            </div>
+            <div class="hist-actions">
+              <button class="abtn" data-id="${it.id}" data-action="word">Word</button>
+              <button class="abtn" data-id="${it.id}" data-action="pdf">PDF</button>
+              ${hasSigned
+                ? `<button class="abtn" data-id="${it.id}" data-action="viewsigned" style="background:var(--grn-l);color:var(--grn);border-color:rgba(30,122,74,.3)">📎 Ondertekend</button>`
+                : `<button class="abtn" data-id="${it.id}" data-action="upload" style="background:var(--amb-l);color:var(--amb);border-color:rgba(184,92,0,.3)">📤 Uploaden</button>`
+              }
+              <button class="abtn del" data-id="${it.id}" data-action="del">✕</button>
+            </div>
+          </div>`;
+      } else {
+        // Losse upload
+        const d = it.data;
+        const uploaded = new Date(d.uploaded);
+        const startStr = d.startdatum ? new Date(d.startdatum).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
+        const eindStr = d.einddatum ? new Date(d.einddatum).toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}) : '';
+        const periode = (startStr || eindStr) ? `${startStr} – ${eindStr || '...'}` : 'Geen periode';
+        item.innerHTML = `
+          <div class="hist-header">
+            <div class="hist-body-text">
+              <div class="hist-title">${d.klant || '–'} — ${d.omschrijving || 'Geüpload document'}
+                <span style="display:inline-block;margin-left:8px;background:var(--grn-l);color:var(--grn);font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;border:1px solid rgba(30,122,74,.2);vertical-align:middle">📎 Upload</span>
+              </div>
+              <div class="hist-sub">${periode} · geüpload ${uploaded.getDate()} ${MOS[uploaded.getMonth()]} ${uploaded.getFullYear()}</div>
+            </div>
+            <div class="hist-actions">
+              <button class="abtn" data-id="${it.id}" data-action="downloadlos" data-url="${d.url}" data-naam="${d.bestandsnaam||'contract.pdf'}">Download</button>
+              <button class="abtn del" data-id="${it.id}" data-action="dellos" data-pad="${d.pad||''}">✕</button>
+            </div>
+          </div>`;
+      }
       el.appendChild(item);
     });
 
@@ -618,10 +724,51 @@ async function loadHistorie() {
         const action = btn.dataset.action;
 
         if (action === 'del') {
-          if (!confirm('Contract uit dossier verwijderen?')) return;
+          if (!confirm('Contract uit dossier verwijderen?\n\nLet op: als er een ondertekend document bij zit, wordt dat ook verwijderd.')) return;
+          // Check of er ondertekend bestand is om te deleten
+          const snap = await getDoc(doc(db,'contracten',id));
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.ondertekend_pad) {
+              try { await deleteObject(storageRef(storage, data.ondertekend_pad)); } catch(_){}
+            }
+          }
           await deleteDoc(doc(db,'contracten',id));
           toast('Verwijderd', 'info');
           loadHistorie();
+          return;
+        }
+
+        if (action === 'dellos') {
+          if (!confirm('Geüpload contract verwijderen?')) return;
+          const pad = btn.dataset.pad;
+          if (pad) {
+            try { await deleteObject(storageRef(storage, pad)); } catch(_){}
+          }
+          await deleteDoc(doc(db,'ondertekende_contracten',id));
+          toast('Verwijderd', 'info');
+          loadHistorie();
+          return;
+        }
+
+        if (action === 'downloadlos') {
+          window.open(btn.dataset.url, '_blank');
+          return;
+        }
+
+        if (action === 'upload') {
+          // Koppel upload aan bestaand contract
+          const snap = await getDoc(doc(db,'contracten',id));
+          if (!snap.exists()) { toast('Contract niet gevonden', 'bad'); return; }
+          openUploadModal(id, snap.data());
+          return;
+        }
+
+        if (action === 'viewsigned') {
+          const snap = await getDoc(doc(db,'contracten',id));
+          if (!snap.exists()) return;
+          const url = snap.data().ondertekend_url;
+          if (url) window.open(url, '_blank');
           return;
         }
 
@@ -648,6 +795,134 @@ async function loadHistorie() {
     el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Laden mislukt: ' + e.message + '</div></div>';
   }
 }
+
+// ── UPLOAD MODAL ──────────────────────────────
+let uploadLinkedTo = null; // Contract-ID waar upload aan gekoppeld wordt (of null = los)
+
+window.openUploadModal = function(linkedId, linkedData) {
+  uploadLinkedTo = linkedId || null;
+  const modal = document.getElementById('uploadModal');
+  const title = document.getElementById('uploadModalTitle');
+  const linkedInfo = document.getElementById('uploadLinkedInfo');
+  const klantField = document.getElementById('uploadKlantField');
+  const dateFields = document.getElementById('uploadDateFields');
+  const omschrField = document.getElementById('uploadOmschrField');
+
+  // Reset velden
+  document.getElementById('u-file').value = '';
+  document.getElementById('u-omschr').value = '';
+  document.getElementById('u-start').value = '';
+  document.getElementById('u-eind').value = '';
+  document.getElementById('uploadProgress').style.display = 'none';
+
+  if (linkedId && linkedData) {
+    // Koppel-modus
+    title.textContent = 'Ondertekend contract uploaden';
+    linkedInfo.style.display = 'block';
+    linkedInfo.innerHTML = `<strong>Koppelen aan:</strong> ${linkedData.klant} — ${linkedData.velden?.ROL || 'contract'}<br><span style="font-size:12px">${linkedData.velden?.STARTDATUM||'–'} tot ${linkedData.velden?.EINDDATUM||'–'}</span>`;
+    klantField.style.display = 'none';
+    dateFields.style.display = 'none';
+    omschrField.style.display = 'none';
+  } else {
+    // Losse upload-modus
+    title.textContent = 'Los ondertekend contract uploaden';
+    linkedInfo.style.display = 'none';
+    klantField.style.display = 'flex';
+    dateFields.style.display = 'grid';
+    omschrField.style.display = 'flex';
+
+    // Vul klant-dropdown
+    const sel = document.getElementById('u-klant');
+    sel.innerHTML = '<option value="">Kies opdrachtgever…</option>' +
+      clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.closeUploadModal = function() {
+  document.getElementById('uploadModal').style.display = 'none';
+  uploadLinkedTo = null;
+};
+
+window.doUpload = async function() {
+  const file = document.getElementById('u-file').files[0];
+  if (!file) { toast('Kies een PDF-bestand', 'bad'); return; }
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    toast('Alleen PDF-bestanden toegestaan', 'bad');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    toast('Bestand te groot (max 10 MB)', 'bad');
+    return;
+  }
+
+  const btn = document.getElementById('uploadSubmitBtn');
+  const progressEl = document.getElementById('uploadProgress');
+  const progressBar = document.getElementById('uploadProgressBar');
+  const progressText = document.getElementById('uploadProgressText');
+  btn.disabled = true;
+  progressEl.style.display = 'block';
+  progressBar.style.width = '30%';
+  progressText.textContent = 'Uploaden…';
+
+  try {
+    let path, url;
+
+    if (uploadLinkedTo) {
+      // Koppel aan bestaand contract
+      path = `contracten/${uploadLinkedTo}/ondertekend.pdf`;
+      const ref = storageRef(storage, path);
+      await uploadBytes(ref, file, { contentType: 'application/pdf' });
+      progressBar.style.width = '70%';
+      progressText.textContent = 'Koppelen…';
+      url = await getDownloadURL(ref);
+      await updateDoc(doc(db,'contracten',uploadLinkedTo), {
+        ondertekend_url: url,
+        ondertekend_pad: path,
+        ondertekend_bestandsnaam: file.name,
+        ondertekend_uploaded: new Date().toISOString()
+      });
+      progressBar.style.width = '100%';
+      toast('Ondertekend contract gekoppeld ✓', 'ok');
+    } else {
+      // Losse upload
+      const klant = document.getElementById('u-klant').value;
+      if (!klant) { toast('Kies een opdrachtgever', 'bad'); btn.disabled = false; progressEl.style.display='none'; return; }
+      const omschr = document.getElementById('u-omschr').value.trim();
+      const start = document.getElementById('u-start').value;
+      const eind = document.getElementById('u-eind').value;
+
+      const safeKlant = klant.replace(/[^a-zA-Z0-9]/g,'_');
+      const id = Date.now() + '_' + Math.random().toString(36).slice(2,8);
+      path = `contracten-los/${safeKlant}/${id}.pdf`;
+      const ref = storageRef(storage, path);
+      await uploadBytes(ref, file, { contentType: 'application/pdf' });
+      progressBar.style.width = '70%';
+      progressText.textContent = 'Registreren…';
+      url = await getDownloadURL(ref);
+      await addDoc(collection(db,'ondertekende_contracten'), {
+        klant, omschrijving: omschr, startdatum: start, einddatum: eind,
+        bestandsnaam: file.name, url, pad: path,
+        uploaded: new Date().toISOString()
+      });
+      progressBar.style.width = '100%';
+      toast('Contract geüpload ✓', 'ok');
+    }
+
+    setTimeout(() => {
+      closeUploadModal();
+      loadHistorie();
+    }, 400);
+
+  } catch(e) {
+    console.error(e);
+    toast('Upload mislukt: ' + e.message, 'bad');
+    progressEl.style.display = 'none';
+  } finally {
+    btn.disabled = false;
+  }
+};
 
 async function downloadWordFromVelden(velden) {
   try {
