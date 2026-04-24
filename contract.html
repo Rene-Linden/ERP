@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f8f7f4">
+<title>Contract — Ordinatio Groep</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- JSZip voor DOCX find-and-replace -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --cream:#f8f7f4;--white:#fff;--ink:#1a1a18;--ink2:#4a4a46;--ink3:#8a8a84;
+  --line:#e8e7e2;--line2:#d4d3cc;
+  --acc:#2d5a8e;--acc-l:#edf3f9;--acc-m:#c8daf0;
+  --grn:#1e7a4a;--grn-l:#eaf5ee;
+  --amb:#b85c00;--amb-l:#fdf3e8;
+  --red:#c0392b;--red-l:#fdf0ee;
+  --r:12px;--rsm:8px;--rxs:6px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04);
+}
+html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+.app{max-width:900px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;padding:env(safe-area-inset-top) 0 0}
+.hinner{padding:14px 20px}
+.hrow{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.bicon{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.bicon svg{width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bname{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
+.bsub{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+.back-btn{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink3);text-decoration:none;background:var(--cream);border:1px solid var(--line2);border-radius:20px;padding:5px 12px}
+.tabs{display:flex;border-top:1px solid var(--line)}
+.tab{flex:1;padding:11px 0;text-align:center;font-size:13px;font-weight:500;color:var(--ink3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.main{flex:1;overflow-y:auto;padding-bottom:20px}
+.pane{display:none;padding:20px}
+.pane.on{display:block}
+.sec{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:10px;margin-top:18px}
+.sec:first-child{margin-top:0}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600}
+input,select,textarea{background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;width:100%;outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);background:var(--white);box-shadow:0 0 0 3px var(--acc-l)}
+input.mono{font-family:'DM Mono',monospace}
+select{cursor:pointer}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fg4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:720px){.fg2,.fg3,.fg4{grid-template-columns:1fr}}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{flex:1;min-width:160px;padding:13px 18px;border-radius:var(--rsm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--acc);color:white;border-color:var(--acc)}
+.btn-primary:hover{background:#234d7a}
+.btn-success{background:var(--grn);color:white;border-color:var(--grn)}
+.btn-success:hover{background:#176038}
+.btn-ghost{background:var(--white);color:var(--ink2);border-color:var(--line2)}
+.btn-ghost:hover{background:var(--cream);color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hist-item{border-bottom:1px solid var(--line)}
+.hist-item:last-child{border-bottom:none}
+.hist-header{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background .1s}
+.hist-header:hover{background:var(--cream)}
+.hist-body-text{flex:1}
+.hist-title{font-size:13px;font-weight:600;color:var(--ink)}
+.hist-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+.hist-actions{display:flex;gap:6px;flex-shrink:0}
+.abtn{background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.abtn:hover{background:var(--acc);color:white}
+.abtn.del{background:none;color:var(--ink3);border-color:var(--line2)}
+.abtn.del:hover{background:var(--red-l);color:var(--red);border-color:var(--red)}
+.empty{text-align:center;padding:40px 20px;color:var(--ink3)}
+.empty-icon{font-size:32px;margin-bottom:8px;opacity:.4}
+.empty-text{font-size:14px}
+.info-line{font-size:12px;color:var(--ink3);line-height:1.5;margin-top:6px}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);border-radius:20px;padding:10px 18px;font-size:13px;font-weight:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;max-width:92vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--grn-l);border:1px solid rgba(30,122,74,.25);color:var(--grn)}
+.toast.bad{background:var(--red-l);border:1px solid rgba(192,57,43,.25);color:var(--red)}
+.toast.info{background:var(--acc-l);border:1px solid var(--acc-m);color:var(--acc)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block;margin-right:4px}
+.sync-dot.off{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-dot.syncing{animation:pulse .8s infinite;background:var(--amb)}
+.hint{font-size:11px;color:var(--ink3);margin-top:4px;font-style:italic}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="hinner">
+      <div class="hrow">
+        <div class="brand">
+          <div class="bicon">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          </div>
+          <div>
+            <div class="bname">Contract</div>
+            <div class="bsub"><span class="sync-dot syncing" id="syncDot"></span><span id="syncTxt">Verbinden…</span></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <a href="admin.html" class="back-btn">← Beheer</a>
+          <a href="index.html" class="back-btn">Dagstaat</a>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" onclick="showTab('nieuw',this)">Nieuw contract</button>
+      <button class="tab" onclick="showTab('historie',this)">Geschiedenis</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- NIEUW CONTRACT -->
+    <div class="pane on" id="pane-nieuw">
+      <p class="sec">Opdrachtgever</p>
+      <div class="card">
+        <div class="field">
+          <label>Kies opdrachtgever</label>
+          <select id="c-klant">
+            <option value="">Kies opdrachtgever…</option>
+          </select>
+          <div class="hint">Velden worden vooraf ingevuld met gegevens uit klantbeheer. Je kunt ze per contract aanpassen.</div>
+        </div>
+      </div>
+
+      <div id="contractForm" style="display:none">
+        <p class="sec">Gegevens opdrachtgever</p>
+        <div class="card">
+          <div class="field">
+            <label>Bedrijfsnaam</label>
+            <input type="text" id="f-naam" placeholder="Bedrijf B.V.">
+          </div>
+          <div class="fg2">
+            <div class="field">
+              <label>Adres (straat + huisnr)</label>
+              <input type="text" id="f-adres" placeholder="Straatnaam 12">
+            </div>
+            <div class="field">
+              <label>Postcode</label>
+              <input type="text" id="f-postcode" placeholder="1234 AB">
+            </div>
+          </div>
+          <div class="fg2">
+            <div class="field">
+              <label>Plaats</label>
+              <input type="text" id="f-plaats" placeholder="Amsterdam">
+            </div>
+            <div class="field">
+              <label>KvK-nummer</label>
+              <input type="text" id="f-kvk" class="mono" placeholder="12345678">
+            </div>
+          </div>
+          <div class="fg2">
+            <div class="field">
+              <label>Contactpersoon</label>
+              <input type="text" id="f-contact" placeholder="Voor- en achternaam">
+            </div>
+            <div class="field">
+              <label>Functie contactpersoon</label>
+              <input type="text" id="f-functie" placeholder="Managing Director">
+            </div>
+          </div>
+        </div>
+
+        <p class="sec">Opdracht</p>
+        <div class="card">
+          <div class="field">
+            <label>Rol / functie opdrachtnemer</label>
+            <input type="text" id="f-rol" placeholder="Interim Operationeel Manager">
+          </div>
+          <div class="fg2">
+            <div class="field">
+              <label>Startdatum</label>
+              <input type="date" id="f-start">
+            </div>
+            <div class="field">
+              <label>Einddatum</label>
+              <input type="date" id="f-eind">
+            </div>
+          </div>
+          <div class="fg3">
+            <div class="field">
+              <label>Werkweek (uur)</label>
+              <input type="number" id="f-werkweek" class="mono" min="1" max="60" value="40">
+            </div>
+            <div class="field">
+              <label>Uurtarief (€, excl. BTW)</label>
+              <input type="number" id="f-tarief" class="mono" min="0" step="0.01" value="115">
+            </div>
+            <div class="field">
+              <label>Betaaltermijn (dagen)</label>
+              <input type="number" id="f-termijn" class="mono" min="1" max="120" value="21">
+            </div>
+          </div>
+          <div class="field">
+            <label>Kilometertarief (€, excl. BTW)</label>
+            <input type="number" id="f-km" class="mono" min="0" step="0.01" value="0.21" style="max-width:200px">
+          </div>
+        </div>
+
+        <p class="sec">Ondertekening</p>
+        <div class="card">
+          <div class="fg2">
+            <div class="field">
+              <label>Plaats ondertekening</label>
+              <input type="text" id="f-ondplaats" placeholder="Bijv. Asten">
+            </div>
+            <div class="field">
+              <label>Datum ondertekening</label>
+              <input type="date" id="f-onddatum">
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="downloadWord()">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M7 13l2 3 3-5 3 5 2-3"/></svg>
+            Download Word
+          </button>
+          <button class="btn btn-primary" onclick="downloadPDF()">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 17l3-3 3 3"/><line x1="12" y1="14" x2="12" y2="21"/></svg>
+            Open PDF-voorbeeld
+          </button>
+          <button class="btn btn-success" onclick="opslaanContract()">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Opslaan in dossier
+          </button>
+        </div>
+        <div class="hint" style="text-align:center;margin-top:8px">Word-download werkt direct. Voor PDF: gebruik Ctrl+P in het geopende voorbeeld en kies "Opslaan als PDF".</div>
+      </div>
+    </div>
+
+    <!-- GESCHIEDENIS -->
+    <div class="pane" id="pane-historie">
+      <p class="sec">Opgeslagen contracten</p>
+      <div class="card" style="padding:0;overflow:hidden" id="histList">
+        <div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Laden…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,doc,getDoc,deleteDoc,collection,addDoc,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB={
+  apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",
+  authDomain:"dagstaat-ordinatio.firebaseapp.com",
+  projectId:"dagstaat-ordinatio",
+  storageBucket:"dagstaat-ordinatio.firebasestorage.app",
+  messagingSenderId:"841107130686",
+  appId:"1:841107130686:web:f91211f83a8e031746846f"
+};
+
+const app = initializeApp(FB);
+const db = getFirestore(app);
+
+const MO = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const MOS = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+const TEMPLATE_URL = 'Interimovereenkomst_template.docx';
+
+let clients = [];
+
+// ── HELPERS ───────────────────────────────────
+const p2 = n => String(n).padStart(2,'0');
+const fmtDate = iso => {
+  if (!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}-${m}-${y}`;
+};
+const fmtEuro = n => {
+  const num = parseFloat(n) || 0;
+  return num.toFixed(2).replace('.',',');
+};
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type||'info'} show`;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function setSync(s, txt) {
+  document.getElementById('syncDot').className = `sync-dot ${s}`;
+  document.getElementById('syncTxt').textContent = txt;
+}
+
+// ── CLIENTS LADEN ─────────────────────────────
+function loadClients() {
+  clients = JSON.parse(localStorage.getItem('dgs_clients_v1') || '[]');
+}
+
+// ── INIT ──────────────────────────────────────
+function init() {
+  loadClients();
+  setSync('', 'Gereed');
+
+  // Klant dropdown
+  const sel = document.getElementById('c-klant');
+  sel.innerHTML = '<option value="">Kies opdrachtgever…</option>' +
+    clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+  sel.addEventListener('change', onKlantChange);
+
+  // Datum ondertekening = vandaag
+  const now = new Date();
+  const today = `${now.getFullYear()}-${p2(now.getMonth()+1)}-${p2(now.getDate())}`;
+  document.getElementById('f-onddatum').value = today;
+}
+
+// ── KLANT SELECTIE ────────────────────────────
+function onKlantChange() {
+  const name = document.getElementById('c-klant').value;
+  const formEl = document.getElementById('contractForm');
+
+  if (!name) {
+    formEl.style.display = 'none';
+    return;
+  }
+  const c = clients.find(x => x.name === name);
+  if (!c) { formEl.style.display = 'none'; return; }
+
+  formEl.style.display = 'block';
+
+  // Splits postcode + plaats uit 'city' veld indien mogelijk
+  // c.city kan bijvoorbeeld "5721 KM ASTEN" bevatten
+  let postcode = '', plaats = '';
+  if (c.city) {
+    const m = c.city.match(/^\s*(\d{4}\s*[A-Z]{2})\s+(.+)$/i);
+    if (m) {
+      postcode = m[1].toUpperCase();
+      plaats = m[2];
+    } else {
+      plaats = c.city;
+    }
+  }
+
+  document.getElementById('f-naam').value = c.name || '';
+  document.getElementById('f-adres').value = c.address || '';
+  document.getElementById('f-postcode').value = postcode;
+  document.getElementById('f-plaats').value = plaats;
+  document.getElementById('f-kvk').value = c.kvk || '';
+  document.getElementById('f-contact').value = c.contact || '';
+  document.getElementById('f-functie').value = c.functie || '';
+  document.getElementById('f-rol').value = c.rol || '';
+  document.getElementById('f-werkweek').value = c.werkweek || 40;
+  document.getElementById('f-tarief').value = c.rate || 115;
+  document.getElementById('f-termijn').value = c.betaaltermijn || 21;
+  document.getElementById('f-km').value = c.kmRate || 0.21;
+  document.getElementById('f-ondplaats').value = c.ondertekenPlaats || plaats || '';
+}
+
+// ── VERZAMEL VELDEN ───────────────────────────
+function getVelden() {
+  return {
+    KLANT_NAAM: document.getElementById('f-naam').value.trim(),
+    KLANT_ADRES: document.getElementById('f-adres').value.trim(),
+    KLANT_POSTCODE: document.getElementById('f-postcode').value.trim(),
+    KLANT_PLAATS: document.getElementById('f-plaats').value.trim(),
+    KLANT_KVK: document.getElementById('f-kvk').value.trim(),
+    KLANT_CONTACTPERSOON: document.getElementById('f-contact').value.trim(),
+    KLANT_FUNCTIE: document.getElementById('f-functie').value.trim(),
+    ROL: document.getElementById('f-rol').value.trim(),
+    STARTDATUM: fmtDate(document.getElementById('f-start').value),
+    EINDDATUM: fmtDate(document.getElementById('f-eind').value),
+    WERKWEEK: document.getElementById('f-werkweek').value || '40',
+    UURTARIEF: fmtEuro(document.getElementById('f-tarief').value),
+    BETAALTERMIJN: document.getElementById('f-termijn').value || '21',
+    KMTARIEF: fmtEuro(document.getElementById('f-km').value),
+    ONDERTEKENING_PLAATS: document.getElementById('f-ondplaats').value.trim(),
+    ONDERTEKENING_DATUM: fmtDate(document.getElementById('f-onddatum').value)
+  };
+}
+
+function validate(v) {
+  const required = ['KLANT_NAAM','KLANT_ADRES','KLANT_POSTCODE','KLANT_PLAATS','KLANT_KVK','KLANT_CONTACTPERSOON','KLANT_FUNCTIE','ROL','STARTDATUM','EINDDATUM','ONDERTEKENING_PLAATS','ONDERTEKENING_DATUM'];
+  for (const k of required) {
+    if (!v[k]) {
+      toast('Veld ontbreekt: ' + k.replace(/_/g,' ').toLowerCase(), 'bad');
+      return false;
+    }
+  }
+  return true;
+}
+
+// ── WORD DOWNLOAD ─────────────────────────────
+async function downloadWord() {
+  const velden = getVelden();
+  if (!validate(velden)) return;
+
+  try {
+    toast('Template laden…', 'info');
+    const resp = await fetch(TEMPLATE_URL);
+    if (!resp.ok) throw new Error('Template niet gevonden (' + resp.status + ')');
+    const blob = await resp.blob();
+    const zip = await JSZip.loadAsync(blob);
+
+    // Bewerk document.xml, header*.xml, footer*.xml
+    const filesToEdit = [];
+    zip.forEach((path) => {
+      if (path === 'word/document.xml' || path.match(/^word\/(header|footer)\d*\.xml$/)) {
+        filesToEdit.push(path);
+      }
+    });
+
+    for (const path of filesToEdit) {
+      let xml = await zip.file(path).async('string');
+      for (const [key, val] of Object.entries(velden)) {
+        const escaped = String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        xml = xml.split(`{{${key}}}`).join(escaped);
+      }
+      zip.file(path, xml);
+    }
+
+    const out = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const url = URL.createObjectURL(out);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Interim-overeenkomst ${velden.KLANT_NAAM} ${velden.STARTDATUM.replace(/-/g,'')}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    toast('Word-document gedownload ✓', 'ok');
+  } catch (e) {
+    console.error(e);
+    toast('Fout: ' + e.message, 'bad');
+  }
+}
+
+// ── PDF DOWNLOAD (via print dialog) ───────────
+function downloadPDF() {
+  const velden = getVelden();
+  if (!validate(velden)) return;
+
+  // Render het contract als HTML en open in nieuw tabblad met auto-print
+  const html = renderContractHTML(velden);
+  const w = window.open('', '_blank');
+  if (!w) { toast('Pop-up geblokkeerd. Sta pop-ups toe voor deze site.', 'bad'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+function renderContractHTML(v) {
+  return `<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8"><title>Interim-overeenkomst ${v.KLANT_NAAM}</title>
+<style>
+  @page { size: A4; margin: 2.5cm 2cm; }
+  body { font-family: 'Calibri', Arial, sans-serif; font-size: 11pt; line-height: 1.45; color: #000; max-width: 17cm; margin: 0 auto; padding: 20px; }
+  h1 { text-align: center; font-size: 20pt; margin: 20px 0 25px; }
+  h2 { font-size: 12pt; margin: 18px 0 8px; }
+  p { margin: 0 0 10px; }
+  .bold { font-weight: 600; }
+  .sig-block { margin-top: 30px; }
+  .sig-block strong { display: block; margin-bottom: 2px; }
+  .footer { position: fixed; bottom: 1cm; left: 0; right: 0; text-align: center; font-size: 8pt; color: #666; }
+  @media print { .print-btn { display: none !important; } }
+  .print-btn { position: fixed; top: 16px; right: 16px; background: #2d5a8e; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: Arial, sans-serif; z-index: 999; }
+</style></head><body>
+<button class="print-btn" onclick="window.print()">🖨 Opslaan als PDF (Ctrl+P)</button>
+<h1>INTERIM-OVEREENKOMST</h1>
+<p class="bold">De ondergetekenden:</p>
+<p>1. <span class="bold">${v.KLANT_NAAM}</span> gevestigd te ${v.KLANT_ADRES}, ${v.KLANT_POSTCODE} ${v.KLANT_PLAATS}, ingeschreven bij de Kamer van Koophandel onder nummer ${v.KLANT_KVK} rechtsgeldig vertegenwoordigd door ${v.KLANT_CONTACTPERSOON}, hierna te noemen "Opdrachtgever";</p>
+<p>en</p>
+<p>2. René van der Linden handelend onder de naam <span class="bold">Rene van der Linden Holding B.V.</span> gevestigd te Adelheidstraat 40, 5231 VB 's-HERTOGENBOSCH, ingeschreven bij de Kamer van Koophandel onder nummer 17239823, hierna te noemen "Opdrachtnemer";</p>
+<p class="bold">Overwegen als volgt:</p>
+<p>• Opdrachtgever wenst tijdelijke ondersteuning en expertise in te huren op interim-basis.</p>
+<p>• Opdrachtnemer treedt op als zelfstandig ondernemer en niet als werknemer van Opdrachtgever.</p>
+<p>• Partijen willen hun afspraken vastleggen in deze overeenkomst.</p>
+<p class="bold">Komen als volgt overeen:</p>
+
+<h2>Artikel 1 – Opdracht</h2>
+<p>1.1. Opdrachtnemer zal werkzaamheden verrichten als ${v.ROL}, hierna te noemen "de Opdracht".</p>
+<p>1.2. De werkzaamheden worden uitgevoerd op basis van zelfstandigheid, zonder gezagsverhouding, in de zin van de Wet Deregulering Beoordeling Arbeidsrelaties (DBA).</p>
+<p>1.3. De Opdracht wordt uitgevoerd op locatie van Opdrachtgever, thuis, of elders, tenzij anders overeengekomen.</p>
+
+<h2>Artikel 2 – Duur en beëindiging</h2>
+<p>2.1. De overeenkomst gaat in op ${v.STARTDATUM} en heeft een looptijd tot ${v.EINDDATUM} dan wel tot afronding van de Opdracht.</p>
+<p>2.2. De opdracht wordt uitgevoerd op basis van een werkweek van ${v.WERKWEEK} uur. Indien gewenst door één der partijen.</p>
+<p>2.3. Beide partijen kunnen de overeenkomst tussentijds schriftelijk opzeggen met inachtneming van een opzegtermijn van één maand.</p>
+<p>2.4. In geval van wanprestatie, faillissement of surseance van betaling van één der partijen, kan de andere partij de overeenkomst per direct beëindigen.</p>
+
+<h2>Artikel 3 – Vergoeding en betaling</h2>
+<p>3.1. Opdrachtgever betaalt Opdrachtnemer een vergoeding van € ${v.UURTARIEF} exclusief BTW per uur, op basis van daadwerkelijk gewerkte uren.</p>
+<p>3.2. Opdrachtnemer factureert maandelijks achteraf. Facturen worden binnen ${v.BETAALTERMIJN} dagen na ontvangst betaald.</p>
+<p>3.3. Reiskosten die Opdrachtnemer maakt in het kader van de uitvoering van de Opdracht worden vergoed tegen een tarief van € ${v.KMTARIEF} per gereden kilometer (excl. BTW). Dit geldt zowel voor reizen van en naar de vaste werklocatie als voor overige reizen die noodzakelijk zijn voor de werkzaamheden, zoals klantbezoeken, vergaderingen en projectlocaties. Andere kosten worden uitsluitend vergoed indien vooraf schriftelijk overeengekomen.</p>
+
+<h2>Artikel 4 – Zelfstandigheid</h2>
+<p>4.1. Opdrachtnemer voert de werkzaamheden zelfstandig en naar eigen inzicht uit.</p>
+<p>4.2. Opdrachtnemer is niet verplicht om instructies van Opdrachtgever op te volgen die zijn zelfstandigheid aantasten.</p>
+<p>4.3. Opdrachtnemer is zelf verantwoordelijk voor het voldoen aan fiscale verplichtingen, zoals inkomstenbelasting en btw-aangifte.</p>
+<p>4.4. Opdrachtgever verklaart zich er nadrukkelijk mee akkoord dat de Opdrachtnemer ook ten behoeve van andere opdrachtgevers werkzaamheden verricht.</p>
+
+<h2>Artikel 5 – Geheimhouding</h2>
+<p>5.1. Opdrachtnemer verplicht zich tot geheimhouding van alle vertrouwelijke informatie die hij in het kader van de Opdracht ontvangt.</p>
+<p>5.2. Deze geheimhoudingsplicht blijft van kracht tot vijf (5) jaar na beëindiging van de overeenkomst.</p>
+
+<h2>Artikel 6 – Intellectueel eigendom</h2>
+<p>6.1. Alle resultaten van de werkzaamheden (inclusief rapportages, adviezen, ontwerpen) komen toe aan Opdrachtgever.</p>
+<p>6.2. Opdrachtnemer behoudt het recht om algemene kennis, vaardigheden en ervaringen elders toe te passen, mits geen vertrouwelijke informatie wordt prijsgegeven.</p>
+
+<h2>Artikel 7 – Aansprakelijkheid en verzekering</h2>
+<p>7.1. Opdrachtnemer is aansprakelijk voor directe schade als gevolg van tekortkomingen in de uitvoering van de Opdracht, tot maximaal het bedrag dat voor de Opdracht is betaald.</p>
+<p>7.2. Opdrachtnemer dient zichzelf adequaat te verzekeren voor beroepsaansprakelijkheid en bedrijfsaansprakelijkheid en op verzoek van Opdrachtgever een bewijs hiervan te overleggen.</p>
+
+<h2>Artikel 8 – Concurrentie en relatiebeding</h2>
+<p>8.1. Tijdens de looptijd van de opdracht en gedurende zes (6) maanden na beëindiging daarvan, zal Opdrachtnemer zonder schriftelijke toestemming van Opdrachtgever geen werkzaamheden verrichten voor directe klanten of relaties van Opdrachtgever die hij via de opdracht heeft leren kennen.</p>
+
+<h2>Artikel 9 – Overmacht</h2>
+<p>9.1. Indien door overmacht (zoals pandemieën, natuurrampen, oorlog, etc.) de uitvoering van de Opdracht tijdelijk niet mogelijk is, zullen Partijen in overleg treden om passende maatregelen te nemen.</p>
+
+<h2>Artikel 10 – Privacy en AVG</h2>
+<p>10.1. Indien Opdrachtnemer persoonsgegevens verwerkt in het kader van de Opdracht, zal hij/zij zich houden aan de Algemene Verordening Gegevensbescherming (AVG).</p>
+<p>10.2. Partijen kunnen desgewenst een verwerkersovereenkomst afsluiten.</p>
+
+<h2>Artikel 11 – Toepasselijk recht en geschillen</h2>
+<p>11.1. Op deze overeenkomst is Nederlands recht van toepassing.</p>
+<p>11.2. Geschillen voortvloeiend uit deze overeenkomst worden exclusief voorgelegd aan de bevoegde rechter te [plaats].</p>
+
+<p class="bold" style="margin-top:24px">Aldus overeengekomen en ondertekend:</p>
+<p>Te ${v.ONDERTEKENING_PLAATS}, op ${v.ONDERTEKENING_DATUM}.</p>
+
+<div class="sig-block">
+  <strong>${v.KLANT_NAAM}</strong>
+  Naam: ${v.KLANT_CONTACTPERSOON}<br>
+  Functie: ${v.KLANT_FUNCTIE}<br><br>
+  Handtekening:
+</div>
+
+<div class="sig-block" style="margin-top:50px">
+  <strong>Rene van der Linden Holding B.V.</strong>
+  Naam: René van der Linden<br><br>
+  Handtekening:
+</div>
+
+<div class="footer">Rene van der Linden Holding B.V. | Adelheidstraat 40 | 5231 VB 's-Hertogenbosch | WWW.RENEVANDERLINDEN.COM | KVK 17239823</div>
+</body></html>`;
+}
+
+// ── OPSLAAN IN FIRESTORE ──────────────────────
+async function opslaanContract() {
+  const velden = getVelden();
+  if (!validate(velden)) return;
+
+  try {
+    setSync('syncing', 'Opslaan…');
+    await addDoc(collection(db,'contracten'), {
+      klant: velden.KLANT_NAAM,
+      startdatum: document.getElementById('f-start').value,
+      einddatum: document.getElementById('f-eind').value,
+      ondertekenDatum: document.getElementById('f-onddatum').value,
+      velden: velden,
+      aangemaakt: new Date().toISOString()
+    });
+    setSync('', 'Opgeslagen');
+    toast('Contract opgeslagen in dossier ✓', 'ok');
+    loadHistorie();
+  } catch (e) {
+    setSync('off', 'Fout');
+    console.error(e);
+    toast('Opslaan mislukt: ' + e.message, 'bad');
+  }
+}
+
+// ── GESCHIEDENIS ──────────────────────────────
+async function loadHistorie() {
+  const el = document.getElementById('histList');
+  el.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Laden…</div></div>';
+  try {
+    const q = query(collection(db,'contracten'), orderBy('aangemaakt','desc'));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Nog geen contracten opgeslagen</div></div>';
+      return;
+    }
+
+    el.innerHTML = '';
+    snap.docs.forEach(d => {
+      const id = d.id;
+      const data = d.data();
+      const startFmt = data.velden?.STARTDATUM || '–';
+      const eindFmt = data.velden?.EINDDATUM || '–';
+      const aangemaakt = new Date(data.aangemaakt);
+
+      const item = document.createElement('div');
+      item.className = 'hist-item';
+      item.innerHTML = `
+        <div class="hist-header">
+          <div class="hist-body-text">
+            <div class="hist-title">${data.klant || '–'} — ${data.velden?.ROL || 'contract'}</div>
+            <div class="hist-sub">${startFmt} tot ${eindFmt} · opgesteld ${aangemaakt.getDate()} ${MOS[aangemaakt.getMonth()]} ${aangemaakt.getFullYear()}</div>
+          </div>
+          <div class="hist-actions">
+            <button class="abtn" data-id="${id}" data-action="word">Word</button>
+            <button class="abtn" data-id="${id}" data-action="pdf">PDF</button>
+            <button class="abtn del" data-id="${id}" data-action="del">✕</button>
+          </div>`;
+
+      el.appendChild(item);
+    });
+
+    // Action handlers
+    el.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+
+        if (action === 'del') {
+          if (!confirm('Contract uit dossier verwijderen?')) return;
+          await deleteDoc(doc(db,'contracten',id));
+          toast('Verwijderd', 'info');
+          loadHistorie();
+          return;
+        }
+
+        // Word of PDF: laad velden en genereer
+        const snap = await getDoc(doc(db,'contracten',id));
+        if (!snap.exists()) { toast('Contract niet gevonden', 'bad'); return; }
+        const velden = snap.data().velden;
+
+        if (action === 'word') {
+          await downloadWordFromVelden(velden);
+        } else if (action === 'pdf') {
+          const html = renderContractHTML(velden);
+          const w = window.open('', '_blank');
+          if (!w) { toast('Pop-up geblokkeerd', 'bad'); return; }
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+        }
+      });
+    });
+
+  } catch(e) {
+    console.error(e);
+    el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Laden mislukt: ' + e.message + '</div></div>';
+  }
+}
+
+async function downloadWordFromVelden(velden) {
+  try {
+    const resp = await fetch(TEMPLATE_URL);
+    if (!resp.ok) throw new Error('Template niet gevonden');
+    const blob = await resp.blob();
+    const zip = await JSZip.loadAsync(blob);
+
+    const filesToEdit = [];
+    zip.forEach((path) => {
+      if (path === 'word/document.xml' || path.match(/^word\/(header|footer)\d*\.xml$/)) {
+        filesToEdit.push(path);
+      }
+    });
+
+    for (const path of filesToEdit) {
+      let xml = await zip.file(path).async('string');
+      for (const [key, val] of Object.entries(velden)) {
+        const escaped = String(val).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        xml = xml.split(`{{${key}}}`).join(escaped);
+      }
+      zip.file(path, xml);
+    }
+
+    const out = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const url = URL.createObjectURL(out);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Interim-overeenkomst ${velden.KLANT_NAAM} ${(velden.STARTDATUM||'').replace(/-/g,'')}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    toast('Word gedownload ✓', 'ok');
+  } catch(e) {
+    toast('Fout: ' + e.message, 'bad');
+  }
+}
+
+// ── TABS ──────────────────────────────────────
+window.showTab = function(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('pane-' + name).classList.add('on');
+  if (name === 'historie') loadHistorie();
+};
+
+// Expose functions to window for onclick handlers
+window.downloadWord = downloadWord;
+window.downloadPDF = downloadPDF;
+window.opslaanContract = opslaanContract;
+
+init();
+</script>
+</body>
+</html>
