@@ -489,6 +489,13 @@ function onSpecChange() {
     return;
   }
 
+  // Zet factuurdatum standaard op laatste dag van de gekozen factuurmaand
+  // (currentSpec.maand is 0-indexed: 0=januari, 11=december)
+  // Date(year, month+1, 0) geeft de laatste dag van month (handelt schrikkeljaren correct af)
+  const lastDay = new Date(currentSpec.jaar, currentSpec.maand + 1, 0);
+  const lastDayStr = `${lastDay.getFullYear()}-${p2(lastDay.getMonth()+1)}-${p2(lastDay.getDate())}`;
+  document.getElementById('f-datum').value = lastDayStr;
+
   const klant = document.getElementById('f-klant').value;
   const c = clients.find(x => x.name === klant);
   const tarief = c ? c.rate : 0;
