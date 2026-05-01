@@ -31,6 +31,8 @@ header{background:var(--white);border-bottom:1px solid var(--line);position:stic
 .bname{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
 .bsub{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
 .back-btn{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink3);text-decoration:none;background:var(--cream);border:1px solid var(--line2);border-radius:20px;padding:5px 12px}
+/* Als in iframe (ingebed in admin.html): verberg terug-knoppen want admin heeft eigen navigatie */
+html.embedded .back-btn, body.embedded .back-btn{display:none !important}
 
 .tabs{display:flex;border-top:1px solid var(--line)}
 .tab{flex:1;padding:11px 0;text-align:center;font-size:13px;font-weight:500;color:var(--ink3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
@@ -125,6 +127,13 @@ textarea{resize:vertical;min-height:70px;font-size:14px;line-height:1.5}
 </style>
 </head>
 <body>
+<script>
+// Detect iframe embedding en verberg terug-knoppen
+if (window !== window.top) {
+  document.documentElement.classList.add('embedded');
+  document.addEventListener('DOMContentLoaded', () => document.body.classList.add('embedded'));
+}
+</script>
 <div class="app">
   <header>
     <div class="hinner">
