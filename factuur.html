@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f8f7f4">
+<title>Factuur — Ordinatio Groep</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --cream:#f8f7f4;--white:#fff;--ink:#1a1a18;--ink2:#4a4a46;--ink3:#8a8a84;
+  --line:#e8e7e2;--line2:#d4d3cc;
+  --acc:#2d5a8e;--acc-l:#edf3f9;--acc-m:#c8daf0;
+  --grn:#1e7a4a;--grn-l:#eaf5ee;
+  --amb:#b85c00;--amb-l:#fdf3e8;
+  --red:#c0392b;--red-l:#fdf0ee;
+  --r:12px;--rsm:8px;--rxs:6px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04);
+}
+html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+.app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;padding:env(safe-area-inset-top) 0 0}
+.hinner{padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px}
+.bicon{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.bicon svg{width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bname{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
+.bsub{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+.back-btn{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink3);text-decoration:none;background:var(--cream);border:1px solid var(--line2);border-radius:20px;padding:5px 12px}
+
+.tabs{display:flex;border-top:1px solid var(--line)}
+.tab{flex:1;padding:11px 0;text-align:center;font-size:13px;font-weight:500;color:var(--ink3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+
+.main{flex:1;overflow-y:auto;padding-bottom:20px}
+.pane{display:none;padding:20px}
+.pane.on{display:block}
+
+.sec{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:10px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600}
+input,select,textarea{background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;padding:10px 12px;width:100%;outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);background:var(--white);box-shadow:0 0 0 3px var(--acc-l)}
+select{cursor:pointer}
+textarea{resize:vertical;min-height:70px;font-size:14px;line-height:1.5}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* EXTRA KOSTEN */
+.extra-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.extra-row input{flex:1}
+.extra-row input.amount{width:100px;flex:none;text-align:right}
+.extra-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:18px;padding:2px 6px;border-radius:4px;transition:color .15s}
+.extra-del:hover{color:var(--red)}
+.add-extra-btn{background:none;border:1.5px dashed var(--line2);border-radius:var(--rsm);padding:8px;width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer;transition:all .15s}
+.add-extra-btn:hover{border-color:var(--acc-m);color:var(--acc);background:var(--acc-l)}
+
+/* TOTAAL */
+.totaal-card{background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.totaal-row{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;color:var(--ink2)}
+.totaal-row.sub{border-top:1px solid var(--acc-m);margin-top:8px;padding-top:12px;font-weight:600;color:var(--acc);font-size:15px}
+.totaal-val{font-family:'DM Mono',monospace;font-size:14px}
+.totaal-row.sub .totaal-val{font-size:16px;color:var(--acc)}
+
+/* PREVIEW */
+.preview-wrap{background:var(--white);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+#invoicePreview{padding:24px;font-family:Arial,sans-serif;font-size:13px;color:#1a1a18;line-height:1.5}
+
+/* BUTTONS */
+.btn-primary{width:100%;background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+.btn-primary:hover{background:#234d7a}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary .spin{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:sp .7s linear infinite}
+.btn-primary.loading .spin{display:block}
+.btn-primary.loading .bic{display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.btn-secondary{width:100%;background:var(--cream);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:8px}
+.btn-secondary:hover{background:var(--acc-l);border-color:var(--acc-m);color:var(--acc)}
+
+/* HISTORY */
+.hist-item{border-bottom:1px solid var(--line)}
+.hist-item:last-child{border-bottom:none}
+.hist-header{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background .1s}
+.hist-header:hover{background:var(--cream)}
+.hist-title{font-size:13px;font-weight:600;color:var(--ink)}
+.hist-sub{font-size:11px;color:var(--ink3);margin-top:2px}
+.hist-detail{display:none;padding:12px 16px;background:var(--cream);border-top:1px solid var(--line)}
+.hist-detail.on{display:block}
+.status-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.status-pill.sent{background:var(--grn-l);color:var(--grn)}
+.status-pill.draft{background:var(--amb-l);color:var(--amb)}
+.abtn{background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink3);transition:all .15s}
+.abtn:hover{border-color:var(--acc-m);color:var(--acc);background:var(--acc-l)}
+.abtn.del:hover{border-color:var(--red);color:var(--red);background:var(--red-l)}
+
+.empty{text-align:center;padding:40px 20px;color:var(--ink3)}
+.empty-icon{font-size:32px;margin-bottom:8px;opacity:.4}
+.empty-text{font-size:14px}
+
+.sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.sync-dot.ok{background:var(--grn)}
+.sync-dot.err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-dot.syncing{animation:pulse .8s infinite;background:var(--amb)}
+
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);border-radius:20px;padding:10px 18px;font-size:13px;font-weight:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;max-width:92vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--grn-l);border:1px solid rgba(30,122,74,.25);color:var(--grn)}
+.toast.bad{background:var(--red-l);border:1px solid rgba(192,57,43,.25);color:var(--red)}
+.toast.info{background:var(--acc-l);border:1px solid var(--acc-m);color:var(--acc)}
+
+@media print{
+  body > *{display:none!important}
+  #printArea{display:block!important;padding:20px}
+}
+@page{size:A4;margin:1.5cm 1cm}
+.btn-secondary{width:100%;background:var(--cream);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{background:var(--acc-l);border-color:var(--acc-m);color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="hinner">
+      <div class="brand">
+        <div class="bicon">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>
+        </div>
+        <div>
+          <div class="bname">Factuur</div>
+          <div class="bsub"><span class="sync-dot syncing" id="syncDot"></span><span id="syncTxt">Verbinden…</span></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a href="verstuur.html" class="back-btn">← Verstuur</a>
+        <a href="index.html" class="back-btn">Dagstaat</a>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" onclick="showTab('nieuw',this)">Nieuwe factuur</button>
+      <button class="tab" onclick="showTab('history',this)">Facturen</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- NIEUWE FACTUUR -->
+    <div class="pane on" id="pane-nieuw">
+
+      <p class="sec">Factuurgegevens</p>
+      <div class="card">
+        <div class="fg2">
+          <div class="field">
+            <label>Factuurnummer</label>
+            <input type="text" id="f-nummer" readonly style="background:var(--acc-l);border-color:var(--acc-m);color:var(--acc);font-family:'DM Mono',monospace;font-weight:600">
+          </div>
+          <div class="field">
+            <label>Factuurdatum</label>
+            <input type="date" id="f-datum">
+          </div>
+          <div class="field">
+            <label>Opdrachtgever</label>
+            <select id="f-klant" onchange="onKlantChange()">
+              <option value="">Kies opdrachtgever…</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Geaccordeerde periode</label>
+            <select id="f-spec">
+              <option value="">Kies periode…</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Omschrijving / referentie</label>
+          <input type="text" id="f-omschrijving" placeholder="Bijv. Interim Operationeel Manager">
+        </div>
+        <div class="field">
+          <label>Uw referentie (optioneel)</label>
+          <input type="text" id="f-ref" placeholder="PO-nummer of inkoopordernummer">
+        </div>
+        <div class="fg2">
+          <div class="field">
+            <label>BTW percentage</label>
+            <select id="f-btw">
+              <option value="21">21%</option>
+              <option value="0">0%</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Betalingstermijn (dagen)</label>
+            <input type="number" id="f-termijn" value="21" min="0" max="90">
+          </div>
+        </div>
+      </div>
+
+      <p class="sec">Uren & kilometers</p>
+      <div class="card" id="urenCard">
+        <div style="font-size:13px;color:var(--ink3);text-align:center;padding:10px">Kies eerst een geaccordeerde periode</div>
+      </div>
+
+      <p class="sec">Overige kosten</p>
+      <div class="card">
+        <div id="extraKosten"></div>
+        <button class="add-extra-btn" onclick="addExtraRegel()">+ Overige kostenregel toevoegen</button>
+      </div>
+
+      <div class="totaal-card" id="totaalCard">
+        <div class="totaal-row"><span>Subtotaal uren</span><span class="totaal-val" id="tot-uren">€ 0,00</span></div>
+        <div class="totaal-row"><span>Subtotaal kilometers</span><span class="totaal-val" id="tot-km">€ 0,00</span></div>
+        <div class="totaal-row"><span>Subtotaal overige kosten</span><span class="totaal-val" id="tot-extra">€ 0,00</span></div>
+        <div class="totaal-row" style="border-top:1px solid var(--acc-m);padding-top:8px;margin-top:4px"><span>Subtotaal excl. BTW</span><span class="totaal-val" id="tot-excl">€ 0,00</span></div>
+        <div class="totaal-row"><span id="btw-label">BTW 21%</span><span class="totaal-val" id="tot-btw">€ 0,00</span></div>
+        <div class="totaal-row sub"><span>Totaal incl. BTW</span><span class="totaal-val" id="tot-incl">€ 0,00</span></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+        <button class="btn-secondary" onclick="printFactuur()" style="display:flex;align-items:center;justify-content:center;gap:6px">
+          🖨 Afdrukken / PDF
+        </button>
+        <button class="btn-secondary" onclick="toggleEmailSection()" style="display:flex;align-items:center;justify-content:center;gap:6px" id="toggleEmailBtn">
+          📧 Ook e-mailen
+        </button>
+      </div>
+
+      <div id="emailSection" style="display:none;margin-bottom:8px">
+        <div class="card" style="margin-bottom:8px">
+          <div class="field" style="margin-bottom:0">
+            <label>Emailadres ontvanger</label>
+            <input type="email" id="f-email" placeholder="naam@bedrijf.nl">
+          </div>
+        </div>
+        <button class="btn-primary" id="sendFactuurBtn" onclick="verstuurFactuur()">
+          <svg class="bic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          <div class="spin"></div>
+          Factuur versturen per email
+        </button>
+      </div>
+
+      <button class="btn-primary" onclick="slaFactuurOp()" style="background:var(--grn)" id="saveFactuurBtn">
+        <svg class="bic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <div class="spin"></div>
+        Factuur opslaan (zonder email)
+      </button>
+    </div>
+
+    <!-- FACTUREN OVERZICHT -->
+    <div class="pane" id="pane-history">
+      <p class="sec">Verstuurde facturen</p>
+      <div class="card" style="padding:0;overflow:hidden" id="factuurList">
+        <div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Laden…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT AREA (hidden, only shown on print) -->
+<div id="printArea" style="display:none;padding:40px;font-family:Arial,sans-serif;font-size:13px;color:#1a1a18"></div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,onSnapshot,collection,addDoc,query,orderBy,where,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB={
+  apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",
+  authDomain:"dagstaat-ordinatio.firebaseapp.com",
+  projectId:"dagstaat-ordinatio",
+  storageBucket:"dagstaat-ordinatio.firebasestorage.app",
+  messagingSenderId:"841107130686",
+  appId:"1:841107130686:web:f91211f83a8e031746846f"
+};
+
+emailjs.init('LVecJZWPqdswbZbga');
+const fbApp = initializeApp(FB);
+const db = getFirestore(fbApp);
+
+const MO = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const MOS = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const DY = ['zo','ma','di','wo','do','vr','za'];
+
+let days = {};
+let clients = [];
+let specs = [];
+let extraRegels = [];
+let currentSpec = null;
+
+const p2 = n => String(n).padStart(2,'0');
+const p3 = n => String(n).padStart(3,'0');
+const m2s = m => `${Math.floor(m/60)}:${p2(m%60)}`;
+const tMins = t => { if(!t) return 0; const[h,m]=t.split(':').map(Number); return h*60+m; };
+const bMins = b => Math.max(0, (tMins(b.end)-tMins(b.start)) - (parseInt(b.brk)||0));
+const euro = n => '€ ' + n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function setSync(s, txt) {
+  document.getElementById('syncDot').className = `sync-dot ${s}`;
+  document.getElementById('syncTxt').textContent = txt;
+}
+
+// ── LOAD DATA ─────────────────────────────────
+onSnapshot(doc(db,'dagstaat','data'), snap => {
+  days = snap.exists() ? (snap.data().days || {}) : {};
+  setSync('ok','Gesynchroniseerd');
+}, () => setSync('err','Offline'));
+
+function loadClients() {
+  clients = JSON.parse(localStorage.getItem('dgs_clients_v1') || '[]');
+  if (!clients.length) {
+    clients = [
+      {name:'Sitech',rate:115,color:'#2d5a8e',email:'',btw:21},
+      {name:'Dysel',rate:110,color:'#1e7a4a',email:'',btw:21},
+      {name:'Seeder',rate:110,color:'#b85c00',email:'',btw:21},
+      {name:'HG',rate:110,color:'#7b3f9e',email:'',btw:21},
+      {name:'Nabuurs',rate:110,color:'#c0392b',email:'',btw:21},
+    ];
+  }
+}
+
+async function loadAccoordedSpecs() {
+  try {
+    const q = query(collection(db,'specs'), orderBy('verstuurd_datum','desc'));
+    const snap = await getDocs(q);
+    specs = snap.docs
+      .filter(d => d.data().akkoord === true && !d.data().factuur_verstuurd)
+      .map(d => ({id: d.id, ...d.data()}));
+  } catch(e) { specs = []; }
+}
+
+// Vergelijk twee klantnamen op een tolerante manier:
+// "Sitech" matcht "Sitech Nederland B.V.", hoofdletters/spaties tolereren.
+// Zo blijven oude specs vindbaar als je later de klantnaam in beheer hebt verlengd.
+function klantMatch(a, b) {
+  if (!a || !b) return false;
+  const norm = s => String(s).toLowerCase().replace(/[.,]/g,'').replace(/\s+/g,' ').trim();
+  const na = norm(a), nb = norm(b);
+  if (na === nb) return true;
+  // Match als de ene de eerste woorden van de andere is.
+  // Splits in woorden en check of het eerste woord matcht én de kortste een prefix is.
+  if (na.startsWith(nb + ' ') || nb.startsWith(na + ' ')) return true;
+  // Eerste woord match (bv. "sitech" -> "sitech nederland bv")
+  const wa = na.split(' ')[0], wb = nb.split(' ')[0];
+  return wa === wb && wa.length >= 3;
+}
+
+// ── FACTUURNUMMER ─────────────────────────────
+async function getNextFactuurNummer() {
+  const jaar = new Date().getFullYear();
+  const ref = doc(db, 'factuur_counter', `${jaar}`);
+  const snap = await getDoc(ref);
+  const huidig = snap.exists() ? snap.data().counter : 0;
+  const nieuw = huidig + 1;
+  await setDoc(ref, {counter: nieuw});
+  return `ORDGR-${jaar}${p3(nieuw)}`;
+}
+
+// ── INIT ──────────────────────────────────────
+async function init() {
+  loadClients();
+  await loadAccoordedSpecs();
+
+  // Factuurnummer wordt PAS toegekend bij Opslaan/Versturen
+  // Toon placeholder zodat duidelijk is dat het nummer nog komt
+  document.getElementById('f-nummer').value = '(wordt toegekend bij opslaan)';
+
+  // Datum = vandaag
+  const now = new Date();
+  document.getElementById('f-datum').value = `${now.getFullYear()}-${p2(now.getMonth()+1)}-${p2(now.getDate())}`;
+
+  // Klant dropdown
+  const kSel = document.getElementById('f-klant');
+  kSel.innerHTML = '<option value="">Kies opdrachtgever…</option>' +
+    clients.filter(c => c.name !== 'Intern')
+           .map(c => `<option value="${c.name}">${c.name}</option>`)
+           .join('');
+  kSel.addEventListener('change', onKlantChange);
+
+  // BTW listener
+  document.getElementById('f-btw').addEventListener('change', berekenTotaal);
+  document.getElementById('f-termijn').addEventListener('change', () => {});
+
+  // Als er een spec-ID in de URL staat: automatisch klant + periode voorselecteren
+  const urlParams = new URLSearchParams(window.location.search);
+  const preSpecId = urlParams.get('spec');
+  if (preSpecId) {
+    const preSpec = specs.find(s => s.id === preSpecId);
+    if (preSpec) {
+      // Klant selecteren — dit triggert onKlantChange die de specs-dropdown vult
+      kSel.value = preSpec.klant;
+      await onKlantChange();
+      // Spec in dropdown selecteren
+      const sSel = document.getElementById('f-spec');
+      sSel.value = preSpecId;
+      // Handmatig onSpecChange triggeren om uren te laden en totalen te berekenen
+      onSpecChange();
+    } else {
+      toast('Spec niet gevonden of al gefactureerd', 'bad');
+    }
+  }
+}
+
+// ── KLANT CHANGE ──────────────────────────────
+async function onKlantChange() {
+  const klant = document.getElementById('f-klant').value;
+  if (!klant) return;
+
+  // Set BTW from client settings
+  const c = clients.find(x => x.name === klant);
+  if (c) {
+    document.getElementById('f-btw').value = c.btw !== undefined ? c.btw : 21;
+    if (c.email) document.getElementById('f-email').value = c.email;
+    if (c.omschrijving) document.getElementById('f-omschrijving').value = c.omschrijving || '';
+  }
+
+  // Fill spec dropdown with accoorded specs for this client (fuzzy match op klantnaam)
+  await loadAccoordedSpecs();
+  const klantSpecs = specs.filter(s => klantMatch(s.klant, klant));
+  const sSel = document.getElementById('f-spec');
+  sSel.innerHTML = '<option value="">Kies periode…</option>' +
+    klantSpecs.map(s => `<option value="${s.id}">${MO[s.maand]} ${s.jaar} (${m2s(s.totaal_mins||0)})</option>`).join('');
+
+  if (!sSel.onchange) {
+    sSel.addEventListener('change', onSpecChange);
+  }
+  currentSpec = null;
+  document.getElementById('urenCard').innerHTML = '<div style="font-size:13px;color:var(--ink3);text-align:center;padding:10px">Kies een geaccordeerde periode</div>';
+  berekenTotaal();
+}
+
+function onSpecChange() {
+  const specId = document.getElementById('f-spec').value;
+  currentSpec = specs.find(s => s.id === specId) || null;
+  if (!currentSpec) {
+    document.getElementById('urenCard').innerHTML = '<div style="font-size:13px;color:var(--ink3);text-align:center;padding:10px">Kies een geaccordeerde periode</div>';
+    berekenTotaal();
+    return;
+  }
+
+  const klant = document.getElementById('f-klant').value;
+  const c = clients.find(x => x.name === klant);
+  const tarief = c ? c.rate : 0;
+  const kmTarief = (c && typeof c.kmRate === 'number' ? c.kmRate : parseFloat(c?.kmRate)) || 0.21;
+
+  const regels = currentSpec.regels || [];
+  const totalMins = regels.reduce((s,r) => s+bMins(r), 0);
+  const totalHours = totalMins / 60;
+  const totalKm = regels.reduce((s,r) => s+(r.km||0), 0);
+
+  document.getElementById('urenCard').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:4px">Totaal uren</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600;color:var(--acc)">${m2s(totalMins)}</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px">${totalHours.toFixed(2)} uur × €${tarief}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:4px">Totaal KM</div>
+        <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600;color:var(--acc)">${totalKm} km</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px">${totalKm} km × €${kmTarief.toFixed(2)}</div>
+      </div>
+    </div>
+    <details style="cursor:pointer">
+      <summary style="font-size:12px;color:var(--ink3);font-weight:500;margin-bottom:8px">Toon dagdetail (${regels.length} dagen)</summary>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px">
+        <thead><tr style="border-bottom:1px solid var(--line2)">
+          <th style="padding:5px 6px;text-align:left;color:var(--ink3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.4px">Datum</th>
+          <th style="padding:5px 6px;text-align:left;color:var(--ink3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.4px">Tijd</th>
+          <th style="padding:5px 6px;text-align:right;color:var(--ink3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.4px">Uren</th>
+          <th style="padding:5px 6px;text-align:right;color:var(--ink3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.4px">KM</th>
+        </tr></thead>
+        <tbody>${regels.map(r => {
+          const d = new Date(r.date);
+          return `<tr style="border-bottom:1px solid var(--line)">
+            <td style="padding:5px 6px;font-weight:500">${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]}</td>
+            <td style="padding:5px 6px;font-family:'DM Mono',monospace;color:var(--ink3)">${r.start}–${r.end}</td>
+            <td style="padding:5px 6px;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--acc)">${m2s(bMins(r))}</td>
+            <td style="padding:5px 6px;text-align:right;font-family:'DM Mono',monospace;color:var(--ink3)">${r.km||'–'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </details>`;
+
+  berekenTotaal();
+}
+
+// ── EXTRA KOSTEN ──────────────────────────────
+window.addExtraRegel = function(omschr='', bedrag='') {
+  const id = Date.now();
+  extraRegels.push({id, omschr, bedrag});
+  renderExtraRegels();
+};
+
+function renderExtraRegels() {
+  document.getElementById('extraKosten').innerHTML = extraRegels.map(r => `
+    <div class="extra-row" id="extra-${r.id}">
+      <input type="text" value="${r.omschr}" placeholder="Omschrijving kosten" onchange="updateExtra(${r.id},'omschr',this.value)">
+      <input type="number" value="${r.bedrag}" placeholder="0,00" step="0.01" min="0" class="amount" onchange="updateExtra(${r.id},'bedrag',this.value)" style="font-family:'DM Mono',monospace">
+      <button class="extra-del" onclick="removeExtra(${r.id})">×</button>
+    </div>`).join('');
+  berekenTotaal();
+}
+
+window.updateExtra = function(id, field, val) {
+  const r = extraRegels.find(x => x.id === id);
+  if (r) { r[field] = val; berekenTotaal(); }
+};
+window.removeExtra = function(id) {
+  extraRegels = extraRegels.filter(x => x.id !== id);
+  renderExtraRegels();
+};
+
+// ── BEREKEN TOTAAL ────────────────────────────
+function berekenTotaal() {
+  const klant = document.getElementById('f-klant').value;
+  const c = clients.find(x => x.name === klant);
+  const tarief = c ? c.rate : 0;
+  const kmTarief = (c && typeof c.kmRate === 'number' ? c.kmRate : parseFloat(c?.kmRate)) || 0.21;
+  const btwPct = parseInt(document.getElementById('f-btw').value) || 0;
+
+  let subtotaalUren = 0;
+  let subtotaalKm = 0;
+  if (currentSpec) {
+    const regels = currentSpec.regels || [];
+    const totalMins = regels.reduce((s,r) => s+bMins(r), 0);
+    const totalKm = regels.reduce((s,r) => s+(r.km||0), 0);
+    subtotaalUren = (totalMins/60) * tarief;
+    subtotaalKm = totalKm * kmTarief;
+  }
+
+  const subtotaalExtra = extraRegels.reduce((s,r) => s+(parseFloat(r.bedrag)||0), 0);
+  const subtotaalExcl = subtotaalUren + subtotaalKm + subtotaalExtra;
+  const btw = subtotaalExcl * (btwPct/100);
+  const totaalIncl = subtotaalExcl + btw;
+
+  document.getElementById('tot-uren').textContent = euro(subtotaalUren);
+  document.getElementById('tot-km').textContent = euro(subtotaalKm);
+  document.getElementById('tot-extra').textContent = euro(subtotaalExtra);
+  document.getElementById('tot-excl').textContent = euro(subtotaalExcl);
+  document.getElementById('btw-label').textContent = `BTW ${btwPct}%`;
+  document.getElementById('tot-btw').textContent = euro(btw);
+  document.getElementById('tot-incl').textContent = euro(totaalIncl);
+}
+
+// ── FACTUUR HTML GENEREREN ────────────────────
+function generateFactuurHTML(data) {
+  const {nummer, datum, klant, klantData, spec, omschrijving, ref, btwPct, termijn, regels, extraKosten, tarief, kmTarief} = data;
+
+  const totalMins = regels.reduce((s,r) => s+bMins(r), 0);
+  const totalHours = totalMins/60;
+  const totalKm = regels.reduce((s,r) => s+(r.km||0), 0);
+  const subtotaalUren = totalHours * tarief;
+  const subtotaalKm = totalKm * kmTarief;
+  const subtotaalExtra = extraKosten.reduce((s,r) => s+(parseFloat(r.bedrag)||0), 0);
+  const subtotaalExcl = subtotaalUren + subtotaalKm + subtotaalExtra;
+  const btw = subtotaalExcl * (btwPct/100);
+  const totaalIncl = subtotaalExcl + btw;
+
+  const factuurDatum = new Date(datum);
+  const betaalDatum = new Date(factuurDatum);
+  betaalDatum.setDate(betaalDatum.getDate() + parseInt(termijn));
+
+  const datumStr = `${factuurDatum.getDate()}-${p2(factuurDatum.getMonth()+1)}-${factuurDatum.getFullYear()}`;
+  const betaalStr = `${betaalDatum.getDate()}-${p2(betaalDatum.getMonth()+1)}-${betaalDatum.getFullYear()}`;
+  const maandStr = `${MOS[spec.maand]}-${String(spec.jaar).slice(2)}`;
+
+  return `
+  <div style="max-width:700px;margin:0 auto;font-family:Arial,sans-serif;font-size:13px;color:#1a1a18;position:relative;min-height:1100px;padding-bottom:80px;box-sizing:border-box">
+
+    <!-- HEADER -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
+      <div style="width:64px;height:64px;display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 100 100" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="96" height="96" rx="6" fill="none" stroke="#1a3a5c" stroke-width="6"/>
+          <text x="50" y="72" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="68" fill="#1a3a5c">R</text>
+        </svg>
+      </div>
+      <div style="text-align:right;line-height:1.6;font-size:13px;color:#4a4a46">
+        <div style="font-weight:700;color:#1a1a18;font-size:14px">Rene van der Linden Holding</div>
+        <div>Adelheidstraat 40</div>
+        <div>5231 VB 's-Hertogenbosch</div>
+        <div>info@renevanderlinden.com</div>
+        <div>NL32 RABO 0136 6243 67</div>
+      </div>
+    </div>
+
+    <!-- KLANT ADRES & FACTUURINFO -->
+    <div style="display:flex;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #e8e7e2">
+      <div style="line-height:1.8;font-size:13px">
+        <div style="font-weight:700">${klant}</div>
+        ${klantData.contact ? `<div>T.a.v. ${klantData.contact}</div>` : ''}
+        ${klantData.address ? `<div>${klantData.address}</div>` : ''}
+        ${klantData.city ? `<div>${klantData.city}</div>` : ''}
+      </div>
+      <div style="text-align:right;font-size:13px">
+        <div style="color:#8a8a84">Klantnummer:</div>
+        <div style="font-weight:600">${klantData.klantnr || '–'}</div>
+      </div>
+    </div>
+
+    <!-- INVOICE TITLE -->
+    <div style="background:#f8f7f4;border:1px solid #e8e7e2;border-radius:8px;padding:16px 20px;margin-bottom:20px">
+      <div style="font-size:20px;font-weight:700;color:#1a1a18;margin-bottom:12px">INVOICE</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:3px 0;color:#8a8a84;width:160px">Invoice number:</td><td style="font-weight:600;font-family:monospace">${nummer}</td></tr>
+        <tr><td style="padding:3px 0;color:#8a8a84">Date invoice:</td><td>${datumStr}</td></tr>
+        <tr><td style="padding:3px 0;color:#8a8a84">Invoice month:</td><td>${maandStr}</td></tr>
+        <tr><td style="padding:3px 0;color:#8a8a84">Description:</td><td>${omschrijving||'–'}</td></tr>
+        ${ref ? `<tr><td style="padding:3px 0;color:#8a8a84">Your reference:</td><td>${ref}</td></tr>` : ''}
+      </table>
+    </div>
+
+    <!-- DESCRIPTION HEADER -->
+    <div style="border-bottom:2px solid #1a1a18;padding-bottom:4px;margin-bottom:16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8a8a84">Description:</div>
+
+    <!-- UREN -->
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+      <tr style="background:#f0f0ec">
+        <td colspan="2" style="padding:8px 10px;font-weight:600">Aantal interim uren te factureren op basis van overeenkomst (zie ook bijlage):</td>
+        <td style="padding:8px 10px;text-align:right;font-weight:600;font-family:monospace">${totalHours.toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 10px;color:#4a4a46">Tarief per uur voor interim uren, volgens overeenkomst</td>
+        <td style="padding:6px 10px;text-align:right;color:#4a4a46">€</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace">${tarief.toFixed(2)}</td>
+      </tr>
+      <tr style="background:#f8f7f4;border-top:1px solid #e8e7e2">
+        <td colspan="2" style="padding:8px 10px;font-weight:600">Totaal bedrag deze maand interim uren:</td>
+        <td style="padding:8px 10px;text-align:right;font-weight:700;font-family:monospace">€ ${subtotaalUren.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      </tr>
+    </table>
+
+    <!-- KM -->
+    ${totalKm > 0 ? `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+      <tr>
+        <td style="padding:6px 10px;color:#4a4a46">Kilometervergoeding volgens overeenkomst, aantal km</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace">${totalKm.toLocaleString('nl-NL')}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 10px;color:#4a4a46">Kilometervergoeding per kilometer</td>
+        <td style="padding:6px 10px;text-align:right;font-family:monospace">€ ${kmTarief.toFixed(2)}</td>
+      </tr>
+      <tr style="background:#f8f7f4;border-top:1px solid #e8e7e2">
+        <td style="padding:8px 10px;font-weight:600">Totaal bedrag deze maand:</td>
+        <td style="padding:8px 10px;text-align:right;font-weight:700;font-family:monospace">€ ${subtotaalKm.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      </tr>
+    </table>` : ''}
+
+    <!-- OVERIGE KOSTEN -->
+    ${extraKosten.length > 0 ? `
+    <div style="border-top:1px solid #e8e7e2;padding-top:12px;margin-bottom:20px">
+      <div style="font-weight:600;margin-bottom:8px;color:#8a8a84;font-size:12px;text-transform:uppercase;letter-spacing:.4px">Overige onkosten</div>
+      ${extraKosten.map(k => `
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px">
+        <tr>
+          <td style="padding:5px 10px;color:#4a4a46">${k.omschr}</td>
+          <td style="padding:5px 10px;text-align:right;font-family:monospace">€ ${parseFloat(k.bedrag||0).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        </tr>
+      </table>`).join('')}
+    </div>` : ''}
+
+    <!-- TOTALEN -->
+    <div style="border-top:2px solid #1a1a18;padding-top:16px;margin-top:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr>
+          <td style="padding:4px 10px;color:#4a4a46">Sub total hours and Kilometers:</td>
+          <td style="padding:4px 10px;text-align:right;font-family:monospace">€ ${(subtotaalUren+subtotaalKm+subtotaalExtra).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 10px;color:#4a4a46">VAT: ${btwPct}%</td>
+          <td style="padding:4px 10px;text-align:right;font-family:monospace">€ ${btw.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        </tr>
+        <tr style="border-top:1px solid #e8e7e2;font-weight:700;font-size:14px">
+          <td style="padding:8px 10px">Total invoice (Hours, kilometers, VAT and costs):</td>
+          <td style="padding:8px 10px;text-align:right;font-family:monospace">€ ${totaalIncl.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- BETALING -->
+    <div style="margin-top:28px;padding-top:16px;border-top:1px solid #e8e7e2;font-size:13px;color:#4a4a46">
+      <div style="margin-bottom:6px"><em>To be payed within <strong>${termijn} days</strong> after invoice date. Please send payment to:</em></div>
+      <table style="font-size:13px">
+        <tr><td style="padding:2px 0;color:#8a8a84;width:120px">Account name:</td><td style="font-weight:600">Rene van der Linden Holding</td></tr>
+        <tr><td style="padding:2px 0;color:#8a8a84">IBAN:</td><td style="font-family:monospace">NL32 RABO 0136 6243 67</td></tr>
+      </table>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="position:absolute;bottom:0;left:0;right:0;padding-top:12px;border-top:1px solid #e8e7e2;font-size:9px;color:#8a8a84;text-align:center;line-height:1.6">
+      <div style="font-weight:600;color:#4a4a46">René van der Linden Holding B.V. | Adelheidstraat 40 | 5231 VB 's-Hertogenbosch</div>
+      <div>WWW.RENEVANDERLINDEN.COM | E-mail: INFO@RENEVANDERLINDEN.COM</div>
+      <div>KVK 17239823 | Rabobank IBAN: NL32 RABO 0136 6243 67 | NL820357376B01</div>
+      <div style="margin-top:4px">Op al onze aanbiedingen zijn onze algemene voorwaarden van toepassing, gedeponeerd bij de Kamer van Koophandel te 's-Hertogenbosch.</div>
+    </div>
+
+  </div>`;
+}
+
+// ── TOGGLE EMAIL SECTION ──────────────────────
+window.toggleEmailSection = function() {
+  const s = document.getElementById('emailSection');
+  const btn = document.getElementById('toggleEmailBtn');
+  const on = s.style.display === 'none';
+  s.style.display = on ? 'block' : 'none';
+  btn.textContent = on ? '✕ Annuleer email' : '📧 Ook e-mailen';
+};
+
+// ── PRINT / PDF ────────────────────────────────
+window.printFactuur = function() {
+  const data = collectFactuurData();
+  if (!data) return;
+  // Preview zonder nummer-reservering: toon (CONCEPT) als nog geen echt nummer is toegekend
+  if (!data.nummer || data.nummer.startsWith('(')) {
+    data.nummer = '(CONCEPT)';
+  }
+  const html = generateFactuurHTML(data);
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(() => window.print(), 100);
+};
+
+// ── OPSLAAN ZONDER EMAIL ───────────────────────
+window.slaFactuurOp = async function() {
+  const data = collectFactuurData();
+  if (!data) return;
+
+  const btn = document.getElementById('saveFactuurBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+
+  try {
+    // PAS NU factuurnummer reserveren — niet bij paginalaad
+    const num = await getNextFactuurNummer();
+    document.getElementById('f-nummer').value = num;
+    data.nummer = num;
+
+    // Save to Firebase
+    const factuurRef = await addDoc(collection(db,'facturen'), {
+      ...data,
+      email: '',
+      verstuurd_datum: new Date().toISOString(),
+      spec_id: currentSpec.id,
+      status: 'opgeslagen'
+    });
+
+    // Mark spec as factuur verstuurd
+    await updateDoc(doc(db,'specs',currentSpec.id), {
+      factuur_verstuurd: true,
+      factuur_id: factuurRef.id,
+      factuur_nummer: data.nummer
+    });
+
+    toast(`Factuur ${data.nummer} opgeslagen ✓`, 'ok');
+
+    // Print PDF
+    const html = generateFactuurHTML(data);
+    document.getElementById('printArea').innerHTML = html;
+    setTimeout(() => window.print(), 300);
+
+    // Reset form
+    await resetForm();
+
+  } catch(e) {
+    console.error(e);
+    toast('Fout: ' + e.message, 'bad');
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+};
+
+async function resetForm() {
+  extraRegels = [];
+  renderExtraRegels();
+  document.getElementById('f-klant').value = '';
+  document.getElementById('f-spec').innerHTML = '<option value="">Kies periode…</option>';
+  document.getElementById('urenCard').innerHTML = '<div style="font-size:13px;color:var(--ink3);text-align:center;padding:10px">Kies eerst een geaccordeerde periode</div>';
+  document.getElementById('f-omschrijving').value = '';
+  document.getElementById('f-ref').value = '';
+  currentSpec = null;
+  berekenTotaal();
+  // Geen nummer reserveren — pas bij volgende opslaan
+  document.getElementById('f-nummer').value = '(wordt toegekend bij opslaan)';
+}
+
+// ── PREVIEW (legacy) ──────────────────────────
+window.previewFactuur = function() {
+  const data = collectFactuurData();
+  if (!data) return;
+  if (!data.nummer || data.nummer.startsWith('(')) {
+    data.nummer = '(CONCEPT)';
+  }
+  const html = generateFactuurHTML(data);
+  document.getElementById('printArea').innerHTML = html;
+  setTimeout(() => window.print(), 100);
+};
+
+function collectFactuurData() {
+  const klant = document.getElementById('f-klant').value;
+  if (!klant) { toast('Kies een opdrachtgever', 'bad'); return null; }
+  if (!currentSpec) { toast('Kies een geaccordeerde periode', 'bad'); return null; }
+
+  const c = clients.find(x => x.name === klant) || {};
+  return {
+    nummer: document.getElementById('f-nummer').value,
+    datum: document.getElementById('f-datum').value,
+    klant,
+    klantData: c,
+    spec: currentSpec,
+    omschrijving: document.getElementById('f-omschrijving').value,
+    ref: document.getElementById('f-ref').value,
+    btwPct: parseInt(document.getElementById('f-btw').value) || 0,
+    termijn: parseInt(document.getElementById('f-termijn').value) || 21,
+    regels: currentSpec.regels || [],
+    extraKosten: extraRegels.filter(r => r.omschr || r.bedrag),
+    tarief: c.rate || 0,
+    kmTarief: (typeof c.kmRate === 'number' ? c.kmRate : parseFloat(c.kmRate)) || 0.21
+  };
+}
+
+// ── VERSTUUR FACTUUR ──────────────────────────
+window.verstuurFactuur = async function() {
+  const email = document.getElementById('f-email').value.trim();
+  if (!email || !email.includes('@')) { toast('Voer een geldig emailadres in', 'bad'); return; }
+
+  const data = collectFactuurData();
+  if (!data) return;
+
+  const btn = document.getElementById('sendFactuurBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+
+  try {
+    // PAS NU factuurnummer reserveren — niet bij paginalaad
+    const num = await getNextFactuurNummer();
+    document.getElementById('f-nummer').value = num;
+    data.nummer = num;
+
+    const factuurHTML = generateFactuurHTML(data);
+
+    // Save factuur to Firebase
+    const factuurRef = await addDoc(collection(db,'facturen'), {
+      ...data,
+      email,
+      verstuurd_datum: new Date().toISOString(),
+      spec_id: currentSpec.id,
+      status: 'verstuurd'
+    });
+
+    // Mark spec as factuur verstuurd
+    await updateDoc(doc(db,'specs',currentSpec.id), {
+      factuur_verstuurd: true,
+      factuur_id: factuurRef.id,
+      factuur_nummer: data.nummer
+    });
+
+    // Send email via EmailJS
+    await emailjs.send('service_rpek59r', 'template_p4r2rkp', {
+      to_email: email,
+      klant: data.klant,
+      naam: 'Rene van der Linden',
+      maand: `Factuur ${data.nummer}`,
+      tabel: factuurHTML,
+      totaal_uren: data.nummer,
+      akkoord_link: '#',
+      email: 'info@renevanderlinden.com'
+    });
+
+    toast(`Factuur ${data.nummer} verstuurd ✓`, 'ok');
+    // Reset form
+    await resetForm();
+    document.getElementById('emailSection').style.display = 'none';
+    document.getElementById('toggleEmailBtn').textContent = '📧 Ook e-mailen';
+
+  } catch(e) {
+    console.error(e);
+    toast('Fout: ' + e.message, 'bad');
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+};
+
+// ── HISTORY ───────────────────────────────────
+async function loadFactuurHistory() {
+  const el = document.getElementById('factuurList');
+  el.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Laden…</div></div>';
+  try {
+    const q = query(collection(db,'facturen'), orderBy('verstuurd_datum','desc'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Nog geen facturen</div></div>';
+      return;
+    }
+    el.innerHTML = '';
+    snap.docs.forEach(d => {
+      const id = d.id;
+      const data = d.data();
+      const vd = new Date(data.verstuurd_datum);
+
+      const item = document.createElement('div');
+      item.className = 'hist-item';
+
+      const header = document.createElement('div');
+      header.className = 'hist-header';
+      header.innerHTML = `
+        <div style="flex:1">
+          <div class="hist-title">${data.nummer} — ${data.klant}</div>
+          <div class="hist-sub">${data.email} · ${vd.getDate()} ${MOS[vd.getMonth()]} ${vd.getFullYear()}</div>
+        </div>
+        <div class="status-pill sent">✓ Verstuurd</div>
+        <span style="color:var(--ink3);font-size:14px;margin-left:6px">›</span>`;
+
+      const detail = document.createElement('div');
+      detail.className = 'hist-detail';
+      detail.innerHTML = `
+        <div style="font-size:13px;color:var(--ink2);margin-bottom:10px">
+          <strong>${data.omschrijving||'–'}</strong><br>
+          <span style="color:var(--ink3)">${MO[data.spec?.maand||0]} ${data.spec?.jaar||''} · BTW ${data.btwPct||21}% · Termijn ${data.termijn||21}d</span>
+        </div>
+        <div class="act-row">
+          <button class="abtn" data-action="herprint" data-id="${id}">🖨 Opnieuw afdrukken</button>
+        </div>`;
+
+      detail.querySelector('[data-action="herprint"]').addEventListener('click', async () => {
+        const snap2 = await getDoc(doc(db,'facturen',id));
+        if (!snap2.exists()) return;
+        const d2 = snap2.data();
+        const html = generateFactuurHTML(d2);
+        document.getElementById('printArea').innerHTML = html;
+        window.print();
+      });
+
+      header.addEventListener('click', () => detail.classList.toggle('on'));
+      item.appendChild(header);
+      item.appendChild(detail);
+      el.appendChild(item);
+    });
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-text">Laden mislukt</div></div>';
+  }
+}
+
+// ── TABS ──────────────────────────────────────
+window.showTab = function(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('pane-' + name).classList.add('on');
+  if (name === 'history') loadFactuurHistory();
+};
+
+init();
+</script>
+</body>
+</html>
