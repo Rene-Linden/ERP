@@ -617,7 +617,7 @@ function generateFactuurHTML(data) {
   const maandStr = `${MOS[spec.maand]}-${String(spec.jaar).slice(2)}`;
 
   return `
-  <div style="max-width:730px;margin:0 auto;font-family:Arial,sans-serif;font-size:11px;color:#1a1a18;line-height:1.4">
+  <div style="max-width:730px;margin:0 auto;font-family:Arial,sans-serif;font-size:11px;color:#1a1a18;line-height:1.4;position:relative;min-height:26cm;padding-bottom:80px;box-sizing:border-box">
 
     <!-- HEADER -->
     <table style="width:100%;border-collapse:collapse;margin-bottom:14px">
@@ -752,7 +752,7 @@ function generateFactuurHTML(data) {
     </div>
 
     <!-- FOOTER -->
-    <div style="margin-top:14px;padding-top:8px;border-top:1px solid #e8e7e2;font-size:9px;color:#8a8a84;text-align:center;line-height:1.5;page-break-inside:avoid">
+    <div style="position:absolute;bottom:0;left:0;right:0;padding-top:8px;border-top:1px solid #e8e7e2;font-size:9px;color:#8a8a84;text-align:center;line-height:1.5;page-break-inside:avoid">
       <div style="font-weight:600;color:#4a4a46;font-size:9.5px">René van der Linden Holding B.V. | Adelheidstraat 40 | 5231 VB 's-Hertogenbosch</div>
       <div>WWW.RENEVANDERLINDEN.COM | E-mail: INFO@RENEVANDERLINDEN.COM</div>
       <div>KVK 17239823 | Rabobank IBAN: NL32 RABO 0136 6243 67 | NL820357376B01</div>
