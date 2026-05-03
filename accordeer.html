@@ -208,6 +208,7 @@ function showState(id){document.querySelectorAll('.state').forEach(s=>s.classLis
 // Get spec ID from URL
 const params=new URLSearchParams(window.location.search);
 const specId=params.get('id');
+const actie=params.get('actie');
 let specData=null;
 
 async function loadSpec(){
@@ -249,6 +250,14 @@ async function loadSpec(){
     }).join('');
 
     showState('stateContent');
+    // Direct afkeurformulier openen als link vanuit mail
+    if(actie==='afkeuren'){
+      setTimeout(()=>{
+        document.getElementById('afkeurForm').classList.add('open');
+        document.getElementById('afkeurOpmerking').focus();
+        document.getElementById('afkeurForm').scrollIntoView({behavior:'smooth',block:'center'});
+      },300);
+    }
   }catch(e){showState('stateError');}
 }
 
@@ -321,10 +330,48 @@ window.geefAkkoord=async function(){
   btn.textContent='Verwerken…';
   try{
     const now=new Date();
+
+    // Bouw urenstaat-snapshot: alle dagen van de maand, met netto uren + km per dag
+    // Aggregeer eventuele meerdere blokken per dag tot één regel.
+    const urenPerDag = {};
+    if (Array.isArray(specData.regels)) {
+      specData.regels.forEach(r => {
+        if (!urenPerDag[r.date]) {
+          urenPerDag[r.date] = { date: r.date, mins: 0, km: 0 };
+        }
+        urenPerDag[r.date].mins += bMins(r);
+        urenPerDag[r.date].km += (parseInt(r.km) || 0);
+      });
+    }
+    // Genereer alle dagen van de maand (ook lege dagen)
+    const jaar = specData.jaar;
+    const maand = specData.maand; // 0-indexed
+    const aantalDagen = new Date(jaar, maand+1, 0).getDate();
+    const urenstaatRegels = [];
+    for (let d=1; d<=aantalDagen; d++) {
+      const iso = `${jaar}-${String(maand+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const found = urenPerDag[iso];
+      urenstaatRegels.push({
+        date: iso,
+        mins: found ? found.mins : 0,
+        km: found ? found.km : 0
+      });
+    }
+    const totaalMins = urenstaatRegels.reduce((s,r)=>s+r.mins, 0);
+    const totaalKm = urenstaatRegels.reduce((s,r)=>s+r.km, 0);
+
     await updateDoc(doc(db,'specs',specId),{
       akkoord:true,
       akkoord_datum:now.toISOString(),
-      akkoord_ip:'client'
+      akkoord_ip:'client',
+      // Urenstaat-snapshot zoals vastgelegd op moment van akkoord
+      urenstaat_snapshot: {
+        regels: urenstaatRegels,
+        totaal_mins: totaalMins,
+        totaal_km: totaalKm,
+        akkoord_email: specData.email || '',
+        akkoord_datum: now.toISOString()
+      }
     });
     const maandStr=`${MO[specData.maand]} ${specData.jaar}`;
     document.getElementById('successDetail').textContent=`${specData.klant} · ${maandStr} · ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}`;

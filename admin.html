@@ -222,6 +222,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
       <button class="nav-item" onclick="showPage('contracten',this)">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>Contracten
       </button>
+      <button class="nav-item" onclick="showPage('urenstaten',this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>Urenstaten
+      </button>
       <button class="nav-item" onclick="showPage('omzet',this)">
         <svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Omzet
       </button>
@@ -385,6 +388,24 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
 
       <div class="page" id="page-contracten" style="display:none;margin:-28px;padding:0">
         <iframe id="contractFrame" src="about:blank" style="width:100%;height:calc(100vh - 58px);border:0;display:block" title="Contracten"></iframe>
+      </div>
+
+      <div class="page" id="page-urenstaten">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Urenstaten</div>
+            <div class="page-sub">Geaccordeerde urenstaten met digitale goedkeuring</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button onclick="openUrenstaatUploadModal()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+              📤 Oude urenstaat uploaden
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Alle urenstaten</span></div>
+          <table class="data-table" id="urenstaten-table"></table>
+        </div>
       </div>
 
       <div class="page" id="page-omzet">
@@ -710,13 +731,58 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
 
 <div class="toast" id="toast"></div>
 
+<!-- URENSTAAT UPLOAD MODAL -->
+<div id="urenstaatUploadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--white);border-radius:var(--r);max-width:480px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25)">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink)">Oude urenstaat uploaden</div>
+      <button onclick="closeUrenstaatUploadModal()" style="background:none;border:none;cursor:pointer;color:var(--ink3);font-size:22px;line-height:1;padding:4px 8px">&times;</button>
+    </div>
+    <div style="padding:20px">
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600;margin-bottom:5px">Opdrachtgever *</div>
+        <select id="us-klant" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-size:14px;outline:none">
+          <option value="">Kies opdrachtgever…</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600;margin-bottom:5px">Maand *</div>
+          <select id="us-maand" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-size:14px;outline:none"></select>
+        </div>
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600;margin-bottom:5px">Jaar *</div>
+          <input type="number" id="us-jaar" min="2020" max="2030" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-size:14px;outline:none">
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600;margin-bottom:5px">PDF-bestand *</div>
+        <input type="file" id="us-file" accept="application/pdf,.pdf" style="width:100%;padding:8px 10px;background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);cursor:pointer">
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px;font-style:italic">Max 10 MB, alleen PDF</div>
+      </div>
+      <div id="us-progress" style="display:none;margin-top:14px">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px" id="us-progress-text">Uploaden…</div>
+        <div style="height:4px;background:var(--cream);border-radius:2px;overflow:hidden">
+          <div id="us-progress-bar" style="height:100%;background:var(--acc);width:0%;transition:width .2s"></div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:14px 20px;background:var(--cream);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeUrenstaatUploadModal()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleren</button>
+      <button id="us-upload-btn" onclick="doUrenstaatUpload()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Upload</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,doc,setDoc,getDoc,onSnapshot,collection,query,orderBy,getDocs,addDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,onSnapshot,collection,query,orderBy,getDocs,addDoc,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getStorage,ref as storageRef,uploadBytes,getDownloadURL,deleteObject}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
 const fbApp=initializeApp(FB);
 const db=getFirestore(fbApp);
+const storage=getStorage(fbApp);
 
 const PK='dgs_admin_pwd';
 const CK='dgs_clients_v1';
@@ -825,6 +891,9 @@ window.showPage=function(name,btn){
     }
     document.getElementById('page-contracten').style.display='block';
   }
+  else if(name==='urenstaten'){
+    renderUrenstaten();
+  }
   // Reset inline display:none voor de iframe-pagina wanneer je weg navigeert
   if(name!=='contracten'){
     const pc=document.getElementById('page-contracten');
@@ -846,6 +915,195 @@ window.printFactuurInline = function(factuurId) {
   document.body.appendChild(iframe);
   // factuur.html roept zelf window.print() aan na 600ms zodra de factuur geladen is
 }
+
+// ── URENSTATEN ─────────────────────────────────
+async function renderUrenstaten() {
+  const el = document.getElementById('urenstaten-table');
+  el.innerHTML = '<tr><td style="padding:18px;color:var(--ink3)">Laden…</td></tr>';
+  try {
+    // Geaccordeerde specs (digitaal goedgekeurd)
+    const qSpecs = query(collection(db,'specs'), orderBy('akkoord_datum','desc'));
+    const specsSnap = await getDocs(qSpecs);
+    const digitaalGoedgekeurd = specsSnap.docs
+      .filter(d => d.data().akkoord === true && d.data().urenstaat_snapshot)
+      .map(d => ({ id: d.id, source: 'digital', data: d.data() }));
+
+    // Geuploade oude urenstaten
+    const qUploads = query(collection(db,'urenstaten_oud'), orderBy('uploaded','desc'));
+    const uploadsSnap = await getDocs(qUploads);
+    const uploadedOud = uploadsSnap.docs.map(d => ({ id: d.id, source: 'upload', data: d.data() }));
+
+    // Combineer en sorteer op datum
+    const items = [...digitaalGoedgekeurd, ...uploadedOud];
+    items.sort((a, b) => {
+      const ta = a.source === 'digital' ? new Date(a.data.akkoord_datum).getTime() : new Date(a.data.uploaded).getTime();
+      const tb = b.source === 'digital' ? new Date(b.data.akkoord_datum).getTime() : new Date(b.data.uploaded).getTime();
+      return tb - ta;
+    });
+
+    if (!items.length) {
+      el.innerHTML = '<tr><td style="padding:30px;text-align:center;color:var(--ink3)">Nog geen urenstaten beschikbaar.<br><span style="font-size:12px">Bij elke goedkeuring via de app verschijnt hier een nieuwe urenstaat.</span></td></tr>';
+      return;
+    }
+
+    const MO_F = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+    const rows = items.map(it => {
+      const d = it.data;
+      if (it.source === 'digital') {
+        const akk = new Date(d.akkoord_datum);
+        const akkStr = `${akk.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][akk.getMonth()]} ${akk.getFullYear()}`;
+        const totaalUren = (d.urenstaat_snapshot.totaal_mins / 60).toFixed(2).replace('.',',');
+        return `<tr>
+          <td style="padding:10px"><strong>${d.klant}</strong></td>
+          <td style="padding:10px">${MO_F[d.maand]} ${d.jaar}</td>
+          <td style="padding:10px;font-family:monospace">${totaalUren} u</td>
+          <td style="padding:10px;font-family:monospace">${d.urenstaat_snapshot.totaal_km || 0} km</td>
+          <td style="padding:10px">
+            <span style="background:var(--grn-l);color:var(--grn);font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;border:1px solid rgba(30,122,74,.25)">✓ Digitaal akkoord</span>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">${akkStr}</div>
+          </td>
+          <td style="padding:10px;text-align:right">
+            <button onclick="printUrenstaatInline('${it.id}')" style="font-size:12px;color:var(--acc);background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;cursor:pointer;font-family:'DM Sans',sans-serif">🖨 PDF</button>
+          </td>
+        </tr>`;
+      } else {
+        // Geuploade oude urenstaat
+        const up = new Date(d.uploaded);
+        const upStr = `${up.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][up.getMonth()]} ${up.getFullYear()}`;
+        return `<tr>
+          <td style="padding:10px"><strong>${d.klant}</strong></td>
+          <td style="padding:10px">${MO_F[d.maand]} ${d.jaar}</td>
+          <td style="padding:10px;color:var(--ink3)">–</td>
+          <td style="padding:10px;color:var(--ink3)">–</td>
+          <td style="padding:10px">
+            <span style="background:var(--amb-l);color:var(--amb);font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;border:1px solid rgba(184,92,0,.25)">📎 Geüpload</span>
+            <div style="font-size:11px;color:var(--ink3);margin-top:3px">${upStr}</div>
+          </td>
+          <td style="padding:10px;text-align:right;white-space:nowrap">
+            <button onclick="window.open('${d.url}', '_blank')" style="font-size:12px;color:var(--acc);background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-right:4px">📄 Bekijk</button>
+            <button onclick="deleteOudeUrenstaat('${it.id}', '${(d.pad||'').replace(/'/g,'\\\\\'')}')" style="font-size:12px;color:var(--ink3);background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:5px 9px;cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+          </td>
+        </tr>`;
+      }
+    }).join('');
+
+    el.innerHTML = `<thead><tr><th>Opdrachtgever</th><th>Periode</th><th>Uren</th><th>KM</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+  } catch(e) {
+    console.error(e);
+    el.innerHTML = '<tr><td style="padding:18px;color:var(--red)">Fout bij laden: ' + e.message + '</td></tr>';
+  }
+}
+
+// Print urenstaat via verborgen iframe
+window.printUrenstaatInline = function(specId) {
+  const existing = document.getElementById('printUrenstaatFrame');
+  if (existing) existing.remove();
+  const iframe = document.createElement('iframe');
+  iframe.id = 'printUrenstaatFrame';
+  iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;left:-9999px;top:-9999px';
+  iframe.src = 'urenstaat.html?spec=' + specId + '&print=1';
+  document.body.appendChild(iframe);
+};
+
+// Delete oude urenstaat
+window.deleteOudeUrenstaat = async function(id, pad) {
+  if (!confirm('Geüploade urenstaat verwijderen?')) return;
+  try {
+    if (pad) {
+      try { await deleteObject(storageRef(storage, pad)); } catch(_) {}
+    }
+    await deleteDoc(doc(db,'urenstaten_oud',id));
+    showToast('Verwijderd', 'info');
+    renderUrenstaten();
+  } catch(e) {
+    showToast('Verwijderen mislukt: ' + e.message, 'bad');
+  }
+};
+
+// Open upload modal
+window.openUrenstaatUploadModal = function() {
+  const modal = document.getElementById('urenstaatUploadModal');
+  // Reset velden
+  document.getElementById('us-file').value = '';
+  document.getElementById('us-progress').style.display = 'none';
+
+  // Vul klant-dropdown
+  const klantSel = document.getElementById('us-klant');
+  klantSel.innerHTML = '<option value="">Kies opdrachtgever…</option>' +
+    clients.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+
+  // Vul maand-dropdown
+  const maandSel = document.getElementById('us-maand');
+  const MO_F = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  const nu = new Date();
+  maandSel.innerHTML = MO_F.map((m, i) => `<option value="${i}"${i===nu.getMonth()?' selected':''}>${m}</option>`).join('');
+
+  // Default jaar = vorig jaar (hand uploads zijn vaak voor oude maanden)
+  document.getElementById('us-jaar').value = nu.getFullYear() - 1;
+
+  modal.style.display = 'flex';
+};
+
+window.closeUrenstaatUploadModal = function() {
+  document.getElementById('urenstaatUploadModal').style.display = 'none';
+};
+
+window.doUrenstaatUpload = async function() {
+  const klant = document.getElementById('us-klant').value;
+  const maand = parseInt(document.getElementById('us-maand').value);
+  const jaar = parseInt(document.getElementById('us-jaar').value);
+  const file = document.getElementById('us-file').files[0];
+
+  if (!klant) { showToast('Kies een opdrachtgever', 'bad'); return; }
+  if (isNaN(maand) || isNaN(jaar)) { showToast('Vul maand en jaar in', 'bad'); return; }
+  if (!file) { showToast('Kies een PDF-bestand', 'bad'); return; }
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    showToast('Alleen PDF-bestanden toegestaan', 'bad'); return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('Bestand te groot (max 10 MB)', 'bad'); return;
+  }
+
+  const btn = document.getElementById('us-upload-btn');
+  const prog = document.getElementById('us-progress');
+  const bar = document.getElementById('us-progress-bar');
+  const txt = document.getElementById('us-progress-text');
+  btn.disabled = true;
+  prog.style.display = 'block';
+  bar.style.width = '30%';
+  txt.textContent = 'Uploaden…';
+
+  try {
+    const safeKlant = klant.replace(/[^a-zA-Z0-9]/g,'_');
+    const id = Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    const pad = `urenstaten-oud/${safeKlant}/${jaar}-${String(maand+1).padStart(2,'0')}_${id}.pdf`;
+    const ref = storageRef(storage, pad);
+    await uploadBytes(ref, file, { contentType: 'application/pdf' });
+    bar.style.width = '70%';
+    txt.textContent = 'Registreren…';
+    const url = await getDownloadURL(ref);
+
+    await addDoc(collection(db,'urenstaten_oud'), {
+      klant, maand, jaar,
+      bestandsnaam: file.name,
+      url, pad,
+      uploaded: new Date().toISOString()
+    });
+
+    bar.style.width = '100%';
+    showToast('Urenstaat geüpload ✓', 'ok');
+    setTimeout(() => {
+      closeUrenstaatUploadModal();
+      renderUrenstaten();
+    }, 400);
+  } catch(e) {
+    console.error(e);
+    showToast('Upload mislukt: ' + e.message, 'bad');
+    prog.style.display = 'none';
+  } finally {
+    btn.disabled = false;
+  }
+};
 
 // PERIOD
 function getPeriod(period,offset){
