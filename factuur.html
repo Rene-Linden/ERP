@@ -437,6 +437,20 @@ async function init() {
       document.getElementById('printArea').innerHTML = html;
       // Trigger print-dialoog na korte vertraging zodat het logo geladen kan worden
       setTimeout(() => window.print(), 600);
+      // Als we in een verborgen iframe vanuit admin staan: ruim onszelf op na het printen
+      if (window !== window.top) {
+        const cleanup = () => {
+          try {
+            const myFrame = window.frameElement;
+            if (myFrame && myFrame.id === 'printFactuurFrame') {
+              myFrame.remove();
+            }
+          } catch(e) { /* cross-origin: niets te doen */ }
+        };
+        window.addEventListener('afterprint', cleanup);
+        // Fallback: sommige browsers vuren afterprint niet betrouwbaar af na 'cancel'
+        setTimeout(cleanup, 60000);
+      }
     } catch(e) {
       console.error(e);
       toast('Fout bij ophalen: ' + e.message, 'bad');
