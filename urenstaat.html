@@ -84,7 +84,11 @@ function genereerUrenstaatHTML(spec, klantData) {
   const maandStr = MO[spec.maand].slice(0,3) + '-' + String(spec.jaar).slice(-2);
   const totaalUren = (snap.totaal_mins / 60).toFixed(2).replace('.',',');
 
-  const rijenHTML = snap.regels.map(r => {
+  // Filter: alleen dagen waarop uren gemaakt zijn worden getoond
+  // (volledige snapshot blijft in Firestore voor audit, presentatie is gefilterd)
+  const gewerkteRegels = snap.regels.filter(r => r.mins > 0 || r.km > 0);
+
+  const rijenHTML = gewerkteRegels.map(r => {
     const d = isoD(r.date);
     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
     const bg = isWeekend ? 'background:#f0f0ec' : '';
