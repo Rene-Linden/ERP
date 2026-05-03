@@ -1039,17 +1039,18 @@ async function renderUrenstaten() {
       return tb - ta;
     });
 
+    // Lees huidige keuze VOORDAT we dropdown opnieuw vullen
+    const jaarSel = document.getElementById('urenstatenJaarFilter');
+    const gekozenJaar = jaarSel ? jaarSel.value || 'alle' : 'alle';
+
     // Vul jaar-dropdown met beschikbare jaren (uit jaar-veld van urenstaten zelf)
     const jaren = [...new Set(allItems.map(it => it.data.jaar).filter(Boolean))].sort((a,b) => b - a);
-    const jaarSel = document.getElementById('urenstatenJaarFilter');
     if (jaarSel) {
-      const huidig = jaarSel.value || 'alle';
       jaarSel.innerHTML = '<option value="alle">Alle jaren</option>' +
-        jaren.map(j => `<option value="${j}"${String(j)===huidig?' selected':''}>${j}</option>`).join('');
+        jaren.map(j => `<option value="${j}"${String(j)===gekozenJaar?' selected':''}>${j}</option>`).join('');
     }
 
     // Pas filter toe
-    const gekozenJaar = jaarSel ? jaarSel.value : 'alle';
     const items = gekozenJaar === 'alle'
       ? allItems
       : allItems.filter(it => String(it.data.jaar) === gekozenJaar);
