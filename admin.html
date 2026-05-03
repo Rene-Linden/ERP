@@ -213,6 +213,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
       <button class="nav-item" onclick="showPage('klanten',this)">
         <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Klantbeheer
       </button>
+      <button class="nav-item" onclick="showPage('crm',this)">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>CRM
+      </button>
       <button class="nav-item" onclick="showPage('accordering',this)">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>Accordering
       </button>
@@ -256,6 +259,10 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
           </div>
         </div>
         <div class="kpi-grid" id="dashKpis"></div>
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center"><span class="card-title">📌 Top 5 openstaande acties</span><a onclick="document.querySelector('.nav-item[onclick*=&quot;crm&quot;]').click()" style="font-size:12px;color:var(--acc);cursor:pointer;text-decoration:none">Naar CRM →</a></div>
+          <div id="topActiesWidget" style="padding:0"></div>
+        </div>
         <div class="grid2">
           <div class="card">
             <div class="card-header"><span class="card-title">Uren per dag</span></div>
@@ -353,6 +360,29 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
           </div>
         </div>
         <div id="clientCards"></div>
+      </div>
+
+      <div class="page" id="page-crm">
+        <div class="page-header">
+          <div><div class="page-title">CRM</div><div class="page-sub">Leads en klanten met gespreksverslagen en acties</div></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="text" id="crmSearch" placeholder="Zoeken…" oninput="renderCRMList()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:200px">
+            <select id="crmStatusFilter" onchange="renderCRMList()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+              <option value="alle">Alle statussen</option>
+              <option value="Lead">Alleen leads</option>
+              <option value="Klant">Alleen klanten</option>
+            </select>
+            <button onclick="openLeadModal()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">+ Nieuwe lead</button>
+          </div>
+        </div>
+        <div id="crmListView">
+          <div class="kpi-grid" id="crm-kpis"></div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Alle relaties</span></div>
+            <table class="data-table" id="crm-table"></table>
+          </div>
+        </div>
+        <div id="crmDetailView" style="display:none"></div>
       </div>
 
       <div class="page" id="page-accordering">
@@ -774,6 +804,65 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
   </div>
 </div>
 
+<!-- LEAD-MODAL -->
+<div id="leadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--white);border-radius:var(--r);max-width:480px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25)">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink)">Nieuwe lead</div>
+      <button onclick="closeLeadModal()" style="background:none;border:none;cursor:pointer;color:var(--ink3);font-size:22px;line-height:1;padding:4px 8px">&times;</button>
+    </div>
+    <div style="padding:20px">
+      <div class="field" style="margin-bottom:14px">
+        <label>Bedrijfsnaam *</label>
+        <input type="text" id="lead-name" placeholder="Bedrijf B.V.">
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Contactpersoon</label>
+        <input type="text" id="lead-contact" placeholder="Jan de Vries">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="lead-email" placeholder="info@bedrijf.nl">
+        </div>
+        <div class="field">
+          <label>Telefoon</label>
+          <input type="tel" id="lead-phone" placeholder="+31 6 12345678">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--ink3);font-style:italic">Aanvullende gegevens kun je later op de detailpagina invullen.</div>
+    </div>
+    <div style="padding:14px 20px;background:var(--cream);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeLeadModal()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleren</button>
+      <button onclick="saveNewLead()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- GESPREK TOEVOEGEN MODAL -->
+<div id="gesprekModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--white);border-radius:var(--r);max-width:520px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25)">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink)">Gesprek toevoegen</div>
+      <button onclick="closeGesprekModal()" style="background:none;border:none;cursor:pointer;color:var(--ink3);font-size:22px;line-height:1;padding:4px 8px">&times;</button>
+    </div>
+    <div style="padding:20px">
+      <div class="field" style="margin-bottom:14px">
+        <label>Datum gesprek</label>
+        <input type="date" id="g-datum">
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Verslag</label>
+        <textarea id="g-verslag" rows="5" placeholder="Korte beschrijving van het gesprek..." style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div style="padding:14px 20px;background:var(--cream);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeGesprekModal()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleren</button>
+      <button onclick="saveGesprek()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Toevoegen</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import{getFirestore,doc,setDoc,getDoc,onSnapshot,collection,query,orderBy,getDocs,addDoc,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -893,6 +982,12 @@ window.showPage=function(name,btn){
   }
   else if(name==='urenstaten'){
     renderUrenstaten();
+  }
+  else if(name==='crm'){
+    crmCurrentDetailId = null;
+    document.getElementById('crmListView').style.display = 'block';
+    document.getElementById('crmDetailView').style.display = 'none';
+    loadCRMData().then(() => renderCRMList());
   }
   // Reset inline display:none voor de iframe-pagina wanneer je weg navigeert
   if(name!=='contracten'){
@@ -1105,6 +1200,544 @@ window.doUrenstaatUpload = async function() {
   }
 };
 
+// ── CRM ────────────────────────────────────────
+let crmRecords = [];          // gemerged: leads + klanten met extra CRM-data
+let crmCurrentDetailId = null; // welke klant/lead is open in detail-view
+
+async function loadCRMData() {
+  try {
+    // Load alle CRM-records uit Firestore
+    const snap = await getDocs(collection(db,'crm_relaties'));
+    const fbRecords = snap.docs.map(d => ({id: d.id, ...d.data()}));
+
+    // Merge met klanten uit localStorage
+    // Voor elke klant in klantbeheer: kijk of er al een crm_relatie bestaat (gekoppeld via klant_name)
+    const klantNames = new Set(clients.map(c => c.name));
+    crmRecords = [];
+
+    // Voeg bestaande CRM-records toe (leads en klant-extensies)
+    fbRecords.forEach(r => {
+      crmRecords.push(r);
+    });
+
+    // Voor elke klant: check of er een CRM-record voor is, anders maak een 'virtuele' (niet opgeslagen)
+    clients.forEach(c => {
+      const existing = crmRecords.find(r => r.linkedKlantName === c.name);
+      if (!existing) {
+        crmRecords.push({
+          id: 'virtual-' + c.name.replace(/[^a-zA-Z0-9]/g,'_'),
+          virtual: true,
+          linkedKlantName: c.name,
+          status: 'Klant',
+          name: c.name,
+          contact: c.contact || '',
+          email: c.email || '',
+          phone: c.phone || '',
+          address: c.address || '',
+          city: c.city || '',
+          kvk: c.kvk || '',
+          gesprekken: [],
+          volgendeActie: '',
+          volgendeActieDatum: ''
+        });
+      } else {
+        // Sync basisgegevens van klantbeheer naar CRM-weergave (klant blijft master)
+        existing.name = c.name;
+        existing.linkedKlantName = c.name;
+        existing.status = 'Klant';
+        if (!existing.contact) existing.contact = c.contact || '';
+        if (!existing.email) existing.email = c.email || '';
+        if (!existing.phone) existing.phone = c.phone || '';
+        if (!existing.address) existing.address = c.address || '';
+        if (!existing.city) existing.city = c.city || '';
+        if (!existing.kvk) existing.kvk = c.kvk || '';
+      }
+    });
+  } catch(e) {
+    console.error('CRM load error:', e);
+    crmRecords = [];
+  }
+}
+
+// Hulpfunctie: sla virtuele klant op zodra er actie/gesprek komt
+async function ensureCRMSaved(record) {
+  if (record.virtual) {
+    // Maak Firestore-record aan
+    const data = {
+      linkedKlantName: record.linkedKlantName,
+      status: 'Klant',
+      name: record.name,
+      contact: record.contact || '',
+      email: record.email || '',
+      phone: record.phone || '',
+      address: record.address || '',
+      city: record.city || '',
+      kvk: record.kvk || '',
+      gesprekken: record.gesprekken || [],
+      volgendeActie: record.volgendeActie || '',
+      volgendeActieDatum: record.volgendeActieDatum || '',
+      aangemaakt: new Date().toISOString()
+    };
+    const docRef = await addDoc(collection(db,'crm_relaties'), data);
+    record.id = docRef.id;
+    record.virtual = false;
+    return docRef.id;
+  }
+  return record.id;
+}
+
+window.renderCRMList = function() {
+  const search = (document.getElementById('crmSearch')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('crmStatusFilter')?.value || 'alle';
+
+  const filtered = crmRecords.filter(r => {
+    if (statusFilter !== 'alle' && r.status !== statusFilter) return false;
+    if (search) {
+      const blob = `${r.name||''} ${r.contact||''} ${r.email||''} ${r.phone||''}`.toLowerCase();
+      if (!blob.includes(search)) return false;
+    }
+    return true;
+  });
+
+  // Sorteer: eerst op volgende actie-datum (oudste/dichtstbijzijnde eerst), dan alfabetisch
+  filtered.sort((a,b) => {
+    const ta = a.volgendeActieDatum ? new Date(a.volgendeActieDatum).getTime() : Infinity;
+    const tb = b.volgendeActieDatum ? new Date(b.volgendeActieDatum).getTime() : Infinity;
+    if (ta !== tb) return ta - tb;
+    return (a.name||'').localeCompare(b.name||'');
+  });
+
+  // KPIs
+  const totaal = crmRecords.length;
+  const leads = crmRecords.filter(r => r.status === 'Lead').length;
+  const klanten = crmRecords.filter(r => r.status === 'Klant').length;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const overdue = crmRecords.filter(r => {
+    if (!r.volgendeActieDatum) return false;
+    return new Date(r.volgendeActieDatum) < today;
+  }).length;
+
+  document.getElementById('crm-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Totaal relaties</div><div class="kpi-val blue">${totaal}</div></div>
+    <div class="kpi"><div class="kpi-label">Leads</div><div class="kpi-val amber">${leads}</div></div>
+    <div class="kpi"><div class="kpi-label">Klanten</div><div class="kpi-val green">${klanten}</div></div>
+    <div class="kpi"><div class="kpi-label">Acties achterstallig</div><div class="kpi-val ${overdue>0?'red':''}">${overdue}</div></div>`;
+
+  const tbl = document.getElementById('crm-table');
+  if (!filtered.length) {
+    tbl.innerHTML = '<tr><td style="padding:30px;text-align:center;color:var(--ink3)">Geen relaties gevonden.</td></tr>';
+    return;
+  }
+
+  const rows = filtered.map(r => {
+    const statusBg = r.status === 'Lead' ? 'background:var(--amb-l);color:var(--amb);border-color:rgba(184,92,0,.25)' : 'background:var(--grn-l);color:var(--grn);border-color:rgba(30,122,74,.25)';
+    let actieCel = '<span style="color:var(--ink3);font-size:11px">—</span>';
+    if (r.volgendeActieDatum) {
+      const d = new Date(r.volgendeActieDatum);
+      const isOverdue = d < today;
+      const isToday = d.toDateString() === today.toDateString();
+      const dStr = `${d.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]}`;
+      const cls = isOverdue ? 'color:var(--red);font-weight:600' : (isToday ? 'color:var(--amb);font-weight:600' : 'color:var(--ink2)');
+      actieCel = `<div style="${cls};font-size:12px">${dStr}</div><div style="font-size:11px;color:var(--ink3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.volgendeActie||''}</div>`;
+    }
+    return `<tr style="cursor:pointer" onclick="openCRMDetail('${r.id}')">
+      <td style="padding:10px"><strong>${r.name||'(geen naam)'}</strong></td>
+      <td style="padding:10px">${r.contact||'<span style=\"color:var(--ink3)\">—</span>'}</td>
+      <td style="padding:10px;font-size:12px">${r.email||'<span style=\"color:var(--ink3)\">—</span>'}</td>
+      <td style="padding:10px;font-family:monospace;font-size:12px">${r.phone||'<span style=\"color:var(--ink3)\">—</span>'}</td>
+      <td style="padding:10px"><span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;border:1px solid;${statusBg}">${r.status||'—'}</span></td>
+      <td style="padding:10px">${actieCel}</td>
+      <td style="padding:10px;text-align:right"><button onclick="event.stopPropagation();openCRMDetail('${r.id}')" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Open</button></td>
+    </tr>`;
+  }).join('');
+
+  tbl.innerHTML = `<thead><tr><th>Bedrijf</th><th>Contactpersoon</th><th>Email</th><th>Telefoon</th><th>Status</th><th>Volgende actie</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+}
+
+// ── CRM DETAIL VIEW ────────────────────────────
+window.openCRMDetail = function(recordId) {
+  const r = crmRecords.find(x => x.id === recordId);
+  if (!r) return;
+  crmCurrentDetailId = recordId;
+
+  document.getElementById('crmListView').style.display = 'none';
+  document.getElementById('crmDetailView').style.display = 'block';
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  let actieBadge = '';
+  if (r.volgendeActieDatum) {
+    const d = new Date(r.volgendeActieDatum);
+    if (d < today) actieBadge = '<span style="background:var(--red-l);color:var(--red);border:1px solid rgba(192,57,43,.25);font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;margin-left:8px">⚠ Achterstallig</span>';
+    else if (d.toDateString() === today.toDateString()) actieBadge = '<span style="background:var(--amb-l);color:var(--amb);border:1px solid rgba(184,92,0,.25);font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;margin-left:8px">Vandaag</span>';
+  }
+
+  const gesprekken = (r.gesprekken || []).slice().sort((a,b) => new Date(b.datum) - new Date(a.datum));
+  const MOS_F = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+  const gesprekkenHTML = gesprekken.length > 0
+    ? gesprekken.map((g, i) => {
+        const d = new Date(g.datum);
+        return `<div style="border-left:3px solid var(--acc);padding:10px 14px;background:var(--cream);border-radius:0 var(--rsm) var(--rsm) 0;margin-bottom:10px;position:relative">
+          <button onclick="deleteGesprek(${i})" title="Verwijder" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--ink3);font-size:14px;padding:2px 6px">✕</button>
+          <div style="font-size:12px;color:var(--acc);font-weight:600;margin-bottom:4px">${d.getDate()} ${MOS_F[d.getMonth()]} ${d.getFullYear()}</div>
+          <div style="font-size:13px;color:var(--ink);white-space:pre-wrap;line-height:1.5">${(g.verslag||'').replace(/</g,'&lt;')}</div>
+        </div>`;
+      }).join('')
+    : '<div style="text-align:center;padding:30px;color:var(--ink3);font-size:13px">Nog geen gesprekken vastgelegd. Klik op + Gesprek toevoegen om te beginnen.</div>';
+
+  const isLead = r.status === 'Lead';
+
+  document.getElementById('crmDetailView').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="closeCRMDetail()" style="background:var(--cream);border:1px solid var(--line2);border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;color:var(--ink3);font-family:'DM Sans',sans-serif">← Terug</button>
+        <div>
+          <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:600">${r.name||'(geen naam)'}</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:2px">${r.status}${r.linkedKlantName?' · gekoppeld aan klant':' · alleen in CRM'}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${isLead ? `<button onclick="convertLeadToKlant()" style="background:var(--grn-l);color:var(--grn);border:1px solid rgba(30,122,74,.3);border-radius:var(--rsm);padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">→ Maak klant</button>` : ''}
+        ${!r.linkedKlantName ? `<button onclick="deleteCRMRecord()" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);padding:8px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Verwijderen</button>` : ''}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start">
+      <!-- LINKER KOLOM: gegevens + gesprekken -->
+      <div>
+        <!-- BEDRIJFSGEGEVENS -->
+        <div class="card" style="padding:18px;margin-bottom:14px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Bedrijfsgegevens</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Bedrijfsnaam</label><input type="text" id="crm-name" value="${(r.name||'').replace(/"/g,'&quot;')}" ${r.linkedKlantName?'readonly title="Beheerd via Klantbeheer"':''}></div>
+            <div class="field"><label>Contactpersoon</label><input type="text" id="crm-contact" value="${(r.contact||'').replace(/"/g,'&quot;')}"></div>
+            <div class="field"><label>Email</label><input type="email" id="crm-email" value="${(r.email||'').replace(/"/g,'&quot;')}"></div>
+            <div class="field"><label>Telefoon</label><input type="tel" id="crm-phone" value="${(r.phone||'').replace(/"/g,'&quot;')}"></div>
+            <div class="field"><label>Adres</label><input type="text" id="crm-address" value="${(r.address||'').replace(/"/g,'&quot;')}"></div>
+            <div class="field"><label>Plaats</label><input type="text" id="crm-city" value="${(r.city||'').replace(/"/g,'&quot;')}"></div>
+            <div class="field"><label>KvK-nummer</label><input type="text" id="crm-kvk" value="${(r.kvk||'').replace(/"/g,'&quot;')}"></div>
+          </div>
+          <div style="margin-top:14px;text-align:right">
+            <button onclick="saveCRMDetails()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
+          </div>
+          ${r.linkedKlantName ? '<div style="margin-top:8px;font-size:11px;color:var(--ink3);font-style:italic">Bedrijfsnaam wordt beheerd via Klantbeheer. Wijzigingen aan andere velden komen alleen in CRM terecht.</div>' : ''}
+        </div>
+
+        <!-- GESPREKKEN -->
+        <div class="card" style="padding:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600">Gespreksverslagen</div>
+            <button onclick="openGesprekModal()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Gesprek toevoegen</button>
+          </div>
+          ${gesprekkenHTML}
+        </div>
+      </div>
+
+      <!-- RECHTER KOLOM: actie + status -->
+      <div>
+        <div class="card" style="padding:18px;margin-bottom:14px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Volgende actie ${actieBadge}</div>
+          <div class="field" style="margin-bottom:10px">
+            <label>Wat te doen</label>
+            <textarea id="crm-actie" rows="3" placeholder="Bijv. Terugbellen voor offerte" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical">${(r.volgendeActie||'').replace(/</g,'&lt;')}</textarea>
+          </div>
+          <div class="field">
+            <label>Wanneer</label>
+            <input type="date" id="crm-actie-datum" value="${r.volgendeActieDatum||''}">
+          </div>
+          <div style="margin-top:12px;text-align:right">
+            <button onclick="saveCRMActie()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:18px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Status</div>
+          <select id="crm-status" ${r.linkedKlantName?'disabled title="Status van klanten is automatisch Klant"':''} style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-size:13px;outline:none">
+            <option value="Lead"${r.status==='Lead'?' selected':''}>Lead</option>
+            <option value="Klant"${r.status==='Klant'?' selected':''}>Klant</option>
+          </select>
+          ${!r.linkedKlantName ? '<div style="margin-top:12px;text-align:right"><button onclick="saveCRMStatus()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">Wijzigen</button></div>' : ''}
+        </div>
+      </div>
+    </div>
+  `;
+  // Scroll to top
+  document.querySelector('.content').scrollTop = 0;
+}
+
+window.closeCRMDetail = function() {
+  crmCurrentDetailId = null;
+  document.getElementById('crmDetailView').style.display = 'none';
+  document.getElementById('crmListView').style.display = 'block';
+  renderCRMList();
+}
+
+// Save details: persisteert naar Firestore (creëert record als virtueel)
+window.saveCRMDetails = async function() {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r) return;
+  // Lees velden
+  if (!r.linkedKlantName) r.name = document.getElementById('crm-name').value.trim();
+  r.contact = document.getElementById('crm-contact').value.trim();
+  r.email = document.getElementById('crm-email').value.trim();
+  r.phone = document.getElementById('crm-phone').value.trim();
+  r.address = document.getElementById('crm-address').value.trim();
+  r.city = document.getElementById('crm-city').value.trim();
+  r.kvk = document.getElementById('crm-kvk').value.trim();
+
+  try {
+    if (r.virtual) {
+      await ensureCRMSaved(r);
+    } else {
+      await setDoc(doc(db,'crm_relaties',r.id), {
+        linkedKlantName: r.linkedKlantName||null,
+        status: r.status,
+        name: r.name,
+        contact: r.contact,
+        email: r.email,
+        phone: r.phone,
+        address: r.address,
+        city: r.city,
+        kvk: r.kvk,
+        gesprekken: r.gesprekken||[],
+        volgendeActie: r.volgendeActie||'',
+        volgendeActieDatum: r.volgendeActieDatum||'',
+        bijgewerkt: new Date().toISOString()
+      }, {merge:true});
+    }
+    showToast('Opgeslagen ✓', 'ok');
+    renderTopActies(); // Update dashboard widget
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+window.saveCRMActie = async function() {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r) return;
+  r.volgendeActie = document.getElementById('crm-actie').value.trim();
+  r.volgendeActieDatum = document.getElementById('crm-actie-datum').value;
+
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_relaties',r.id), {
+      volgendeActie: r.volgendeActie,
+      volgendeActieDatum: r.volgendeActieDatum,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('Actie opgeslagen ✓', 'ok');
+    openCRMDetail(r.id); // Re-render to update badge
+    renderTopActies();
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+window.saveCRMStatus = async function() {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r || r.linkedKlantName) return;
+  r.status = document.getElementById('crm-status').value;
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_relaties',r.id), {status: r.status, bijgewerkt: new Date().toISOString()}, {merge:true});
+    showToast('Status gewijzigd ✓', 'ok');
+    openCRMDetail(r.id);
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+window.convertLeadToKlant = async function() {
+  if (!confirm('Deze lead omzetten naar een klant?\n\nDe lead wordt toegevoegd aan Klantbeheer met de huidige gegevens.')) return;
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r) return;
+
+  // Voeg toe aan klantbeheer
+  const newClient = {
+    name: r.name,
+    contact: r.contact || '',
+    email: r.email || '',
+    phone: r.phone || '',
+    address: r.address || '',
+    city: r.city || '',
+    kvk: r.kvk || '',
+    rate: 0,
+    kmRate: 0.21,
+    btw: 21,
+    klantnr: 100100 + clients.length
+  };
+  clients.push(newClient);
+  localStorage.setItem(CK, JSON.stringify(clients));
+
+  // Update CRM-record: link aan klant + status
+  r.linkedKlantName = r.name;
+  r.status = 'Klant';
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_relaties',r.id), {
+      linkedKlantName: r.name,
+      status: 'Klant',
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('Lead omgezet naar klant ✓', 'ok');
+    openCRMDetail(r.id);
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+window.deleteCRMRecord = async function() {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r || r.linkedKlantName) return;
+  if (!confirm(`Lead "${r.name}" verwijderen?\n\nAlle gespreksverslagen en acties worden ook verwijderd.`)) return;
+  try {
+    if (!r.virtual) await deleteDoc(doc(db,'crm_relaties',r.id));
+    crmRecords = crmRecords.filter(x => x.id !== r.id);
+    showToast('Verwijderd', 'info');
+    closeCRMDetail();
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+// ── LEAD MODAL ─────────────────────────────────
+window.openLeadModal = function() {
+  document.getElementById('lead-name').value = '';
+  document.getElementById('lead-contact').value = '';
+  document.getElementById('lead-email').value = '';
+  document.getElementById('lead-phone').value = '';
+  document.getElementById('leadModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('lead-name').focus(), 50);
+}
+window.closeLeadModal = function() {
+  document.getElementById('leadModal').style.display = 'none';
+}
+window.saveNewLead = async function() {
+  const name = document.getElementById('lead-name').value.trim();
+  if (!name) { showToast('Bedrijfsnaam is verplicht', 'bad'); return; }
+  const data = {
+    linkedKlantName: null,
+    status: 'Lead',
+    name,
+    contact: document.getElementById('lead-contact').value.trim(),
+    email: document.getElementById('lead-email').value.trim(),
+    phone: document.getElementById('lead-phone').value.trim(),
+    address: '',
+    city: '',
+    kvk: '',
+    gesprekken: [],
+    volgendeActie: '',
+    volgendeActieDatum: '',
+    aangemaakt: new Date().toISOString()
+  };
+  try {
+    const docRef = await addDoc(collection(db,'crm_relaties'), data);
+    showToast('Lead toegevoegd ✓', 'ok');
+    closeLeadModal();
+    await loadCRMData();
+    renderCRMList();
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+// ── GESPREK MODAL ──────────────────────────────
+window.openGesprekModal = function() {
+  const today = new Date();
+  document.getElementById('g-datum').value = `${today.getFullYear()}-${p2(today.getMonth()+1)}-${p2(today.getDate())}`;
+  document.getElementById('g-verslag').value = '';
+  document.getElementById('gesprekModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('g-verslag').focus(), 50);
+}
+window.closeGesprekModal = function() {
+  document.getElementById('gesprekModal').style.display = 'none';
+}
+window.saveGesprek = async function() {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r) return;
+  const datum = document.getElementById('g-datum').value;
+  const verslag = document.getElementById('g-verslag').value.trim();
+  if (!datum || !verslag) { showToast('Vul datum en verslag in', 'bad'); return; }
+
+  if (!r.gesprekken) r.gesprekken = [];
+  r.gesprekken.push({
+    datum,
+    verslag,
+    toegevoegd: new Date().toISOString()
+  });
+
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_relaties',r.id), {
+      gesprekken: r.gesprekken,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('Gesprek toegevoegd ✓', 'ok');
+    closeGesprekModal();
+    openCRMDetail(r.id);
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+window.deleteGesprek = async function(idx) {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r || !r.gesprekken) return;
+  // Idx is in gesorteerde lijst (nieuwste eerst), dus zoek correct item
+  const sorted = r.gesprekken.slice().sort((a,b) => new Date(b.datum) - new Date(a.datum));
+  const target = sorted[idx];
+  if (!target) return;
+  if (!confirm('Gesprek verwijderen?')) return;
+  r.gesprekken = r.gesprekken.filter(g => g !== target);
+  try {
+    await setDoc(doc(db,'crm_relaties',r.id), {
+      gesprekken: r.gesprekken,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('Gesprek verwijderd', 'info');
+    openCRMDetail(r.id);
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+// ── DASHBOARD-WIDGET: top 5 acties ─────────────
+async function renderTopActies() {
+  const widget = document.getElementById('topActiesWidget');
+  if (!widget) return; // Widget bestaat niet (oude page)
+
+  // Refresh data
+  if (!crmRecords.length) await loadCRMData();
+
+  const items = crmRecords
+    .filter(r => r.volgendeActieDatum && r.volgendeActie)
+    .sort((a,b) => new Date(a.volgendeActieDatum) - new Date(b.volgendeActieDatum))
+    .slice(0, 5);
+
+  if (!items.length) {
+    widget.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3);font-size:13px">Geen openstaande acties.</div>';
+    return;
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const MOS_F = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
+  widget.innerHTML = items.map(r => {
+    const d = new Date(r.volgendeActieDatum);
+    const isOverdue = d < today;
+    const isToday = d.toDateString() === today.toDateString();
+    const dStr = `${d.getDate()} ${MOS_F[d.getMonth()]}`;
+    const badgeStyle = isOverdue
+      ? 'background:var(--red-l);color:var(--red);border-color:rgba(192,57,43,.3)'
+      : isToday
+      ? 'background:var(--amb-l);color:var(--amb);border-color:rgba(184,92,0,.3)'
+      : 'background:var(--acc-l);color:var(--acc);border-color:var(--acc-m)';
+    return `<div onclick="goToCRMDetail('${r.id}')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='transparent'">
+      <div style="flex:0 0 70px"><span style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:10px;border:1px solid;${badgeStyle}">${isOverdue?'⚠ ':''}${dStr}</span></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name}</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.volgendeActie}</div>
+      </div>
+      <div style="flex:0 0 auto;color:var(--ink3);font-size:14px">→</div>
+    </div>`;
+  }).join('');
+}
+
+window.goToCRMDetail = async function(recordId) {
+  // Navigeer naar CRM-tab en open detail
+  const navBtn = document.querySelector('.nav-item[onclick*="crm"]');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('on'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  if (navBtn) navBtn.classList.add('on');
+  document.getElementById('page-crm').classList.add('on');
+  await loadCRMData();
+  openCRMDetail(recordId);
+}
+
 // PERIOD
 function getPeriod(period,offset){
   const now=new Date(),y=now.getFullYear(),m=now.getMonth();
@@ -1134,6 +1767,8 @@ function renderDashboard(){
   const{label,keys}=getPeriod(dashPeriod,dashOff);
   document.getElementById('periodLabel').textContent=label;
   document.getElementById('dashSub').textContent=label;
+  // Top 5 acties widget vullen
+  renderTopActies();
   const all=keys.flatMap(k=>days[k].map(b=>({...b,date:k})));
   const tMin=all.reduce((s,b)=>s+bMins(b),0);
   const tKm=all.reduce((s,b)=>s+(b.km||0),0);
