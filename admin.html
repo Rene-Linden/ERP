@@ -427,6 +427,9 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
             <div class="page-sub">Geaccordeerde urenstaten met digitale goedkeuring</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
+            <select id="urenstatenJaarFilter" onchange="renderUrenstaten()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);outline:none">
+              <option value="alle">Alle jaren</option>
+            </select>
             <button onclick="openUrenstaatUploadModal()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
               📤 Oude urenstaat uploaden
             </button>
@@ -1029,15 +1032,33 @@ async function renderUrenstaten() {
     const uploadedOud = uploadsSnap.docs.map(d => ({ id: d.id, source: 'upload', data: d.data() }));
 
     // Combineer en sorteer op datum
-    const items = [...digitaalGoedgekeurd, ...uploadedOud];
-    items.sort((a, b) => {
+    const allItems = [...digitaalGoedgekeurd, ...uploadedOud];
+    allItems.sort((a, b) => {
       const ta = a.source === 'digital' ? new Date(a.data.akkoord_datum).getTime() : new Date(a.data.uploaded).getTime();
       const tb = b.source === 'digital' ? new Date(b.data.akkoord_datum).getTime() : new Date(b.data.uploaded).getTime();
       return tb - ta;
     });
 
+    // Vul jaar-dropdown met beschikbare jaren (uit jaar-veld van urenstaten zelf)
+    const jaren = [...new Set(allItems.map(it => it.data.jaar).filter(Boolean))].sort((a,b) => b - a);
+    const jaarSel = document.getElementById('urenstatenJaarFilter');
+    if (jaarSel) {
+      const huidig = jaarSel.value || 'alle';
+      jaarSel.innerHTML = '<option value="alle">Alle jaren</option>' +
+        jaren.map(j => `<option value="${j}"${String(j)===huidig?' selected':''}>${j}</option>`).join('');
+    }
+
+    // Pas filter toe
+    const gekozenJaar = jaarSel ? jaarSel.value : 'alle';
+    const items = gekozenJaar === 'alle'
+      ? allItems
+      : allItems.filter(it => String(it.data.jaar) === gekozenJaar);
+
     if (!items.length) {
-      el.innerHTML = '<tr><td style="padding:30px;text-align:center;color:var(--ink3)">Nog geen urenstaten beschikbaar.<br><span style="font-size:12px">Bij elke goedkeuring via de app verschijnt hier een nieuwe urenstaat.</span></td></tr>';
+      const empty = gekozenJaar === 'alle'
+        ? 'Nog geen urenstaten beschikbaar.<br><span style="font-size:12px">Bij elke goedkeuring via de app verschijnt hier een nieuwe urenstaat.</span>'
+        : `Geen urenstaten voor ${gekozenJaar}.`;
+      el.innerHTML = `<tr><td style="padding:30px;text-align:center;color:var(--ink3)">${empty}</td></tr>`;
       return;
     }
 
