@@ -1015,7 +1015,7 @@ window.printFactuurInline = function(factuurId) {
 }
 
 // ── URENSTATEN ─────────────────────────────────
-async function renderUrenstaten() {
+window.renderUrenstaten = async function() {
   const el = document.getElementById('urenstaten-table');
   el.innerHTML = '<tr><td style="padding:18px;color:var(--ink3)">Laden…</td></tr>';
   try {
@@ -1109,7 +1109,7 @@ async function renderUrenstaten() {
     console.error(e);
     el.innerHTML = '<tr><td style="padding:18px;color:var(--red)">Fout bij laden: ' + e.message + '</td></tr>';
   }
-}
+};
 
 // Print urenstaat via verborgen iframe
 window.printUrenstaatInline = function(specId) {
