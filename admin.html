@@ -1874,23 +1874,91 @@ function getPeriod(period,offset){
 window.setPeriod=function(p,btn){dashPeriod=p;dashOff=0;document.querySelectorAll('#page-dashboard .period-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderDashboard();}
 window.navPeriod=function(d){dashOff+=d;renderDashboard();}
 
-function renderDashboard(){
+// Bepaal welke maanden+jaar(en) bij de gekozen periode horen.
+// Levert een lijst van {jaar, maand} objecten die we matchen tegen factuur.spec.{jaar,maand}.
+function getPeriodMonths(period, offset) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const out = [];
+  if (period === 'month') {
+    const d = new Date(y, m + offset, 1);
+    out.push({ jaar: d.getFullYear(), maand: d.getMonth() });
+  } else if (period === 'quarter') {
+    const qBase = Math.floor(m / 3) + offset;
+    const yr = y + Math.floor(qBase / 4);
+    const qn = ((qBase % 4) + 4) % 4;
+    for (let i = 0; i < 3; i++) out.push({ jaar: yr, maand: qn * 3 + i });
+  } else if (period === 'year') {
+    const yr = y + offset;
+    for (let i = 0; i < 12; i++) out.push({ jaar: yr, maand: i });
+  }
+  return out;
+}
+
+// Berekent omzet/btw/uren/km uit een factuur — zelfde logica als tab Omzet
+function berekenFactuurTotalen(d) {
+  const regels = d.regels || [];
+  const tarief = d.tarief || 0;
+  const kmTarief = (typeof d.kmTarief === 'number' ? d.kmTarief : parseFloat(d.kmTarief)) || 0.21;
+  const btwPct = d.btwPct !== undefined ? d.btwPct : 21;
+  let uren, totalKm;
+  if (regels.length > 0) {
+    const totalMins = regels.reduce((s,r) => {
+      const tM = t => { if(!t) return 0; const[h,mm]=t.split(':').map(Number); return h*60+mm; };
+      return s + Math.max(0, (tM(r.end) - tM(r.start)) - (parseInt(r.brk)||0));
+    }, 0);
+    uren = totalMins / 60;
+    totalKm = regels.reduce((s,r) => s + (r.km || 0), 0);
+  } else {
+    uren = d.uren || 0;
+    totalKm = d.km || 0;
+  }
+  const extra = (d.extraKosten || []).reduce((s,k) => s + (parseFloat(k.bedrag) || 0), 0);
+  const subtotaalUren = uren * tarief;
+  const subtotaalKm = totalKm * kmTarief;
+  const subtotaalExcl = subtotaalUren + subtotaalKm + extra;
+  const btw = subtotaalExcl * (btwPct / 100);
+  return { uren, totalKm, subtotaalKm, subtotaalExcl, btw, totaalIncl: subtotaalExcl + btw };
+}
+
+async function renderDashboard(){
   const{label,keys}=getPeriod(dashPeriod,dashOff);
   document.getElementById('periodLabel').textContent=label;
   document.getElementById('dashSub').textContent=label;
-  // Top 5 acties widget vullen
   renderTopActies();
+
+  // Werkdagen + uren komen uit dagstaat (zoals voorheen)
   const all=keys.flatMap(k=>days[k].map(b=>({...b,date:k})));
   const tMin=all.reduce((s,b)=>s+bMins(b),0);
-  const tKm=all.reduce((s,b)=>s+(b.km||0),0);
-  const tRev=all.reduce((s,b)=>s+(bMins(b)/60)*rate(b.klant),0);
   const bill=all.filter(b=>b.klant!=='Intern');
   const bMin=bill.reduce((s,b)=>s+bMins(b),0);
+
+  // Omzet + KM komen uit verzonden facturen die binnen de gekozen periode vallen
+  let tRev = 0, tKm = 0, tKmVergoeding = 0;
+  try {
+    const periodMonths = getPeriodMonths(dashPeriod, dashOff);
+    const fSnap = await getDocs(collection(db,'facturen'));
+    fSnap.forEach(docSnap => {
+      const d = docSnap.data();
+      const spec = d.spec || {};
+      // Match op jaar+maand uit factuur.spec
+      const inPeriod = periodMonths.some(p => p.jaar === spec.jaar && p.maand === spec.maand);
+      if (!inPeriod) return;
+      const t = berekenFactuurTotalen(d);
+      tRev += t.subtotaalExcl;
+      tKm += t.totalKm;
+      tKmVergoeding += t.subtotaalKm;
+    });
+  } catch(e) {
+    console.error('Dashboard omzet fetch error:', e);
+  }
+
   document.getElementById('dashKpis').innerHTML=`
     <div class="kpi"><div class="kpi-label">Werkdagen</div><div class="kpi-val blue">${keys.length}</div><div class="kpi-sub">${all.length} registraties</div></div>
     <div class="kpi"><div class="kpi-label">Gewerkte uren</div><div class="kpi-val green">${m2s(tMin)}</div><div class="kpi-sub">${m2s(bMin)} facturabel</div></div>
-    <div class="kpi"><div class="kpi-label">Omzet</div><div class="kpi-val amber">${euro(tRev)}</div><div class="kpi-sub">excl. BTW</div></div>
-    <div class="kpi"><div class="kpi-label">Gereden KM</div><div class="kpi-val purple">${tKm}</div><div class="kpi-sub">${euro(tKm*0.21)} vergoeding</div></div>`;
+    <div class="kpi"><div class="kpi-label">Omzet</div><div class="kpi-val amber">${euro(tRev)}</div><div class="kpi-sub">excl. BTW · gefactureerd</div></div>
+    <div class="kpi"><div class="kpi-label">Gefactureerde KM</div><div class="kpi-val purple">${tKm}</div><div class="kpi-sub">${euro(tKmVergoeding)} vergoeding</div></div>`;
   renderChart(keys);
   renderPie(all);
   renderRecent(keys.slice(-10).reverse());
