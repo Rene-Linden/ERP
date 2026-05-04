@@ -893,8 +893,20 @@ function p2(n){return String(n).padStart(2,'0')}
 function m2s(m){return`${Math.floor(m/60)}:${p2(m%60)}`}
 function tMins(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m}
 function bMins(b){return Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.brk)||0))}
-function cc(n){const c=clients.find(x=>x.name===n);return c?c.color:'#8a8a84'}
-function rate(n){const c=clients.find(x=>x.name===n);return c?c.rate:0}
+// Fuzzy match: probeert eerst exact, dan op eerste woord (Sitech ↔ Sitech Nederland B.V.)
+function findClient(n) {
+  if (!n) return null;
+  const exact = clients.find(x => x.name === n);
+  if (exact) return exact;
+  const lower = n.toLowerCase();
+  // Klantnaam begint met dagstaat-naam, of dagstaat-naam begint met klantnaam (eerste woord)
+  return clients.find(x => {
+    const xLower = x.name.toLowerCase();
+    return xLower.startsWith(lower) || lower.startsWith(xLower.split(' ')[0]);
+  }) || null;
+}
+function cc(n){const c=findClient(n);return c?c.color:'#8a8a84'}
+function rate(n){const c=findClient(n);return c?c.rate:0}
 function isoD(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)}
 function euro(n){return'€ '+n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function getPwd(){return localStorage.getItem(PK)||DEFAULT_PWD}
