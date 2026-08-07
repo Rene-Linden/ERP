@@ -302,6 +302,113 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
   .kpi-grid{grid-template-columns:1fr}
   .modal-header .modal-title{font-size:16px}
 }
+
+/* ── KLANTEN TABEL → KAART-LAYOUT OP MOBIEL ── */
+@media(max-width:768px){
+  /* Reset de mobiele scroll voor Klanten tab */
+  #page-klanten .card .data-table,
+  #page-klanten .card table {
+    display:block !important;
+    overflow-x:visible !important;
+    white-space:normal !important;
+  }
+  /* Verberg tabel-header op mobiel (te weinig ruimte) */
+  #clientCards table thead {
+    display:none !important;
+  }
+  /* Elke tbody wordt een blok */
+  #clientCards table,
+  #clientCards table tbody {
+    display:block !important;
+    width:100% !important;
+    min-width:0 !important;
+  }
+  /* Elke rij wordt een kaart */
+  #clientCards table tbody tr {
+    display:block !important;
+    background:var(--white);
+    border:1px solid var(--line) !important;
+    border-radius:var(--r);
+    padding:14px !important;
+    margin-bottom:12px;
+    box-shadow:var(--shadow-sm);
+  }
+  /* Cellen krijgen elk hun eigen regel met label */
+  #clientCards table tbody tr td {
+    display:flex !important;
+    justify-content:space-between !important;
+    align-items:center;
+    padding:6px 0 !important;
+    border-bottom:1px dashed var(--line);
+    text-align:right !important;
+    font-size:13px;
+    white-space:normal !important;
+  }
+  #clientCards table tbody tr td:last-child {
+    border-bottom:none;
+    padding-top:12px !important;
+  }
+  /* Labels via data-attribuut worden hier NIET gebruikt; we labelen door positie */
+  /* De tweede kolom (bedrijfsnaam) meer prominent */
+  #clientCards table tbody tr td:nth-child(2) {
+    display:block !important;
+    text-align:left !important;
+    padding-bottom:10px !important;
+    border-bottom:2px solid var(--line);
+    margin-bottom:8px;
+  }
+  #clientCards table tbody tr td:nth-child(2) > div {
+    font-size:15px !important;
+  }
+  /* Klantnr eerst, klein en subtiel */
+  #clientCards table tbody tr td:nth-child(1) {
+    display:inline-block !important;
+    background:var(--acc-l);
+    color:var(--acc);
+    padding:2px 8px !important;
+    border-radius:12px;
+    font-size:11px !important;
+    border-bottom:none !important;
+    margin-bottom:8px;
+  }
+  /* Voor cellen met alleen '-' verberg de hele rij */
+  /* Actie-knoppen prominent onderaan */
+  #clientCards table tbody tr td:last-child > div {
+    justify-content:stretch !important;
+    width:100%;
+    gap:8px !important;
+  }
+  #clientCards table tbody tr td:last-child button {
+    flex:1;
+    padding:10px 14px !important;
+    font-size:13px !important;
+    min-height:38px;
+  }
+  /* Voeg labels toe via ::before pseudo-elementen */
+  #clientCards table tbody tr td:nth-child(3)::before { content:"Contactpersoon"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  #clientCards table tbody tr td:nth-child(4)::before { content:"Email"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  #clientCards table tbody tr td:nth-child(5)::before { content:"Telefoon"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  #clientCards table tbody tr td:nth-child(6)::before { content:"Adres"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  #clientCards table tbody tr td:nth-child(7)::before { content:"Tarief"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  #clientCards table tbody tr td:nth-child(8)::before { content:"KM-tarief"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  #clientCards table tbody tr td:nth-child(9)::before { content:"BTW"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  #clientCards table tbody tr td:nth-child(10)::before { content:"Gewerkte uren"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+
+  /* Edit-rij op mobiel: naar 1 kolom */
+  #clientCards table tbody tr[id^="edit-"] td {
+    display:block !important;
+    padding:0 !important;
+    border:none !important;
+    text-align:left !important;
+  }
+  #clientCards table tbody tr[id^="edit-"] td > div[style*="grid-template-columns"] {
+    grid-template-columns:1fr !important;
+  }
+  #clientCards table tbody tr[id^="edit-"] {
+    background:var(--acc-l) !important;
+    border:2px solid var(--acc-m) !important;
+  }
+}
 </style>
 </head>
 <body>
