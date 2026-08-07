@@ -139,11 +139,62 @@ body{
   .tile{padding:28px 20px;min-height:240px}
   .tile-logo{width:150px;height:80px}
 }
+
+/* Login overlay */
+.login-overlay{
+  position:fixed;inset:0;
+  background:linear-gradient(135deg,#f8f7f4 0%,#e8e7e2 100%);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  z-index:1000;
+}
+.login-card{
+  max-width:400px;width:100%;
+  background:var(--white);
+  border-radius:var(--r);
+  padding:36px 32px;
+  box-shadow:0 20px 40px rgba(0,0,0,.15);
+}
+.login-title{font-family:'Fraunces',serif;font-size:24px;font-weight:600;margin-bottom:4px;color:var(--ink)}
+.login-sub{font-size:13px;color:var(--ink3);margin-bottom:24px}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:6px}
+.login-field input{
+  width:100%;background:var(--cream);
+  border:1px solid var(--line2);
+  border-radius:var(--rsm);
+  padding:11px 12px;
+  font-family:'DM Sans',sans-serif;
+  font-size:14px;outline:none;
+}
+.login-field input:focus{border-color:var(--acc);background:var(--white)}
+.login-btn{
+  width:100%;background:var(--acc);color:white;border:none;
+  border-radius:var(--rsm);padding:12px;
+  font-size:14px;font-weight:600;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+}
+.login-btn:hover{background:#254c78}
+.login-error{color:#c0392b;font-size:12px;margin-top:10px;text-align:center;display:none}
+.login-error.show{display:block}
 </style>
 </head>
 <body>
 
-<div class="wrap">
+<!-- LOGIN OVERLAY (verschijnt tot ingelogd) -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-title">Ordinatio Groep</div>
+    <div class="login-sub">Log in om verder te gaan</div>
+    <div class="login-field">
+      <label>Wachtwoord</label>
+      <input type="password" id="loginPwd" placeholder="••••••••" onkeypress="if(event.key==='Enter') doLogin()" autofocus>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Inloggen</button>
+    <div class="login-error" id="loginError">Onjuist wachtwoord</div>
+  </div>
+</div>
+
+<div class="wrap" id="mainWrap" style="display:none">
   <div class="brand">
     <div class="brand-title">Ordinatio Groep</div>
     <div class="brand-sub">Kies een organisatie om verder te gaan</div>
@@ -167,19 +218,57 @@ body{
     </a>
   </div>
 
+  <div style="margin-top:32px;text-align:center">
+    <button onclick="doLogout()" style="background:transparent;color:#8a8a84;border:none;font-size:12px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif">Uitloggen</button>
+  </div>
+
   <div class="footer">
     &copy; 2026 Ordinatio Groep
   </div>
 </div>
 
 <script>
-function kiesTenant(id) {
-  // Bewaar keuze voor huidige browser-sessie (verdwijnt bij browser sluiten)
+// Gedeeld authenticatie-systeem: één keer inloggen op start,
+// werkt automatisch voor RvdL en SCM modules via sessionStorage.
+const AUTH_KEY = 'ordinatio_auth_v1';
+const DEFAULT_PWD = 'ordinatio2024';
+function getPwd() {
+  return localStorage.getItem('ordinatio_admin_pwd') || DEFAULT_PWD;
+}
+function isLoggedIn() {
+  try { return sessionStorage.getItem(AUTH_KEY) === '1'; } catch(e) { return false; }
+}
+function showLoggedInState() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('mainWrap').style.display = 'block';
+  setTimeout(() => { document.getElementById('loginPwd').value = ''; }, 100);
+}
+function doLogin() {
+  const pwd = document.getElementById('loginPwd').value;
+  if (pwd === getPwd()) {
+    try { sessionStorage.setItem(AUTH_KEY, '1'); } catch(e) {}
+    document.getElementById('loginError').classList.remove('show');
+    showLoggedInState();
+  } else {
+    document.getElementById('loginError').classList.add('show');
+    document.getElementById('loginPwd').select();
+  }
+}
+function doLogout() {
   try {
-    sessionStorage.setItem('ordinatio_tenant', id);
+    sessionStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem('ordinatio_tenant');
   } catch(e) {}
-  // Link doet de navigatie zelf (href) — geen preventDefault
+  location.reload();
+}
+function kiesTenant(id) {
+  try { sessionStorage.setItem('ordinatio_tenant', id); } catch(e) {}
   return true;
+}
+
+// Bij laden: check of al ingelogd
+if (isLoggedIn()) {
+  showLoggedInState();
 }
 </script>
 

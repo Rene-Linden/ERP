@@ -933,15 +933,24 @@ onSnapshot(doc(db,'dagstaat','data'),(snap)=>{
 
 // AUTH
 const AUTH_KEY = 'dgs_auth_v1';
+const SHARED_AUTH_KEY = 'ordinatio_auth_v1'; // gedeeld met start.html + scm.html
 
 function isAuthed() {
-  try { return sessionStorage.getItem(AUTH_KEY) === '1'; } catch(e) { return false; }
+  try {
+    // Ingelogd als óf de admin-specifieke óf de gedeelde sessie actief is
+    return sessionStorage.getItem(AUTH_KEY) === '1' || sessionStorage.getItem(SHARED_AUTH_KEY) === '1';
+  } catch(e) { return false; }
 }
 
 function setAuthed(on) {
   try {
-    if (on) sessionStorage.setItem(AUTH_KEY, '1');
-    else sessionStorage.removeItem(AUTH_KEY);
+    if (on) {
+      sessionStorage.setItem(AUTH_KEY, '1');
+      sessionStorage.setItem(SHARED_AUTH_KEY, '1'); // ook gedeelde sessie opzetten
+    } else {
+      sessionStorage.removeItem(AUTH_KEY);
+      sessionStorage.removeItem(SHARED_AUTH_KEY);
+    }
   } catch(e){}
 }
 
