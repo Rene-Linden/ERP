@@ -307,6 +307,8 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
 .edit-label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px}
 .edit-input{width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:9px 11px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif;box-sizing:border-box}
 .edit-input:focus{border-color:var(--acc);background:var(--white)}
+.edit-input[readonly],.edit-input[disabled]{background:transparent;border-color:transparent;color:var(--ink);cursor:default;padding-left:0;padding-right:0}
+.edit-input[readonly]:focus,.edit-input[disabled]:focus{border-color:transparent;background:transparent}
 input.edit-input[type="number"]{font-family:'DM Mono',monospace}
 select.edit-input{cursor:pointer}
 
@@ -2531,7 +2533,7 @@ function renderKlanten(){
       <span></span>
     </div>
     ${clients.map((c,i)=>{
-      return `<div class="klant-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)">
+      return `<div class="klant-row" onclick="openKlantModal(${i},'view')" style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''">
         <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--acc);font-weight:600;background:var(--acc-l);padding:3px 10px;border-radius:20px;white-space:nowrap">${c.klantnr||'–'}</span>
         <div style="display:flex;align-items:center;gap:10px;min-width:0">
           <div style="width:10px;height:10px;border-radius:50%;background:${c.color||'#8a8a84'};flex-shrink:0"></div>
@@ -2541,59 +2543,69 @@ function renderKlanten(){
           </div>
         </div>
         <span class="klant-tarief" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--ink2);white-space:nowrap">${c.rate?'€ '+c.rate+'/u':'<span style=&quot;color:var(--ink3);font-size:12px&quot;>—</span>'}</span>
-        <button onclick="openEditModal(${i})" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Wijzigen</button>
-        <button onclick="deleteClient('${c.name.replace(/'/g,"\\\\'")}')" title="Verwijderen" style="background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:6px 10px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+        <button onclick="event.stopPropagation();openKlantModal(${i},'edit')" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Wijzigen</button>
+        <button onclick="event.stopPropagation();deleteClient('${c.name.replace(/'/g,"\\\\'")}')" title="Verwijderen" style="background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:6px 10px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
       </div>`;
     }).join('')}
   </div>`;
 }
 
-// ── EDIT MODAL ─────────────────────────────────
-window.openEditModal=function(i){
+// ── KLANT MODAL (view + edit) ──────────────────
+window.openKlantModal=function(i, mode){
   const c=clients[i];
   if(!c) return;
+  mode = mode || 'view';
 
   // Verwijder eventueel bestaande modal
   const bestaand=document.getElementById('klantEditModal');
   if(bestaand) bestaand.remove();
 
+  const readonly = (mode === 'view') ? 'readonly' : '';
+  const disabled = (mode === 'view') ? 'disabled' : '';
+  const titel = (mode === 'view') ? 'Klant bekijken' : 'Klant wijzigen';
+  const footerDisplay = (mode === 'view') ? 'none' : 'flex';
+  const editBtnDisplay = (mode === 'view') ? 'inline-flex' : 'none';
+
   // Bouw modal HTML
   const modalHTML=`
-    <div id="klantEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeEditModal()">
+    <div id="klantEditModal" data-mode="${mode}" data-idx="${i}" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeEditModal()">
       <div style="background:var(--white);border-radius:var(--r);max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,.25)">
-        <div style="padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);z-index:2">
-          <div>
-            <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:600">Klant wijzigen</div>
-            <div style="font-size:12px;color:var(--ink3);margin-top:2px">${c.klantnr||''} · ${c.name}</div>
+        <div style="padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);z-index:2;gap:12px">
+          <div style="min-width:0;flex:1">
+            <div id="klantModalTitel" style="font-family:'Fraunces',serif;font-size:18px;font-weight:600">${titel}</div>
+            <div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.klantnr||''} · ${c.name}</div>
           </div>
-          <button onclick="closeEditModal()" style="background:none;border:none;font-size:24px;color:var(--ink3);cursor:pointer;padding:0 4px">&times;</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+            <button id="klantEditBtn" onclick="switchToEditMode()" style="display:${editBtnDisplay};background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;align-items:center;gap:6px">✏️ Wijzigen</button>
+            <button onclick="closeEditModal()" style="background:none;border:none;font-size:24px;color:var(--ink3);cursor:pointer;padding:0 4px">&times;</button>
+          </div>
         </div>
 
         <div style="padding:22px" class="edit-modal-body">
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--acc);font-weight:600;margin-bottom:10px">Bedrijfsgegevens</div>
           <div class="edit-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
             <div><div class="edit-label">Bedrijfsnaam</div>
-              <input type="text" value="${(c.name||'').replace(/"/g,'&quot;')}" id="em-name" class="edit-input"></div>
+              <input type="text" value="${(c.name||'').replace(/"/g,'&quot;')}" id="em-name" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Contactpersoon</div>
-              <input type="text" value="${(c.contact||'').replace(/"/g,'&quot;')}" id="em-contact" class="edit-input"></div>
+              <input type="text" value="${(c.contact||'').replace(/"/g,'&quot;')}" id="em-contact" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Email</div>
-              <input type="email" value="${(c.email||'').replace(/"/g,'&quot;')}" id="em-email" class="edit-input"></div>
+              <input type="email" value="${(c.email||'').replace(/"/g,'&quot;')}" id="em-email" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Telefoon</div>
-              <input type="tel" value="${(c.phone||'').replace(/"/g,'&quot;')}" id="em-phone" class="edit-input"></div>
+              <input type="tel" value="${(c.phone||'').replace(/"/g,'&quot;')}" id="em-phone" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Adres</div>
-              <input type="text" value="${(c.address||'').replace(/"/g,'&quot;')}" id="em-address" class="edit-input"></div>
+              <input type="text" value="${(c.address||'').replace(/"/g,'&quot;')}" id="em-address" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Postcode &amp; Plaats</div>
-              <input type="text" value="${(c.city||'').replace(/"/g,'&quot;')}" id="em-city" class="edit-input"></div>
+              <input type="text" value="${(c.city||'').replace(/"/g,'&quot;')}" id="em-city" class="edit-input" ${readonly}></div>
           </div>
 
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--acc);font-weight:600;margin-bottom:10px">Tarieven</div>
           <div class="edit-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">
             <div><div class="edit-label">Uurtarief (€)</div>
-              <input type="number" value="${c.rate||0}" id="em-rate" min="0" step="0.01" class="edit-input"></div>
+              <input type="number" value="${c.rate||0}" id="em-rate" min="0" step="0.01" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">KM-vergoeding (€)</div>
-              <input type="number" value="${c.kmRate||0.21}" id="em-kmrate" min="0" step="0.01" class="edit-input"></div>
+              <input type="number" value="${c.kmRate||0.21}" id="em-kmrate" min="0" step="0.01" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">BTW %</div>
-              <select id="em-btw" class="edit-input">
+              <select id="em-btw" class="edit-input" ${disabled}>
                 <option value="21"${(c.btw===21||c.btw===undefined)?' selected':''}>21%</option>
                 <option value="0"${c.btw===0?' selected':''}>0%</option>
               </select></div>
@@ -2602,21 +2614,21 @@ window.openEditModal=function(i){
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--acc);font-weight:600;margin-bottom:10px;padding-top:6px;border-top:1px dashed var(--line)">Contract-gegevens (voor interim-overeenkomst)</div>
           <div class="edit-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
             <div><div class="edit-label">KvK-nummer</div>
-              <input type="text" value="${(c.kvk||'').replace(/"/g,'&quot;')}" id="em-kvk" placeholder="12345678" class="edit-input"></div>
+              <input type="text" value="${(c.kvk||'').replace(/"/g,'&quot;')}" id="em-kvk" placeholder="12345678" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Functie contactpersoon</div>
-              <input type="text" value="${(c.functie||'').replace(/"/g,'&quot;')}" id="em-functie" placeholder="Managing Director" class="edit-input"></div>
+              <input type="text" value="${(c.functie||'').replace(/"/g,'&quot;')}" id="em-functie" placeholder="Managing Director" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Mijn rol</div>
-              <input type="text" value="${(c.rol||'').replace(/"/g,'&quot;')}" id="em-rol" placeholder="Interim Operationeel Manager" class="edit-input"></div>
+              <input type="text" value="${(c.rol||'').replace(/"/g,'&quot;')}" id="em-rol" placeholder="Interim Operationeel Manager" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Werkweek (uur)</div>
-              <input type="number" value="${c.werkweek||40}" id="em-werkweek" min="1" max="60" class="edit-input"></div>
+              <input type="number" value="${c.werkweek||40}" id="em-werkweek" min="1" max="60" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Betalingstermijn (dagen)</div>
-              <input type="number" value="${c.betaaltermijn||21}" id="em-betaaltermijn" min="1" max="120" class="edit-input"></div>
+              <input type="number" value="${c.betaaltermijn||21}" id="em-betaaltermijn" min="1" max="120" class="edit-input" ${readonly}></div>
             <div><div class="edit-label">Plaats ondertekening</div>
-              <input type="text" value="${(c.ondertekenPlaats||'').replace(/"/g,'&quot;')}" id="em-ondplaats" placeholder="Bijv. Asten" class="edit-input"></div>
+              <input type="text" value="${(c.ondertekenPlaats||'').replace(/"/g,'&quot;')}" id="em-ondplaats" placeholder="Bijv. Asten" class="edit-input" ${readonly}></div>
           </div>
         </div>
 
-        <div style="padding:14px 22px;background:var(--cream);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0">
+        <div id="klantModalFooter" style="padding:14px 22px;background:var(--cream);border-top:1px solid var(--line);display:${footerDisplay};gap:10px;justify-content:flex-end;position:sticky;bottom:0">
           <button onclick="closeEditModal()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleren</button>
           <button onclick="saveEditModal(${i})" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
         </div>
@@ -2624,8 +2636,38 @@ window.openEditModal=function(i){
     </div>`;
 
   document.body.insertAdjacentHTML('beforeend', modalHTML);
-  // Focus op naam-veld
-  setTimeout(()=>document.getElementById('em-name').focus(), 50);
+  // Focus alleen bij edit-mode
+  if(mode === 'edit'){
+    setTimeout(()=>document.getElementById('em-name').focus(), 50);
+  }
+};
+
+// Backwards compat + oude bindings
+window.openEditModal = function(i){ window.openKlantModal(i, 'edit'); };
+
+// Wissel van bekijk-modus naar wijzig-modus
+window.switchToEditMode = function(){
+  const modal = document.getElementById('klantEditModal');
+  if(!modal) return;
+  modal.setAttribute('data-mode','edit');
+  // Alle inputs enablen
+  modal.querySelectorAll('input, select, textarea').forEach(el => {
+    el.removeAttribute('readonly');
+    el.removeAttribute('disabled');
+  });
+  // Titel wijzigen
+  const titel = document.getElementById('klantModalTitel');
+  if(titel) titel.textContent = 'Klant wijzigen';
+  // Verberg de "✏️ Wijzigen" knop, toon Opslaan/Annuleren footer
+  const editBtn = document.getElementById('klantEditBtn');
+  if(editBtn) editBtn.style.display = 'none';
+  const footer = document.getElementById('klantModalFooter');
+  if(footer) footer.style.display = 'flex';
+  // Focus op naam
+  setTimeout(()=>{
+    const nameEl = document.getElementById('em-name');
+    if(nameEl){ nameEl.focus(); nameEl.select(); }
+  }, 50);
 };
 
 window.closeEditModal=function(){
