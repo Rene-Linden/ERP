@@ -211,10 +211,29 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
 /* ── Breakpoint: telefoons ── */
 @media(max-width:768px){
   /* Topbar compacter */
-  .topbar{padding:0 12px;height:52px}
-  .topbar-title{font-size:14px}
-  .sync-badge{display:none} /* meestal te groot voor mobiel */
-  .topbar-right a,.topbar-right button{padding:5px 10px;font-size:12px}
+  .topbar{padding:0 12px;height:52px;gap:8px}
+  .topbar-left{gap:6px;flex:1;min-width:0}
+  .topbar-title{display:none} /* op mobiel: alleen logo, geen tekst */
+  .topbar-left img{height:28px}
+  .sync-badge{display:none}
+
+  /* Uniforme knoppen rechts */
+  .topbar-right{gap:6px;flex-shrink:0}
+  .topbar-right a,
+  .topbar-right button,
+  .topbar-right .logout-btn{
+    height:34px;
+    padding:0 12px !important;
+    font-size:12px !important;
+    font-weight:500;
+    border-radius:6px !important;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 !important;
+    line-height:1;
+    box-sizing:border-box;
+  }
 
   /* Hamburger zichtbaar */
   .hamburger{display:inline-flex}
