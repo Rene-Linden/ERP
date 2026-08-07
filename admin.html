@@ -303,110 +303,45 @@ html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-
   .modal-header .modal-title{font-size:16px}
 }
 
-/* ── KLANTEN TABEL → KAART-LAYOUT OP MOBIEL ── */
-@media(max-width:768px){
-  /* Reset de mobiele scroll voor Klanten tab */
-  #page-klanten .card .data-table,
-  #page-klanten .card table {
-    display:block !important;
-    overflow-x:visible !important;
-    white-space:normal !important;
-  }
-  /* Verberg tabel-header op mobiel (te weinig ruimte) */
-  #clientCards table thead {
-    display:none !important;
-  }
-  /* Elke tbody wordt een blok */
-  #clientCards table,
-  #clientCards table tbody {
-    display:block !important;
-    width:100% !important;
-    min-width:0 !important;
-  }
-  /* Elke rij wordt een kaart */
-  #clientCards table tbody tr {
-    display:block !important;
-    background:var(--white);
-    border:1px solid var(--line) !important;
-    border-radius:var(--r);
-    padding:14px !important;
-    margin-bottom:12px;
-    box-shadow:var(--shadow-sm);
-  }
-  /* Cellen krijgen elk hun eigen regel met label */
-  #clientCards table tbody tr td {
-    display:flex !important;
-    justify-content:space-between !important;
-    align-items:center;
-    padding:6px 0 !important;
-    border-bottom:1px dashed var(--line);
-    text-align:right !important;
-    font-size:13px;
-    white-space:normal !important;
-  }
-  #clientCards table tbody tr td:last-child {
-    border-bottom:none;
-    padding-top:12px !important;
-  }
-  /* Labels via data-attribuut worden hier NIET gebruikt; we labelen door positie */
-  /* De tweede kolom (bedrijfsnaam) meer prominent */
-  #clientCards table tbody tr td:nth-child(2) {
-    display:block !important;
-    text-align:left !important;
-    padding-bottom:10px !important;
-    border-bottom:2px solid var(--line);
-    margin-bottom:8px;
-  }
-  #clientCards table tbody tr td:nth-child(2) > div {
-    font-size:15px !important;
-  }
-  /* Klantnr eerst, klein en subtiel */
-  #clientCards table tbody tr td:nth-child(1) {
-    display:inline-block !important;
-    background:var(--acc-l);
-    color:var(--acc);
-    padding:2px 8px !important;
-    border-radius:12px;
-    font-size:11px !important;
-    border-bottom:none !important;
-    margin-bottom:8px;
-  }
-  /* Voor cellen met alleen '-' verberg de hele rij */
-  /* Actie-knoppen prominent onderaan */
-  #clientCards table tbody tr td:last-child > div {
-    justify-content:stretch !important;
-    width:100%;
-    gap:8px !important;
-  }
-  #clientCards table tbody tr td:last-child button {
-    flex:1;
-    padding:10px 14px !important;
-    font-size:13px !important;
-    min-height:38px;
-  }
-  /* Voeg labels toe via ::before pseudo-elementen */
-  #clientCards table tbody tr td:nth-child(3)::before { content:"Contactpersoon"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
-  #clientCards table tbody tr td:nth-child(4)::before { content:"Email"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
-  #clientCards table tbody tr td:nth-child(5)::before { content:"Telefoon"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
-  #clientCards table tbody tr td:nth-child(6)::before { content:"Adres"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
-  #clientCards table tbody tr td:nth-child(7)::before { content:"Tarief"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
-  #clientCards table tbody tr td:nth-child(8)::before { content:"KM-tarief"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
-  #clientCards table tbody tr td:nth-child(9)::before { content:"BTW"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
-  #clientCards table tbody tr td:nth-child(10)::before { content:"Gewerkte uren"; color:var(--ink3); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+/* ── KLANTEN LIJST — COMPACT (mobiel + desktop) ── */
+.edit-label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px}
+.edit-input{width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:9px 11px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif;box-sizing:border-box}
+.edit-input:focus{border-color:var(--acc);background:var(--white)}
+input.edit-input[type="number"]{font-family:'DM Mono',monospace}
+select.edit-input{cursor:pointer}
 
-  /* Edit-rij op mobiel: naar 1 kolom */
-  #clientCards table tbody tr[id^="edit-"] td {
-    display:block !important;
-    padding:0 !important;
-    border:none !important;
-    text-align:left !important;
+/* Mobiel: klanten-rij past aan, minder velden zichtbaar */
+@media(max-width:768px){
+  .klant-list-header{
+    grid-template-columns:auto 1fr auto !important;
+    gap:10px !important;
+    padding:8px 14px !important;
   }
-  #clientCards table tbody tr[id^="edit-"] td > div[style*="grid-template-columns"] {
+  .klant-list-header .klant-tarief-header{
+    display:none;
+  }
+  .klant-row{
+    grid-template-columns:auto 1fr auto !important;
+    gap:10px !important;
+    padding:12px 14px !important;
+  }
+  .klant-row .klant-tarief{
+    display:none;  /* Op mobiel geen tarief-kolom in overzicht */
+  }
+  .klant-row button:last-child{
+    display:none;  /* Op mobiel geen ✕ knop; verwijderen via modal (kan later) */
+  }
+  .edit-grid{
     grid-template-columns:1fr !important;
   }
-  #clientCards table tbody tr[id^="edit-"] {
-    background:var(--acc-l) !important;
-    border:2px solid var(--acc-m) !important;
+  #klantEditModal{
+    padding:0 !important;
+    align-items:stretch !important;
+  }
+  #klantEditModal > div{
+    max-width:100% !important;
+    max-height:100vh !important;
+    border-radius:0 !important;
   }
 }
 </style>
@@ -2529,105 +2464,144 @@ function renderKlanten(){
     el.innerHTML='<div class="empty-state"><div class="empty-icon">🏢</div><div>Geen opdrachtgevers</div></div>';
     return;
   }
-  const allBlocks=Object.values(days).flat();
 
-  el.innerHTML=`<div class="card" style="overflow:hidden;padding:0">
-    <table style="width:100%;border-collapse:collapse">
-      <thead>
-        <tr style="background:var(--cream);border-bottom:2px solid var(--line)">
-          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600;white-space:nowrap">Nr</th>
-          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Bedrijfsnaam</th>
-          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Contactpersoon</th>
-          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Email</th>
-          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Telefoon</th>
-          <th style="padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Adres</th>
-          <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Tarief</th>
-          <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">KM</th>
-          <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">BTW</th>
-          <th style="padding:10px 14px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600">Uren</th>
-          <th style="padding:10px 14px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600"></th>
-        </tr>
-      </thead>
-      <tbody>
-        ${clients.map((c,i)=>{
-          const mins=allBlocks.filter(b=>b.klant===c.name).reduce((s,b)=>s+bMins(b),0);
-          const p2=n=>String(n).padStart(2,'0');
-          const urenStr=mins?`${Math.floor(mins/60)}:${p2(mins%60)}`:'–';
-          return`<tr style="border-bottom:1px solid var(--line)" id="row-${i}">
-            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--acc);font-weight:600;white-space:nowrap">${c.klantnr||'–'}</td>
-            <td style="padding:12px 14px">
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="width:8px;height:8px;border-radius:50%;background:${c.color||'#8a8a84'};flex-shrink:0"></div>
-                <span style="font-weight:600;color:var(--ink);font-size:13px">${c.name}</span>
-              </div>
-            </td>
-            <td style="padding:12px 14px;font-size:13px;color:var(--ink2)">${c.contact||'–'}</td>
-            <td style="padding:12px 14px;font-size:13px;color:var(--ink2)">${c.email?`<a href="mailto:${c.email}" style="color:var(--acc);text-decoration:none">${c.email}</a>`:'–'}</td>
-            <td style="padding:12px 14px;font-size:13px;color:var(--ink2);white-space:nowrap">${c.phone||'–'}</td>
-            <td style="padding:12px 14px;font-size:13px;color:var(--ink2)">${[c.address,c.city].filter(Boolean).join(', ')||'–'}</td>
-            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;text-align:right;white-space:nowrap">${c.rate?'€ '+c.rate:'–'}</td>
-            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;text-align:right;white-space:nowrap">${c.kmRate?'€ '+parseFloat(c.kmRate).toFixed(2):'–'}</td>
-            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;text-align:right">${c.btw!==undefined?c.btw+'%':'21%'}</td>
-            <td style="padding:12px 14px;font-family:'DM Mono',monospace;font-size:13px;text-align:right;color:var(--grn)">${urenStr}</td>
-            <td style="padding:12px 14px;text-align:center">
-              <div style="display:flex;gap:6px;justify-content:flex-end">
-                <button onclick="openEdit(${i})" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Wijzigen</button>
-                <button onclick="deleteClient('${c.name}')" style="background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:5px 10px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
-              </div>
-            </td>
-          </tr>
-          <!-- EDIT ROW (hidden) -->
-          <tr id="edit-${i}" style="display:none;background:var(--acc-l);border-bottom:1px solid var(--acc-m)">
-            <td colspan="11" style="padding:16px 20px">
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Bedrijfsnaam</div>
-                  <input type="text" value="${c.name.replace(/"/g,'&quot;')}" id="e-name-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Contactpersoon</div>
-                  <input type="text" value="${(c.contact||'').replace(/"/g,'&quot;')}" id="e-contact-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Email</div>
-                  <input type="email" value="${(c.email||'').replace(/"/g,'&quot;')}" id="e-email-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Telefoon</div>
-                  <input type="tel" value="${(c.phone||'').replace(/"/g,'&quot;')}" id="e-phone-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Adres</div>
-                  <input type="text" value="${(c.address||'').replace(/"/g,'&quot;')}" id="e-address-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Postcode & Plaats</div>
-                  <input type="text" value="${(c.city||'').replace(/"/g,'&quot;')}" id="e-city-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Uurtarief (€)</div>
-                  <input type="number" value="${c.rate||0}" id="e-rate-${i}" min="0" step="0.01" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">KM vergoeding (€)</div>
-                  <input type="number" value="${c.kmRate||0.23}" id="e-kmrate-${i}" min="0" step="0.01" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">BTW %</div>
-                  <select id="e-btw-${i}" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none">
-                    <option value="21"${(c.btw===21||c.btw===undefined)?'selected':''}>21%</option>
-                    <option value="0"${c.btw===0?'selected':''}>0%</option>
-                  </select></div>
-              </div>
-              <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--acc);font-weight:600;margin:4px 0 8px;padding-top:10px;border-top:1px dashed var(--acc-m)">Contract-gegevens (voor interim-overeenkomst)</div>
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px">
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">KvK-nummer</div>
-                  <input type="text" value="${(c.kvk||'').replace(/"/g,'&quot;')}" id="e-kvk-${i}" placeholder="12345678" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Functie contactpersoon</div>
-                  <input type="text" value="${(c.functie||'').replace(/"/g,'&quot;')}" id="e-functie-${i}" placeholder="Managing Director" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Mijn rol</div>
-                  <input type="text" value="${(c.rol||'').replace(/"/g,'&quot;')}" id="e-rol-${i}" placeholder="Interim Operationeel Manager" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Werkweek (uur)</div>
-                  <input type="number" value="${c.werkweek||40}" id="e-werkweek-${i}" min="1" max="60" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Betalingstermijn (dagen)</div>
-                  <input type="number" value="${c.betaaltermijn||21}" id="e-betaaltermijn-${i}" min="1" max="120" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Mono',monospace"></div>
-                <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:4px">Plaats ondertekening</div>
-                  <input type="text" value="${(c.ondertekenPlaats||'').replace(/"/g,'&quot;')}" id="e-ondplaats-${i}" placeholder="Bijv. Asten" style="width:100%;background:var(--white);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 10px;font-size:13px;color:var(--ink);outline:none;font-family:'DM Sans',sans-serif"></div>
-              </div>
-              <div style="display:flex;gap:8px">
-                <button onclick="saveEdit(${i})" style="background:var(--acc);color:white;border:none;border-radius:var(--rxs);padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
-                <button onclick="closeEdit(${i})" style="background:var(--white);color:var(--ink3);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:8px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleer</button>
-              </div>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
+  // Compacte lijst: klantnr, kleur+naam, contactpersoon, tarief, actie-knoppen
+  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+    <div class="klant-list-header" style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;padding:10px 16px;background:var(--cream);border-bottom:2px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:700">
+      <span>Nr</span>
+      <span>Bedrijf / Contactpersoon</span>
+      <span class="klant-tarief-header">Tarief</span>
+      <span></span>
+      <span></span>
+    </div>
+    ${clients.map((c,i)=>{
+      return `<div class="klant-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)">
+        <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--acc);font-weight:600;background:var(--acc-l);padding:3px 10px;border-radius:20px;white-space:nowrap">${c.klantnr||'–'}</span>
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <div style="width:10px;height:10px;border-radius:50%;background:${c.color||'#8a8a84'};flex-shrink:0"></div>
+          <div style="min-width:0">
+            <div style="font-weight:600;color:var(--ink);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div>
+            <div class="klant-contact" style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.contact||'<span style=&quot;font-style:italic&quot;>Geen contactpersoon</span>'}</div>
+          </div>
+        </div>
+        <span class="klant-tarief" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--ink2);white-space:nowrap">${c.rate?'€ '+c.rate+'/u':'<span style=&quot;color:var(--ink3);font-size:12px&quot;>—</span>'}</span>
+        <button onclick="openEditModal(${i})" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Wijzigen</button>
+        <button onclick="deleteClient('${c.name.replace(/'/g,"\\\\'")}')" title="Verwijderen" style="background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:6px 10px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+      </div>`;
+    }).join('')}
   </div>`;
 }
+
+// ── EDIT MODAL ─────────────────────────────────
+window.openEditModal=function(i){
+  const c=clients[i];
+  if(!c) return;
+
+  // Verwijder eventueel bestaande modal
+  const bestaand=document.getElementById('klantEditModal');
+  if(bestaand) bestaand.remove();
+
+  // Bouw modal HTML
+  const modalHTML=`
+    <div id="klantEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeEditModal()">
+      <div style="background:var(--white);border-radius:var(--r);max-width:720px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,.25)">
+        <div style="padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);z-index:2">
+          <div>
+            <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:600">Klant wijzigen</div>
+            <div style="font-size:12px;color:var(--ink3);margin-top:2px">${c.klantnr||''} · ${c.name}</div>
+          </div>
+          <button onclick="closeEditModal()" style="background:none;border:none;font-size:24px;color:var(--ink3);cursor:pointer;padding:0 4px">&times;</button>
+        </div>
+
+        <div style="padding:22px" class="edit-modal-body">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--acc);font-weight:600;margin-bottom:10px">Bedrijfsgegevens</div>
+          <div class="edit-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+            <div><div class="edit-label">Bedrijfsnaam</div>
+              <input type="text" value="${(c.name||'').replace(/"/g,'&quot;')}" id="em-name" class="edit-input"></div>
+            <div><div class="edit-label">Contactpersoon</div>
+              <input type="text" value="${(c.contact||'').replace(/"/g,'&quot;')}" id="em-contact" class="edit-input"></div>
+            <div><div class="edit-label">Email</div>
+              <input type="email" value="${(c.email||'').replace(/"/g,'&quot;')}" id="em-email" class="edit-input"></div>
+            <div><div class="edit-label">Telefoon</div>
+              <input type="tel" value="${(c.phone||'').replace(/"/g,'&quot;')}" id="em-phone" class="edit-input"></div>
+            <div><div class="edit-label">Adres</div>
+              <input type="text" value="${(c.address||'').replace(/"/g,'&quot;')}" id="em-address" class="edit-input"></div>
+            <div><div class="edit-label">Postcode &amp; Plaats</div>
+              <input type="text" value="${(c.city||'').replace(/"/g,'&quot;')}" id="em-city" class="edit-input"></div>
+          </div>
+
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--acc);font-weight:600;margin-bottom:10px">Tarieven</div>
+          <div class="edit-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">
+            <div><div class="edit-label">Uurtarief (€)</div>
+              <input type="number" value="${c.rate||0}" id="em-rate" min="0" step="0.01" class="edit-input"></div>
+            <div><div class="edit-label">KM-vergoeding (€)</div>
+              <input type="number" value="${c.kmRate||0.21}" id="em-kmrate" min="0" step="0.01" class="edit-input"></div>
+            <div><div class="edit-label">BTW %</div>
+              <select id="em-btw" class="edit-input">
+                <option value="21"${(c.btw===21||c.btw===undefined)?' selected':''}>21%</option>
+                <option value="0"${c.btw===0?' selected':''}>0%</option>
+              </select></div>
+          </div>
+
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--acc);font-weight:600;margin-bottom:10px;padding-top:6px;border-top:1px dashed var(--line)">Contract-gegevens (voor interim-overeenkomst)</div>
+          <div class="edit-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
+            <div><div class="edit-label">KvK-nummer</div>
+              <input type="text" value="${(c.kvk||'').replace(/"/g,'&quot;')}" id="em-kvk" placeholder="12345678" class="edit-input"></div>
+            <div><div class="edit-label">Functie contactpersoon</div>
+              <input type="text" value="${(c.functie||'').replace(/"/g,'&quot;')}" id="em-functie" placeholder="Managing Director" class="edit-input"></div>
+            <div><div class="edit-label">Mijn rol</div>
+              <input type="text" value="${(c.rol||'').replace(/"/g,'&quot;')}" id="em-rol" placeholder="Interim Operationeel Manager" class="edit-input"></div>
+            <div><div class="edit-label">Werkweek (uur)</div>
+              <input type="number" value="${c.werkweek||40}" id="em-werkweek" min="1" max="60" class="edit-input"></div>
+            <div><div class="edit-label">Betalingstermijn (dagen)</div>
+              <input type="number" value="${c.betaaltermijn||21}" id="em-betaaltermijn" min="1" max="120" class="edit-input"></div>
+            <div><div class="edit-label">Plaats ondertekening</div>
+              <input type="text" value="${(c.ondertekenPlaats||'').replace(/"/g,'&quot;')}" id="em-ondplaats" placeholder="Bijv. Asten" class="edit-input"></div>
+          </div>
+        </div>
+
+        <div style="padding:14px 22px;background:var(--cream);border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0">
+          <button onclick="closeEditModal()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleren</button>
+          <button onclick="saveEditModal(${i})" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  // Focus op naam-veld
+  setTimeout(()=>document.getElementById('em-name').focus(), 50);
+};
+
+window.closeEditModal=function(){
+  const m=document.getElementById('klantEditModal');
+  if(m) m.remove();
+};
+
+window.saveEditModal=function(i){
+  const c=clients[i];
+  if(!c) return;
+  const val=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
+  const newName=val('em-name')||c.name;
+  c.name=newName;
+  c.contact=val('em-contact');
+  c.email=val('em-email');
+  c.phone=val('em-phone');
+  c.address=val('em-address');
+  c.city=val('em-city');
+  c.rate=parseFloat(val('em-rate'))||0;
+  c.kmRate=parseFloat(val('em-kmrate'))||0.21;
+  c.btw=parseInt(val('em-btw'))||21;
+  c.kvk=val('em-kvk');
+  c.functie=val('em-functie');
+  c.rol=val('em-rol');
+  c.werkweek=parseInt(val('em-werkweek'))||40;
+  c.betaaltermijn=parseInt(val('em-betaaltermijn'))||21;
+  c.ondertekenPlaats=val('em-ondplaats');
+  localStorage.setItem(CK,JSON.stringify(clients));
+  closeEditModal();
+  renderKlanten();
+  showToast(`${c.name} opgeslagen ✓`,'ok');
+};
 
 window.openEdit=function(i){
   // Close all other edit rows first
