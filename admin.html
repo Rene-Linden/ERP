@@ -1047,7 +1047,7 @@ select.edit-input{cursor:pointer}
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,doc,setDoc,getDoc,onSnapshot,collection,query,orderBy,getDocs,addDoc,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,updateDoc,getDoc,onSnapshot,collection,query,orderBy,getDocs,addDoc,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{getStorage,ref as storageRef,uploadBytes,getDownloadURL,deleteObject}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
@@ -1067,6 +1067,57 @@ const COLORS=['#2d5a8e','#1e7a4a','#b85c00','#7b3f9e','#c0392b','#1a7a8a','#5c6b
 let days={},clients=JSON.parse(localStorage.getItem(CK)||JSON.stringify(DEF_CLIENTS));
 let selColor=COLORS[0];
 let dashPeriod='month',dashOff=0,urenPeriod='month',urenOff=0,opPeriod='month',opOff=0;
+
+// ─── FIREBASE CLIENTS SYNC ─────────────────────
+// Klanten worden centraal opgeslagen in Firebase (collection 'clients')
+// localStorage blijft als backup/cache.
+// Bij eerste keer inloggen: migratie van localStorage → Firebase.
+let clientsFirebaseReady = false;
+
+async function saveClientsToFirebase() {
+  if (!clientsFirebaseReady) return; // Firebase nog niet klaar; alleen localStorage
+  try {
+    // Schrijf alles in één document, simpel en atomair
+    await setDoc(doc(db,'app_clients','main'), {
+      clients: clients,
+      updated: new Date().toISOString()
+    });
+  } catch(e) {
+    console.warn('Firebase clients save failed:', e);
+  }
+}
+
+async function loadClientsFromFirebase() {
+  try {
+    const snap = await getDoc(doc(db,'app_clients','main'));
+    if (snap.exists()) {
+      const fbClients = snap.data().clients;
+      if (Array.isArray(fbClients) && fbClients.length > 0) {
+        // Firebase heeft data → gebruik die
+        clients = fbClients;
+        saveClients();
+        clientsFirebaseReady = true;
+        return true;
+      }
+    }
+    // Firebase leeg of niet-bestaand → migratie vanuit localStorage
+    console.log('Firebase clients leeg, migratie vanuit localStorage...');
+    clientsFirebaseReady = true;
+    await saveClientsToFirebase(); // Uploads huidige clients
+    return true;
+  } catch(e) {
+    console.warn('Firebase clients load failed, gebruikt localStorage:', e);
+    clientsFirebaseReady = false;
+    return false;
+  }
+}
+
+// Nieuwe save-helper: schrijft naar zowel localStorage als Firebase
+function saveClients() {
+  saveClients();
+  saveClientsToFirebase(); // async, geen await — UI hoeft niet te wachten
+}
+
 
 function p2(n){return String(n).padStart(2,'0')}
 function m2s(m){return`${Math.floor(m/60)}:${p2(m%60)}`}
@@ -1137,7 +1188,12 @@ window.doLogin=function(){
     setAuthed(true);
     document.getElementById('loginWrap').style.display='none';
     document.getElementById('adminWrap').classList.add('on');
-    renderDashboard();renderInstellingen();
+    // Laad klanten uit Firebase (async, met migratie-fallback)
+    loadClientsFromFirebase().then(()=>{
+      renderDashboard();renderInstellingen();
+      // Als we nu op de klanten-pagina zitten, herrender
+      if(document.querySelector('#page-klanten.on')) renderKlanten();
+    });
   }else{
     document.getElementById('loginErr').style.display='block';
     document.getElementById('loginPwd').value='';
@@ -1800,7 +1856,7 @@ window.convertLeadToKlant = async function() {
     klantnr: 100100 + clients.length
   };
   clients.push(newClient);
-  localStorage.setItem(CK, JSON.stringify(clients));
+  saveClients();
 
   // Update CRM-record: link aan klant + status
   r.linkedKlantName = r.name;
@@ -2432,7 +2488,7 @@ window.addClient=function(){
   if(!name){showToast('Voer een naam in','bad');return;}
   if(clients.find(c=>c.name===name)){showToast('Naam bestaat al','bad');return;}
   clients.push({name,rate:r,kmRate,color:selColor,email,phone,address,city,contact,btw,klantnr});
-  localStorage.setItem(CK,JSON.stringify(clients));
+  saveClients();
   ['newName','newRate','newKmRate','newEmail','newPhone','newAddress','newCity','newContact'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('newBtw').value='21';
   document.getElementById('newKmRate').value='0.23';
@@ -2441,14 +2497,14 @@ window.addClient=function(){
 window.deleteClient=function(name){
   if(!confirm(`${name} verwijderen?`))return;
   clients=clients.filter(c=>c.name!==name);
-  localStorage.setItem(CK,JSON.stringify(clients));
+  saveClients();
   renderKlanten();showToast(`${name} verwijderd`,'info');
 }
 window.editField=function(name,field,val){
   const c=clients.find(x=>x.name===name);
   if(c){
     c[field]=field==='rate'?(parseFloat(val)||0):val;
-    localStorage.setItem(CK,JSON.stringify(clients));
+    saveClients();
     showToast('Opgeslagen ✓','ok');
   }
 }
@@ -2597,7 +2653,7 @@ window.saveEditModal=function(i){
   c.werkweek=parseInt(val('em-werkweek'))||40;
   c.betaaltermijn=parseInt(val('em-betaaltermijn'))||21;
   c.ondertekenPlaats=val('em-ondplaats');
-  localStorage.setItem(CK,JSON.stringify(clients));
+  saveClients();
   closeEditModal();
   renderKlanten();
   showToast(`${c.name} opgeslagen ✓`,'ok');
@@ -2633,7 +2689,7 @@ window.saveEdit=function(i){
   c.werkweek=parseInt(document.getElementById(`e-werkweek-${i}`).value)||40;
   c.betaaltermijn=parseInt(document.getElementById(`e-betaaltermijn-${i}`).value)||21;
   c.ondertekenPlaats=document.getElementById(`e-ondplaats-${i}`).value.trim();
-  localStorage.setItem(CK,JSON.stringify(clients));
+  saveClients();
   renderKlanten();
   showToast(`${c.name} opgeslagen ✓`,'ok');
 }
@@ -3027,9 +3083,8 @@ window.renderOmzet=async function(){
 
 window.resetClients=function(){
   if(!confirm('Klanten resetten naar standaard? Bestaande aanpassingen gaan verloren.'))return;
-  localStorage.removeItem('dgs_clients_v1');
   clients=JSON.parse(JSON.stringify(DEF_CLIENTS));
-  localStorage.setItem('dgs_clients_v1',JSON.stringify(clients));
+  saveClients();
   renderKlanten();
   showToast('Klanten hersteld ✓','ok');
 }
@@ -3864,8 +3919,11 @@ populeerJaarSelectors();
 if (isAuthed()) {
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('adminWrap').classList.add('on');
-  renderDashboard();
-  renderInstellingen();
+  loadClientsFromFirebase().then(()=>{
+    renderDashboard();
+    renderInstellingen();
+    if(document.querySelector('#page-klanten.on')) renderKlanten();
+  });
 }
 </script>
 </body>
