@@ -109,6 +109,18 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
 .badge.blue{background:var(--acc-l);color:var(--acc);border-color:var(--acc-m)}
 .badge.green{background:var(--grn-l);color:var(--grn);border-color:rgba(30,122,74,.3)}
 .badge.amber{background:var(--amb-l);color:var(--amb);border-color:rgba(184,92,0,.3)}
+
+/* WYSIWYG editor */
+.editor-toolbar{display:flex;gap:4px;padding:6px;background:var(--cream);border:1px solid var(--line2);border-bottom:0;border-radius:var(--rsm) var(--rsm) 0 0;flex-wrap:wrap}
+.editor-toolbar button{background:var(--white);border:1px solid var(--line);color:var(--ink2);border-radius:4px;padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;min-width:32px}
+.editor-toolbar button:hover{background:var(--acc-l);border-color:var(--acc-m);color:var(--acc)}
+.editor-toolbar button.active{background:var(--acc);color:white;border-color:var(--acc)}
+.editor-content{background:var(--cream);border:1px solid var(--line2);border-radius:0 0 var(--rsm) var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;min-height:130px;max-height:300px;overflow-y:auto;line-height:1.5}
+.editor-content:focus{background:var(--white);border-color:var(--acc-m)}
+.editor-content p{margin:0 0 8px}
+.editor-content ul,.editor-content ol{margin:0 0 8px 22px}
+.editor-content strong{font-weight:700}
+.editor-content em{font-style:italic}
 </style>
 </head>
 <body>
@@ -328,9 +340,13 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
           <option value="uur">Per uur (tarief × uren)</option>
           <option value="vast">Vaste prijs (één totaalbedrag)</option>
           <option value="maand">Per maand (maandbedrag × maanden + evt. setup fee)</option>
+          <option value="interim">Interim / open-eind (tarief + km, geen totaal)</option>
         </select>
       </div>
-      <div class="field"><label>Standaard tarief / prijs (€)</label><input type="number" step="0.01" id="tpl-tarief" placeholder="Bijv. 125"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Standaard tarief / prijs (€)</label><input type="number" step="0.01" id="tpl-tarief" placeholder="Bijv. 125"></div>
+        <div class="field"><label>Standaard km-tarief (€, alleen interim)</label><input type="number" step="0.01" id="tpl-kmtarief" placeholder="Bijv. 0.30"></div>
+      </div>
       <div class="field"><label>Standaard omschrijving werkzaamheden</label><textarea id="tpl-omschrijving" placeholder="Optioneel. Wordt vooringevuld bij nieuwe offerte."></textarea></div>
       <div class="field"><label>Standaard voorwaarden</label><textarea id="tpl-voorwaarden" placeholder="Optioneel. Bijv. betalingstermijn 14 dagen na factuur."></textarea></div>
     </div>
@@ -373,11 +389,34 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         </div>
         <div class="field"><label>Eenmalige setup fee (€, optioneel)</label><input type="number" step="0.01" id="off-setup"></div>
       </div>
+      <div id="off-fields-interim" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field"><label>Uurtarief excl. BTW (€) *</label><input type="number" step="0.01" id="off-int-uurtarief"></div>
+          <div class="field"><label>Km-vergoeding excl. BTW (€)</label><input type="number" step="0.01" id="off-int-kmtarief"></div>
+        </div>
+        <div class="field" style="margin-top:-6px">
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--ink2);font-weight:400;cursor:pointer">
+            <input type="checkbox" id="off-int-km-nvt" onchange="toggleKmNvt()" style="width:auto;margin:0"> Kilometervergoeding niet van toepassing
+          </label>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>BTW %</label><input type="number" id="off-btw" value="21"></div>
         <div class="field"><label>Geldigheidsduur (dagen)</label><input type="number" id="off-geldig" value="30"></div>
       </div>
-      <div class="field"><label>Omschrijving werkzaamheden</label><textarea id="off-omschrijving" rows="4"></textarea></div>
+      <div class="field">
+        <label>Omschrijving werkzaamheden</label>
+        <div class="editor-toolbar">
+          <button type="button" onclick="fmtDoc('bold')" title="Vet (Ctrl+B)"><strong>B</strong></button>
+          <button type="button" onclick="fmtDoc('italic')" title="Cursief (Ctrl+I)"><em>I</em></button>
+          <button type="button" onclick="fmtDoc('underline')" title="Onderstreept"><span style="text-decoration:underline">U</span></button>
+          <button type="button" onclick="fmtBlock('h3')" title="Kop">H</button>
+          <button type="button" onclick="fmtDoc('insertUnorderedList')" title="Opsomming">• Lijst</button>
+          <button type="button" onclick="fmtDoc('insertOrderedList')" title="Genummerde lijst">1. Lijst</button>
+          <button type="button" onclick="fmtDoc('removeFormat')" title="Opmaak wissen">×</button>
+        </div>
+        <div class="editor-content" id="off-omschrijving" contenteditable="true"></div>
+      </div>
       <div class="field"><label>Voorwaarden</label><textarea id="off-voorwaarden" rows="3"></textarea></div>
     </div>
     <div class="modal-footer">
@@ -455,13 +494,28 @@ async function loadTemplates(){
     await seedDefaultTemplates();
     const snap2=await getDocs(collection(db,'scm_offerte_templates'));
     templates=snap2.docs.map(d=>({id:d.id,...d.data()}));
+    return;
+  }
+  // Migratie: voeg 'Interim (open-eind)' toe als hij ontbreekt
+  if(!templates.find(t=>t.type==='interim')){
+    await addDoc(collection(db,'scm_offerte_templates'),{
+      name:'Interim (open-eind)',
+      type:'interim',
+      tarief:125,
+      kmTarief:0.30,
+      omschrijving:'<p>Interim werkzaamheden op basis van een uurtarief. De duur en scope worden in gezamenlijk overleg bepaald.</p><p><strong>Werkzaamheden:</strong></p><ul><li>Beschrijf hier de opdracht</li></ul>',
+      voorwaarden:'Facturering per maand achteraf op basis van gewerkte uren. Betaling binnen 14 dagen na factuurdatum. Kilometervergoeding volgens overeenkomst.'
+    });
+    const snap3=await getDocs(collection(db,'scm_offerte_templates'));
+    templates=snap3.docs.map(d=>({id:d.id,...d.data()}));
   }
 }
 async function seedDefaultTemplates(){
   const defaults=[
     {name:'Consultancy per uur',type:'uur',tarief:125,omschrijving:'Consultancy op afroepbasis, gefactureerd per gewerkt uur.',voorwaarden:'Betaling binnen 14 dagen na factuurdatum. Reiskosten volgens overeenkomst.'},
     {name:'Project vaste prijs',type:'vast',tarief:0,omschrijving:'Uitvoering van het project tegen een vooraf overeengekomen totaalbedrag.',voorwaarden:'50% bij opdracht, 50% bij oplevering. Betaling binnen 14 dagen na factuurdatum.'},
-    {name:'Software per maand',type:'maand',tarief:0,omschrijving:'Software abonnement met maandelijkse licentiekosten.',voorwaarden:'Betaling maandelijks vooruit. Opzegtermijn 1 maand.'}
+    {name:'Software per maand',type:'maand',tarief:0,omschrijving:'Software abonnement met maandelijkse licentiekosten.',voorwaarden:'Betaling maandelijks vooruit. Opzegtermijn 1 maand.'},
+    {name:'Interim (open-eind)',type:'interim',tarief:125,kmTarief:0.30,omschrijving:'<p>Interim werkzaamheden op basis van een uurtarief. De duur en scope worden in gezamenlijk overleg bepaald.</p><p><strong>Werkzaamheden:</strong></p><ul><li>Beschrijf hier de opdracht</li></ul>',voorwaarden:'Facturering per maand achteraf op basis van gewerkte uren. Betaling binnen 14 dagen na factuurdatum. Kilometervergoeding volgens overeenkomst.'}
   ];
   for(const t of defaults){await addDoc(collection(db,'scm_offerte_templates'),t);}
 }
@@ -1028,7 +1082,7 @@ function renderTemplates(){
     tbl.innerHTML='<tr><td class="empty">Templates laden…</td></tr>';
     return;
   }
-  const typeLabel={uur:'Per uur',vast:'Vaste prijs',maand:'Per maand'};
+  const typeLabel={uur:'Per uur',vast:'Vaste prijs',maand:'Per maand',interim:'Interim'};
   tbl.innerHTML='<thead><tr><th>Naam</th><th>Prijsmodel</th><th>Standaard tarief</th><th></th></tr></thead><tbody>'+
     templates.map(t=>`<tr>
       <td><strong>${t.name||'–'}</strong></td>
@@ -1043,7 +1097,7 @@ function renderTemplates(){
 
 window.openTemplateModal=function(){
   document.getElementById('templateModalTitle').textContent='Nieuwe template';
-  ['tpl-id','tpl-name','tpl-tarief','tpl-omschrijving','tpl-voorwaarden'].forEach(id=>document.getElementById(id).value='');
+  ['tpl-id','tpl-name','tpl-tarief','tpl-kmtarief','tpl-omschrijving','tpl-voorwaarden'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('tpl-type').value='uur';
   document.getElementById('templateModal').classList.add('show');
 };
@@ -1055,6 +1109,7 @@ window.editTemplate=function(id){
   document.getElementById('tpl-name').value=t.name||'';
   document.getElementById('tpl-type').value=t.type||'uur';
   document.getElementById('tpl-tarief').value=t.tarief||'';
+  document.getElementById('tpl-kmtarief').value=t.kmTarief||'';
   document.getElementById('tpl-omschrijving').value=t.omschrijving||'';
   document.getElementById('tpl-voorwaarden').value=t.voorwaarden||'';
   document.getElementById('templateModal').classList.add('show');
@@ -1067,6 +1122,7 @@ window.saveTemplate=async function(){
     name:document.getElementById('tpl-name').value.trim(),
     type:document.getElementById('tpl-type').value,
     tarief:parseFloat(document.getElementById('tpl-tarief').value)||0,
+    kmTarief:parseFloat(document.getElementById('tpl-kmtarief').value)||0,
     omschrijving:document.getElementById('tpl-omschrijving').value.trim(),
     voorwaarden:document.getElementById('tpl-voorwaarden').value.trim()
   };
@@ -1108,13 +1164,29 @@ function renderOffertes(){
       <td>${o.klant_naam||'–'}</td>
       <td>${o.titel||'–'}</td>
       <td>${formatDatum(o.datum)}</td>
-      <td style="text-align:right;font-family:'DM Mono',monospace">${euro(o.totaal_excl||0)}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace">${o.is_interim||o.template_type==='interim'?'<span style="color:var(--ink3);font-style:italic">interim</span>':euro(o.totaal_excl||0)}</td>
       <td style="text-align:right">
         <a href="scm-offerte.html?id=${o.id}" target="_blank" class="btn-small">🖨 Openen</a>
         <button class="btn-small danger" onclick="deleteOfferte('${o.id}')">✕</button>
       </td>
     </tr>`).join('')+'</tbody>';
 }
+
+// ── WYSIWYG editor helpers ────────────────────
+window.fmtDoc=function(cmd){
+  document.execCommand(cmd,false,null);
+  document.getElementById('off-omschrijving').focus();
+};
+window.fmtBlock=function(tag){
+  document.execCommand('formatBlock',false,tag);
+  document.getElementById('off-omschrijving').focus();
+};
+window.toggleKmNvt=function(){
+  const nvt=document.getElementById('off-int-km-nvt').checked;
+  const kmInput=document.getElementById('off-int-kmtarief');
+  kmInput.disabled=nvt;
+  if(nvt){kmInput.value='';kmInput.style.opacity='0.4';}else{kmInput.style.opacity='1';}
+};
 
 window.openOfferteModal=async function(){
   // Vul dropdowns
@@ -1124,7 +1196,6 @@ window.openOfferteModal=async function(){
   if(klanten.length===0){
     klantSel.innerHTML='<option value="">Geen contacten — maak eerst een lead of klant aan in CRM</option>';
   } else {
-    // Zowel leads als klanten selecteerbaar; toon status in label
     const sorted = klanten.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
     klantSel.innerHTML='<option value="">Kies contact…</option>'+sorted.map(k=>{
       const status = k.status || 'Klant';
@@ -1132,7 +1203,12 @@ window.openOfferteModal=async function(){
       return `<option value="${k.id}">${k.name}${badge}</option>`;
     }).join('');
   }
-  ['off-titel','off-uurtarief','off-uren','off-vastprijs','off-maandprijs','off-maanden','off-setup','off-omschrijving','off-voorwaarden'].forEach(id=>document.getElementById(id).value='');
+  // Reset alle velden
+  ['off-titel','off-uurtarief','off-uren','off-vastprijs','off-maandprijs','off-maanden','off-setup','off-int-uurtarief','off-int-kmtarief','off-voorwaarden'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('off-omschrijving').innerHTML='';
+  document.getElementById('off-int-km-nvt').checked=false;
+  document.getElementById('off-int-kmtarief').disabled=false;
+  document.getElementById('off-int-kmtarief').style.opacity='1';
   document.getElementById('off-btw').value=21;
   document.getElementById('off-geldig').value=30;
   onTemplateSelect();
@@ -1143,9 +1219,7 @@ window.closeOfferteModal=function(){document.getElementById('offerteModal').clas
 window.onTemplateSelect=function(){
   const tplId=document.getElementById('off-tpl').value;
   const tpl=templates.find(x=>x.id===tplId);
-  document.getElementById('off-fields-uur').style.display='none';
-  document.getElementById('off-fields-vast').style.display='none';
-  document.getElementById('off-fields-maand').style.display='none';
+  ['off-fields-uur','off-fields-vast','off-fields-maand','off-fields-interim'].forEach(id=>document.getElementById(id).style.display='none');
   if(!tpl)return;
   if(tpl.type==='uur'){
     document.getElementById('off-fields-uur').style.display='block';
@@ -1156,9 +1230,15 @@ window.onTemplateSelect=function(){
   } else if(tpl.type==='maand'){
     document.getElementById('off-fields-maand').style.display='block';
     document.getElementById('off-maandprijs').value=tpl.tarief||'';
+  } else if(tpl.type==='interim'){
+    document.getElementById('off-fields-interim').style.display='block';
+    document.getElementById('off-int-uurtarief').value=tpl.tarief||'';
+    document.getElementById('off-int-kmtarief').value=tpl.kmTarief||'';
   }
-  if(tpl.omschrijving && !document.getElementById('off-omschrijving').value){
-    document.getElementById('off-omschrijving').value=tpl.omschrijving;
+  // Omschrijving: laad template-content in editor (als leeg)
+  const editor=document.getElementById('off-omschrijving');
+  if(tpl.omschrijving && editor.innerHTML.trim()===''){
+    editor.innerHTML=tpl.omschrijving;
   }
   if(tpl.voorwaarden && !document.getElementById('off-voorwaarden').value){
     document.getElementById('off-voorwaarden').value=tpl.voorwaarden;
@@ -1188,6 +1268,7 @@ window.saveOfferte=async function(){
   const geldig=parseInt(document.getElementById('off-geldig').value)||30;
 
   let regels=[],totaalExcl=0;
+  let interimData=null; // Voor interim: aparte tarieven zonder totaal
   if(tpl.type==='uur'){
     const uurtarief=parseFloat(document.getElementById('off-uurtarief').value)||0;
     const uren=parseFloat(document.getElementById('off-uren').value)||0;
@@ -1205,6 +1286,14 @@ window.saveOfferte=async function(){
     if(setup>0){regels.push({omschrijving:'Eenmalige setup fee',bedrag:setup});}
     regels.push({omschrijving:`${m} maanden × ${euro(mp)}/maand`,bedrag:mp*m});
     totaalExcl=setup+(mp*m);
+  } else if(tpl.type==='interim'){
+    // Interim: geen totaal, alleen tarieven
+    const uurtarief=parseFloat(document.getElementById('off-int-uurtarief').value)||0;
+    const kmNvt=document.getElementById('off-int-km-nvt').checked;
+    const kmtarief=kmNvt?0:(parseFloat(document.getElementById('off-int-kmtarief').value)||0);
+    if(!uurtarief){toast('Vul uurtarief in','bad');return;}
+    interimData={uurtarief_excl:uurtarief,kmtarief_excl:kmtarief,km_nvt:kmNvt};
+    totaalExcl=0; // Geen totaal bij interim
   }
 
   const btw=totaalExcl*(btwPct/100);
@@ -1225,7 +1314,8 @@ window.saveOfferte=async function(){
       template_id:tplId,
       template_naam:tpl.name,
       template_type:tpl.type,
-      omschrijving:document.getElementById('off-omschrijving').value,
+      is_interim:tpl.type==='interim',
+      omschrijving:document.getElementById('off-omschrijving').innerHTML,
       voorwaarden:document.getElementById('off-voorwaarden').value,
       regels,
       totaal_excl:totaalExcl,
@@ -1234,6 +1324,11 @@ window.saveOfferte=async function(){
       totaal_incl:totaalIncl,
       geldigheid_dagen:geldig
     };
+    if(interimData){
+      offerte.uurtarief_excl=interimData.uurtarief_excl;
+      offerte.kmtarief_excl=interimData.kmtarief_excl;
+      offerte.km_nvt=interimData.km_nvt;
+    }
     const ref=await addDoc(collection(db,'scm_offertes'),offerte);
     await loadOffertes();
     renderOffertes();

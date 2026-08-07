@@ -118,14 +118,40 @@ function renderOfferte(o){
       </table>
     </div>
 
-    <!-- OMSCHRIJVING -->
+    <!-- OMSCHRIJVING (HTML uit WYSIWYG editor voor alle types) -->
     ${o.omschrijving?`
     <div style="margin-bottom:14px">
       <div style="border-bottom:2px solid #003366;padding-bottom:3px;margin-bottom:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#003366">Omschrijving werkzaamheden</div>
-      <div style="font-size:11px;line-height:1.6">${esc(o.omschrijving)}</div>
+      <div style="font-size:11px;line-height:1.6">${o.omschrijving}</div>
     </div>`:''}
 
-    <!-- REGELS + TOTALEN -->
+    ${o.is_interim || o.template_type==='interim' ? `
+    <!-- INTERIM: TARIEVEN ZONDER TOTAAL -->
+    <div style="margin-bottom:14px">
+      <div style="border-bottom:2px solid #003366;padding-bottom:3px;margin-bottom:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#003366">Tarieven</div>
+      <table style="width:100%;border-collapse:collapse;font-size:11px;border:1px solid #d4d3cc">
+        <thead>
+          <tr style="background:#003366;color:white">
+            <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600">Omschrijving</th>
+            <th style="padding:8px 10px;text-align:right;font-size:11px;font-weight:600;width:150px">Tarief excl. BTW</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2">Uurtarief</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #e8e7e2;text-align:right;font-family:monospace">${euro(o.uurtarief_excl||0)} / uur</td>
+          </tr>
+          ${o.km_nvt ? '' : `
+          <tr>
+            <td style="padding:8px 10px">Kilometervergoeding</td>
+            <td style="padding:8px 10px;text-align:right;font-family:monospace">${euro(o.kmtarief_excl||0)} / km</td>
+          </tr>`}
+        </tbody>
+      </table>
+      <div style="font-size:10px;color:#8a8a84;font-style:italic;margin-top:6px">Alle bedragen exclusief BTW (${o.btw_pct||21}%). Facturering op basis van werkelijk bestede uren${o.km_nvt?'':' en gereden kilometers'}.</div>
+    </div>
+    ` : `
+    <!-- STANDAARD: REGELS + TOTALEN -->
     <div style="margin-bottom:14px">
       <div style="border-bottom:2px solid #003366;padding-bottom:3px;margin-bottom:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#003366">Overzicht</div>
       <table style="width:100%;border-collapse:collapse;font-size:11px;border:1px solid #d4d3cc">
@@ -156,6 +182,7 @@ function renderOfferte(o){
         </tr>
       </table>
     </div>
+    `}
 
     <!-- VOORWAARDEN -->
     ${o.voorwaarden?`
