@@ -551,7 +551,10 @@ select.edit-input{cursor:pointer}
             <select id="crmStatusFilter" onchange="renderCRMList()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
               <option value="alle">Alle statussen</option>
               <option value="Lead">Alleen leads</option>
-              <option value="Klant">Alleen klanten</option>
+              <option value="Klant">Alle klanten</option>
+              <option value="RvdL">Klanten RvdL</option>
+              <option value="SCM">Klanten SCM</option>
+              <option value="Beide">Klant bij beide</option>
             </select>
             <button onclick="openLeadModal()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">+ Nieuwe lead</button>
           </div>
@@ -1502,29 +1505,38 @@ let crmCurrentDetailId = null; // welke klant/lead is open in detail-view
 
 async function loadCRMData() {
   try {
-    // Load alle CRM-records uit Firestore
-    const snap = await getDocs(collection(db,'crm_relaties'));
+    // Load alle CRM-records uit Firestore (crm_gedeeld)
+    const snap = await getDocs(collection(db,'crm_gedeeld'));
     const fbRecords = snap.docs.map(d => ({id: d.id, ...d.data()}));
 
-    // Merge met klanten uit localStorage
-    // Voor elke klant in klantbeheer: kijk of er al een crm_relatie bestaat (gekoppeld via klant_name)
-    const klantNames = new Set(clients.map(c => c.name));
     crmRecords = [];
 
-    // Voeg bestaande CRM-records toe (leads en klant-extensies)
+    // Voeg bestaande CRM-records toe
     fbRecords.forEach(r => {
+      // Migratie: oude records zonder de nieuwe klant-status-velden krijgen defaults
+      if (r.is_rvdl_klant === undefined) {
+        r.is_rvdl_klant = (r.status === 'Klant' && !!r.linkedKlantName);
+      }
+      if (r.is_scm_klant === undefined) r.is_scm_klant = false;
+      if (!r.rvdl_klantnr && r.linkedKlantName) {
+        const link = clients.find(c => c.name === r.linkedKlantName);
+        if (link) r.rvdl_klantnr = link.klantnr;
+      }
       crmRecords.push(r);
     });
 
-    // Voor elke klant: check of er een CRM-record voor is, anders maak een 'virtuele' (niet opgeslagen)
+    // Voor elke RvdL klant: check of er een CRM-record is, anders maak een 'virtuele' (niet opgeslagen)
     clients.forEach(c => {
-      const existing = crmRecords.find(r => r.linkedKlantName === c.name);
+      const existing = crmRecords.find(r => r.linkedKlantName === c.name || r.rvdl_klantnr === c.klantnr);
       if (!existing) {
         crmRecords.push({
           id: 'virtual-' + c.name.replace(/[^a-zA-Z0-9]/g,'_'),
           virtual: true,
           linkedKlantName: c.name,
-          status: 'Klant',
+          rvdl_klantnr: c.klantnr,
+          is_rvdl_klant: true,
+          is_scm_klant: false,
+          status: 'Klant',  // backwards-compat
           name: c.name,
           contact: c.contact || '',
           email: c.email || '',
@@ -1540,7 +1552,9 @@ async function loadCRMData() {
         // Sync basisgegevens van klantbeheer naar CRM-weergave (klant blijft master)
         existing.name = c.name;
         existing.linkedKlantName = c.name;
-        existing.status = 'Klant';
+        existing.rvdl_klantnr = c.klantnr;
+        existing.is_rvdl_klant = true;
+        existing.status = existing.is_scm_klant ? 'Klant' : 'Klant'; // Blijft Klant
         if (!existing.contact) existing.contact = c.contact || '';
         if (!existing.email) existing.email = c.email || '';
         if (!existing.phone) existing.phone = c.phone || '';
@@ -1553,6 +1567,22 @@ async function loadCRMData() {
     console.error('CRM load error:', e);
     crmRecords = [];
   }
+}
+
+// Helper: bereken de status-string voor een record (voor tabel/badges)
+function getKlantStatusLabel(r) {
+  if (r.is_rvdl_klant && r.is_scm_klant) return 'Klant RvdL+SCM';
+  if (r.is_rvdl_klant) return 'Klant RvdL';
+  if (r.is_scm_klant) return 'Klant SCM';
+  return 'Lead';
+}
+
+// Helper: bereken kleur voor status-badge
+function getKlantStatusColor(r) {
+  if (r.is_rvdl_klant && r.is_scm_klant) return 'purple';
+  if (r.is_rvdl_klant) return 'green';
+  if (r.is_scm_klant) return 'blue';
+  return 'amber';
 }
 
 // Hulpfunctie: sla virtuele klant op zodra er actie/gesprek komt
@@ -1574,7 +1604,7 @@ async function ensureCRMSaved(record) {
       volgendeActieDatum: record.volgendeActieDatum || '',
       aangemaakt: new Date().toISOString()
     };
-    const docRef = await addDoc(collection(db,'crm_relaties'), data);
+    const docRef = await addDoc(collection(db,'crm_gedeeld'), data);
     record.id = docRef.id;
     record.virtual = false;
     return docRef.id;
@@ -1587,7 +1617,18 @@ window.renderCRMList = function() {
   const statusFilter = document.getElementById('crmStatusFilter')?.value || 'alle';
 
   const filtered = crmRecords.filter(r => {
-    if (statusFilter !== 'alle' && r.status !== statusFilter) return false;
+    // Filter op status/bedrijf
+    if (statusFilter === 'Lead') {
+      if (r.is_rvdl_klant || r.is_scm_klant) return false;
+    } else if (statusFilter === 'Klant') {
+      if (!r.is_rvdl_klant && !r.is_scm_klant) return false;
+    } else if (statusFilter === 'RvdL') {
+      if (!r.is_rvdl_klant) return false;
+    } else if (statusFilter === 'SCM') {
+      if (!r.is_scm_klant) return false;
+    } else if (statusFilter === 'Beide') {
+      if (!r.is_rvdl_klant || !r.is_scm_klant) return false;
+    }
     if (search) {
       const blob = `${r.name||''} ${r.contact||''} ${r.email||''} ${r.phone||''}`.toLowerCase();
       if (!blob.includes(search)) return false;
@@ -1605,8 +1646,9 @@ window.renderCRMList = function() {
 
   // KPIs
   const totaal = crmRecords.length;
-  const leads = crmRecords.filter(r => r.status === 'Lead').length;
-  const klanten = crmRecords.filter(r => r.status === 'Klant').length;
+  const leads = crmRecords.filter(r => !r.is_rvdl_klant && !r.is_scm_klant).length;
+  const klantRvdl = crmRecords.filter(r => r.is_rvdl_klant).length;
+  const klantScm = crmRecords.filter(r => r.is_scm_klant).length;
   const today = new Date(); today.setHours(0,0,0,0);
   const overdue = crmRecords.filter(r => {
     if (!r.volgendeActieDatum) return false;
@@ -1616,7 +1658,8 @@ window.renderCRMList = function() {
   document.getElementById('crm-kpis').innerHTML = `
     <div class="kpi"><div class="kpi-label">Totaal relaties</div><div class="kpi-val blue">${totaal}</div></div>
     <div class="kpi"><div class="kpi-label">Leads</div><div class="kpi-val amber">${leads}</div></div>
-    <div class="kpi"><div class="kpi-label">Klanten</div><div class="kpi-val green">${klanten}</div></div>
+    <div class="kpi"><div class="kpi-label">Klanten RvdL</div><div class="kpi-val green">${klantRvdl}</div></div>
+    <div class="kpi"><div class="kpi-label">Klanten SCM</div><div class="kpi-val blue">${klantScm}</div></div>
     <div class="kpi"><div class="kpi-label">Acties achterstallig</div><div class="kpi-val ${overdue>0?'red':''}">${overdue}</div></div>`;
 
   const tbl = document.getElementById('crm-table');
@@ -1626,7 +1669,14 @@ window.renderCRMList = function() {
   }
 
   const rows = filtered.map(r => {
-    const statusBg = r.status === 'Lead' ? 'background:var(--amb-l);color:var(--amb);border-color:rgba(184,92,0,.25)' : 'background:var(--grn-l);color:var(--grn);border-color:rgba(30,122,74,.25)';
+    const label = getKlantStatusLabel(r);
+    const color = getKlantStatusColor(r);
+    let statusBg;
+    if (color === 'green') statusBg = 'background:var(--grn-l);color:var(--grn);border-color:rgba(30,122,74,.25)';
+    else if (color === 'blue') statusBg = 'background:var(--acc-l);color:var(--acc);border-color:var(--acc-m)';
+    else if (color === 'purple') statusBg = 'background:#f0e6f7;color:#7a3e9e;border-color:rgba(122,62,158,.3)';
+    else statusBg = 'background:var(--amb-l);color:var(--amb);border-color:rgba(184,92,0,.25)';
+
     let actieCel = '<span style="color:var(--ink3);font-size:11px">—</span>';
     if (r.volgendeActieDatum) {
       const d = new Date(r.volgendeActieDatum);
@@ -1641,7 +1691,7 @@ window.renderCRMList = function() {
       <td style="padding:10px">${r.contact||'<span style=\"color:var(--ink3)\">—</span>'}</td>
       <td style="padding:10px;font-size:12px">${r.email||'<span style=\"color:var(--ink3)\">—</span>'}</td>
       <td style="padding:10px;font-family:monospace;font-size:12px">${r.phone||'<span style=\"color:var(--ink3)\">—</span>'}</td>
-      <td style="padding:10px"><span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;border:1px solid;${statusBg}">${r.status||'—'}</span></td>
+      <td style="padding:10px"><span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;border:1px solid;${statusBg};white-space:nowrap">${label}</span></td>
       <td style="padding:10px">${actieCel}</td>
       <td style="padding:10px;text-align:right"><button onclick="event.stopPropagation();openCRMDetail('${r.id}')" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Open</button></td>
     </tr>`;
@@ -1689,12 +1739,11 @@ window.openCRMDetail = function(recordId) {
         <button onclick="closeCRMDetail()" style="background:var(--cream);border:1px solid var(--line2);border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;color:var(--ink3);font-family:'DM Sans',sans-serif">← Terug</button>
         <div>
           <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:600">${r.name||'(geen naam)'}</div>
-          <div style="font-size:12px;color:var(--ink3);margin-top:2px">${r.status}${r.linkedKlantName?' · gekoppeld aan klant':' · alleen in CRM'}</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:2px">${getKlantStatusLabel(r)}</div>
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        ${isLead ? `<button onclick="convertLeadToKlant()" style="background:var(--grn-l);color:var(--grn);border:1px solid rgba(30,122,74,.3);border-radius:var(--rsm);padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">→ Maak klant</button>` : ''}
-        ${!r.linkedKlantName ? `<button onclick="deleteCRMRecord()" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);padding:8px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Verwijderen</button>` : ''}
+        ${!r.is_rvdl_klant && !r.is_scm_klant ? `<button onclick="deleteCRMRecord()" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);padding:8px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Verwijderen</button>` : ''}
       </div>
     </div>
 
@@ -1748,12 +1797,41 @@ window.openCRMDetail = function(recordId) {
         </div>
 
         <div class="card" style="padding:18px">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Status</div>
-          <select id="crm-status" ${r.linkedKlantName?'disabled title="Status van klanten is automatisch Klant"':''} style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-size:13px;outline:none">
-            <option value="Lead"${r.status==='Lead'?' selected':''}>Lead</option>
-            <option value="Klant"${r.status==='Klant'?' selected':''}>Klant</option>
-          </select>
-          ${!r.linkedKlantName ? '<div style="margin-top:12px;text-align:right"><button onclick="saveCRMStatus()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">Wijzigen</button></div>' : ''}
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Klantstatus</div>
+
+          <!-- RvdL klant status -->
+          <div style="padding:12px;background:${r.is_rvdl_klant?'var(--grn-l)':'var(--cream)'};border:1px solid ${r.is_rvdl_klant?'rgba(30,122,74,.3)':'var(--line)'};border-radius:var(--rsm);margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+              <div style="min-width:0">
+                <div style="font-size:13px;font-weight:600;color:${r.is_rvdl_klant?'var(--grn)':'var(--ink2)'}">René van der Linden beheer</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:2px">
+                  ${r.is_rvdl_klant
+                    ? (r.rvdl_klantnr ? `Klant · nr ${r.rvdl_klantnr}` : 'Klant')
+                    : 'Nog geen klant'}
+                </div>
+              </div>
+              ${!r.is_rvdl_klant
+                ? `<button onclick="makeKlantRvdL()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0">+ Maak klant</button>`
+                : '<span style="font-size:18px;color:var(--grn);flex-shrink:0">✓</span>'
+              }
+            </div>
+          </div>
+
+          <!-- SCM klant status -->
+          <div style="padding:12px;background:${r.is_scm_klant?'var(--acc-l)':'var(--cream)'};border:1px solid ${r.is_scm_klant?'var(--acc-m)':'var(--line)'};border-radius:var(--rsm)">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+              <div style="min-width:0">
+                <div style="font-size:13px;font-weight:600;color:${r.is_scm_klant?'var(--acc)':'var(--ink2)'}">Supply Chain Meneer</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:2px">
+                  ${r.is_scm_klant ? 'Klant' : 'Nog geen klant'}
+                </div>
+              </div>
+              ${!r.is_scm_klant
+                ? `<button onclick="makeKlantSCM()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0">+ Maak klant</button>`
+                : '<span style="font-size:18px;color:var(--acc);flex-shrink:0">✓</span>'
+              }
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1786,7 +1864,7 @@ window.saveCRMDetails = async function() {
     if (r.virtual) {
       await ensureCRMSaved(r);
     } else {
-      await setDoc(doc(db,'crm_relaties',r.id), {
+      await setDoc(doc(db,'crm_gedeeld',r.id), {
         linkedKlantName: r.linkedKlantName||null,
         status: r.status,
         name: r.name,
@@ -1815,7 +1893,7 @@ window.saveCRMActie = async function() {
 
   try {
     await ensureCRMSaved(r);
-    await setDoc(doc(db,'crm_relaties',r.id), {
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
       volgendeActie: r.volgendeActie,
       volgendeActieDatum: r.volgendeActieDatum,
       bijgewerkt: new Date().toISOString()
@@ -1832,18 +1910,26 @@ window.saveCRMStatus = async function() {
   r.status = document.getElementById('crm-status').value;
   try {
     await ensureCRMSaved(r);
-    await setDoc(doc(db,'crm_relaties',r.id), {status: r.status, bijgewerkt: new Date().toISOString()}, {merge:true});
+    await setDoc(doc(db,'crm_gedeeld',r.id), {status: r.status, bijgewerkt: new Date().toISOString()}, {merge:true});
     showToast('Status gewijzigd ✓', 'ok');
     openCRMDetail(r.id);
   } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
 }
 
+// Deprecated: Backwards-compat, promoveert nu naar RvdL klant
 window.convertLeadToKlant = async function() {
-  if (!confirm('Deze lead omzetten naar een klant?\n\nDe lead wordt toegevoegd aan Klantbeheer met de huidige gegevens.')) return;
+  return window.makeKlantRvdL();
+}
+
+// Promoveert de huidige CRM-lead naar RvdL klant
+window.makeKlantRvdL = async function() {
   const r = crmRecords.find(x => x.id === crmCurrentDetailId);
   if (!r) return;
+  if (r.is_rvdl_klant) { showToast('Al klant bij RvdL', 'info'); return; }
+  if (!confirm(`"${r.name}" toevoegen als klant bij René van der Linden beheer?\n\nEr wordt een nieuw klantnummer aangemaakt.`)) return;
 
-  // Voeg toe aan klantbeheer
+  // Voeg toe aan klantbeheer (app_clients)
+  const newKlantnr = getNextKlantnr();
   const newClient = {
     name: r.name,
     contact: r.contact || '',
@@ -1855,22 +1941,73 @@ window.convertLeadToKlant = async function() {
     rate: 0,
     kmRate: 0.21,
     btw: 21,
-    klantnr: 100100 + clients.length
+    klantnr: newKlantnr
   };
   clients.push(newClient);
   saveClients();
 
-  // Update CRM-record: link aan klant + status
+  // Update CRM-record
+  r.is_rvdl_klant = true;
+  r.rvdl_klantnr = newKlantnr;
+  r.rvdl_sinds = new Date().toISOString();
   r.linkedKlantName = r.name;
   r.status = 'Klant';
+
   try {
-    await ensureCRMSaved(r);
-    await setDoc(doc(db,'crm_relaties',r.id), {
+    // Zorg dat CRM-record persistent is in Firebase
+    if (r.virtual) await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
+      is_rvdl_klant: true,
+      rvdl_klantnr: r.rvdl_klantnr,
+      rvdl_sinds: r.rvdl_sinds,
       linkedKlantName: r.name,
       status: 'Klant',
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
-    showToast('Lead omgezet naar klant ✓', 'ok');
+    showToast(`✓ Klant RvdL aangemaakt (${r.rvdl_klantnr})`, 'ok');
+    openCRMDetail(r.id);
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+// Promoveert de huidige CRM-lead naar SCM klant
+window.makeKlantSCM = async function() {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r) return;
+  if (r.is_scm_klant) { showToast('Al klant bij SCM', 'info'); return; }
+  if (!confirm(`"${r.name}" toevoegen als klant bij Supply Chain Meneer?\n\nDe klant wordt toegevoegd aan de SCM klantenlijst zodat je offertes kunt maken.`)) return;
+
+  try {
+    // Voeg toe aan scm_klanten (voor offerte-dropdown)
+    const scmData = {
+      name: r.name,
+      contact: r.contact || '',
+      email: r.email || '',
+      phone: r.phone || '',
+      address: r.address || '',
+      city: r.city || '',
+      kvk: r.kvk || '',
+      status: 'Klant',
+      gesprekken: [],
+      volgendeActie: '',
+      volgendeActieDatum: '',
+      aangemaakt: new Date().toISOString(),
+      bron: 'gedeeld_crm'
+    };
+    const scmDocRef = await addDoc(collection(db,'scm_klanten'), scmData);
+
+    // Update CRM-record
+    r.is_scm_klant = true;
+    r.scm_klant_id = scmDocRef.id;
+    r.scm_sinds = new Date().toISOString();
+
+    if (r.virtual) await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
+      is_scm_klant: true,
+      scm_klant_id: r.scm_klant_id,
+      scm_sinds: r.scm_sinds,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('✓ Klant SCM aangemaakt', 'ok');
     openCRMDetail(r.id);
   } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
 }
@@ -1880,7 +2017,7 @@ window.deleteCRMRecord = async function() {
   if (!r || r.linkedKlantName) return;
   if (!confirm(`Lead "${r.name}" verwijderen?\n\nAlle gespreksverslagen en acties worden ook verwijderd.`)) return;
   try {
-    if (!r.virtual) await deleteDoc(doc(db,'crm_relaties',r.id));
+    if (!r.virtual) await deleteDoc(doc(db,'crm_gedeeld',r.id));
     crmRecords = crmRecords.filter(x => x.id !== r.id);
     showToast('Verwijderd', 'info');
     closeCRMDetail();
@@ -1918,7 +2055,7 @@ window.saveNewLead = async function() {
     aangemaakt: new Date().toISOString()
   };
   try {
-    const docRef = await addDoc(collection(db,'crm_relaties'), data);
+    const docRef = await addDoc(collection(db,'crm_gedeeld'), data);
     showToast('Lead toegevoegd ✓', 'ok');
     closeLeadModal();
     await loadCRMData();
@@ -1953,7 +2090,7 @@ window.saveGesprek = async function() {
 
   try {
     await ensureCRMSaved(r);
-    await setDoc(doc(db,'crm_relaties',r.id), {
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
       gesprekken: r.gesprekken,
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
@@ -1973,7 +2110,7 @@ window.deleteGesprek = async function(idx) {
   if (!confirm('Gesprek verwijderen?')) return;
   r.gesprekken = r.gesprekken.filter(g => g !== target);
   try {
-    await setDoc(doc(db,'crm_relaties',r.id), {
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
       gesprekken: r.gesprekken,
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
