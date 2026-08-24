@@ -498,11 +498,22 @@ function toast(msg, type='info'){
 window.toast=toast;
 
 // ── DATA ──────────────────────────────────────
-let klanten=[], templates=[], offertes=[];
+let klanten=[], templates=[], offertes=[], crmContacten=[];
 
 async function loadKlanten(){
   const snap=await getDocs(collection(db,'scm_klanten'));
   klanten=snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+
+// Laad alle contacten uit gedeelde CRM (voor offerte-dropdown)
+async function loadCRMContacten(){
+  try {
+    const snap=await getDocs(collection(db,'crm_gedeeld'));
+    crmContacten=snap.docs.map(d=>({id:d.id,...d.data()}));
+  } catch(e) {
+    console.warn('CRM contacten laden gefaald:',e);
+    crmContacten=[];
+  }
 }
 async function loadTemplates(){
   const snap=await getDocs(collection(db,'scm_offerte_templates'));
@@ -550,6 +561,7 @@ async function init(){
     await loadKlanten();
     await loadTemplates();
     await loadOffertes();
+    await loadCRMContacten();
     badge.className='sync-badge';
     badgeText.textContent='Live';
     renderDashboard();
@@ -738,19 +750,27 @@ window.toggleKmNvt=function(){
 };
 
 window.openOfferteModal=async function(){
+  // Vernieuw CRM-contacten voor de zekerheid (nieuw sinds vorige keer?)
+  await loadCRMContacten();
+
   // Vul dropdowns
   const tplSel=document.getElementById('off-tpl');
   tplSel.innerHTML='<option value="">Kies template…</option>'+templates.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
   const klantSel=document.getElementById('off-klant');
-  if(klanten.length===0){
-    klantSel.innerHTML='<option value="">Geen contacten — maak eerst een lead of klant aan in CRM</option>';
+  if(crmContacten.length===0){
+    klantSel.innerHTML='<option value="">Geen contacten — maak eerst een lead of klant aan in CRM (via RvdL beheer)</option>';
   } else {
-    const sorted = klanten.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
-    klantSel.innerHTML='<option value="">Kies contact…</option>'+sorted.map(k=>{
-      const status = k.status || 'Klant';
-      const badge = status === 'Lead' ? ' [LEAD]' : '';
-      return `<option value="${k.id}">${k.name}${badge}</option>`;
+    // Sorteer alfabetisch en toon met status-badge
+    const sorted = crmContacten.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    const opts = sorted.map(function(c){
+      var badge = ' [LEAD]';
+      if (c.is_rvdl_klant && c.is_scm_klant) badge = ' [RvdL+SCM]';
+      else if (c.is_rvdl_klant) badge = ' [RvdL]';
+      else if (c.is_scm_klant) badge = ' [SCM]';
+      var naam = c.name || '(geen naam)';
+      return '<option value="crm:' + c.id + '">' + naam + badge + '</option>';
     }).join('');
+    klantSel.innerHTML = '<option value="">Kies contact…</option>' + opts;
   }
   // Reset alle velden
   ['off-titel','off-uurtarief','off-uren','off-vastprijs','off-maandprijs','off-maanden','off-setup','off-int-uurtarief','off-int-kmtarief','off-voorwaarden'].forEach(id=>document.getElementById(id).value='');
@@ -809,12 +829,44 @@ window.saveOfferte=async function(){
   const klantId=document.getElementById('off-klant').value;
   const titel=document.getElementById('off-titel').value.trim();
   if(!tplId){toast('Kies een template','bad');return;}
-  if(!klantId){toast('Kies een klant','bad');return;}
+  if(!klantId){toast('Kies een contact','bad');return;}
   if(!titel){toast('Vul titel in','bad');return;}
   const tpl=templates.find(x=>x.id===tplId);
-  const klant=klanten.find(x=>x.id===klantId);
   const btwPct=parseInt(document.getElementById('off-btw').value)||21;
   const geldig=parseInt(document.getElementById('off-geldig').value)||30;
+
+  // Resolve klant: klantId is 'crm:<id>' (nieuwe CRM-flow) of gewoon <id> (backwards-compat)
+  let klant = null;
+  let crmContact = null;
+  if (klantId.startsWith('crm:')) {
+    const crmId = klantId.substring(4);
+    crmContact = crmContacten.find(c => c.id === crmId);
+    if (!crmContact) { toast('CRM-contact niet gevonden','bad'); return; }
+
+    // Als contact al SCM-klant is: gebruik bestaand scm_klanten record
+    if (crmContact.is_scm_klant) {
+      klant = klanten.find(k => k.id === crmContact.scm_klant_id) ||
+              klanten.find(k => (k.name||'').toLowerCase() === (crmContact.name||'').toLowerCase());
+      if (!klant) {
+        // Kan gebeuren als klanten-array niet ge-refreshed is; herlaad
+        await loadKlanten();
+        klant = klanten.find(k => k.id === crmContact.scm_klant_id) ||
+                klanten.find(k => (k.name||'').toLowerCase() === (crmContact.name||'').toLowerCase());
+      }
+      if (!klant) {
+        // Fallback: gebruik CRM-data zonder scm_klanten record
+        klant = { id: null, name: crmContact.name, contact: crmContact.contact||'', email: crmContact.email||'', phone: crmContact.phone||'', address: crmContact.address||'', city: crmContact.city||'', kvk: crmContact.kvk||'' };
+      }
+    } else {
+      // Contact is nog geen SCM-klant (lead of alleen RvdL-klant): gebruik CRM-data direct
+      // GEEN automatische conversie naar SCM-klant — status wordt handmatig via CRM omgezet
+      klant = { id: null, name: crmContact.name, contact: crmContact.contact||'', email: crmContact.email||'', phone: crmContact.phone||'', address: crmContact.address||'', city: crmContact.city||'', kvk: crmContact.kvk||'' };
+    }
+  } else {
+    // Backwards-compat: direct id uit scm_klanten
+    klant = klanten.find(x => x.id === klantId);
+    if (!klant) { toast('Klant niet gevonden','bad'); return; }
+  }
 
   let regels=[],totaalExcl=0;
   let interimData=null; // Voor interim: aparte tarieven zonder totaal
@@ -857,7 +909,8 @@ window.saveOfferte=async function(){
       datum:nu.toISOString(),
       geldig_tot:geldigTot.toISOString(),
       titel,
-      klant_id:klantId,
+      klant_id:klant.id,
+      crm_contact_id:crmContact?crmContact.id:null,
       klant_naam:klant.name,
       klant_data:{contact:klant.contact||'',email:klant.email||'',phone:klant.phone||'',address:klant.address||'',city:klant.city||'',kvk:klant.kvk||''},
       template_id:tplId,
