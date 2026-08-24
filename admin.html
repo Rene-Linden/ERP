@@ -1506,8 +1506,39 @@ let crmCurrentDetailId = null; // welke klant/lead is open in detail-view
 async function loadCRMData() {
   try {
     // Load alle CRM-records uit Firestore (crm_gedeeld)
-    const snap = await getDocs(collection(db,'crm_gedeeld'));
-    const fbRecords = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    let snap = await getDocs(collection(db,'crm_gedeeld'));
+    let fbRecords = snap.docs.map(d => ({id: d.id, ...d.data()}));
+
+    // ── MIGRATIE: als crm_gedeeld leeg is, kopieer oude crm_relaties ──
+    if (fbRecords.length === 0) {
+      try {
+        const oldSnap = await getDocs(collection(db,'crm_relaties'));
+        const oldRecords = oldSnap.docs.map(d => ({id: d.id, ...d.data()}));
+        if (oldRecords.length > 0) {
+          console.log(`Migratie: ${oldRecords.length} records van crm_relaties → crm_gedeeld`);
+          for (const oldRec of oldRecords) {
+            const {id, ...data} = oldRec;
+            // Zet oude 'status'-veld om naar nieuwe klantstatus-velden
+            data.is_rvdl_klant = (data.status === 'Klant' && !!data.linkedKlantName);
+            data.is_scm_klant = false;
+            if (data.linkedKlantName) {
+              const link = clients.find(c => c.name === data.linkedKlantName);
+              if (link) data.rvdl_klantnr = link.klantnr;
+            }
+            data.gemigreerd_van = 'crm_relaties';
+            data.gemigreerd_op = new Date().toISOString();
+            // Behoud originele ID
+            await setDoc(doc(db,'crm_gedeeld',id), data);
+          }
+          // Herlaad
+          snap = await getDocs(collection(db,'crm_gedeeld'));
+          fbRecords = snap.docs.map(d => ({id: d.id, ...d.data()}));
+          showToast(`✓ ${oldRecords.length} leads gemigreerd naar gedeelde CRM`, 'ok');
+        }
+      } catch(migErr) {
+        console.warn('Migratie van crm_relaties gefaald (mogelijk geen data):', migErr);
+      }
+    }
 
     crmRecords = [];
 
