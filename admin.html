@@ -1933,7 +1933,14 @@ window.renderCRMList = function() {
     </tr>`;
   }).join('');
 
-  tbl.innerHTML = `<thead><tr>${crmColHeader('name','Bedrijf')}${crmColHeader('contact','Contactpersoon')}${crmColHeader('email','Email')}${crmColHeader('phone','Telefoon')}${crmColHeader('status','Status')}${crmColHeader('laatstecontact','Laatste contact')}${crmColHeader('volgendeactie','Volgende actie')}<th></th></tr></thead><tbody>${rows}</tbody>`;
+  let headerHTML;
+  try {
+    headerHTML = `<thead><tr>${crmColHeader('name','Bedrijf')}${crmColHeader('contact','Contactpersoon')}${crmColHeader('email','Email')}${crmColHeader('phone','Telefoon')}${crmColHeader('status','Status')}${crmColHeader('laatstecontact','Laatste contact')}${crmColHeader('volgendeactie','Volgende actie')}<th></th></tr></thead>`;
+  } catch(e) {
+    console.error('crmColHeader error:', e);
+    headerHTML = `<thead><tr><th>Bedrijf</th><th>Contactpersoon</th><th>Email</th><th>Telefoon</th><th>Status</th><th>Laatste contact</th><th>Volgende actie</th><th></th></tr></thead>`;
+  }
+  tbl.innerHTML = headerHTML + `<tbody>${rows}</tbody>`;
 }
 
 // ── CRM DETAIL VIEW ────────────────────────────
