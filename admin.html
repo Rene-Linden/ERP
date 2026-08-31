@@ -1634,11 +1634,11 @@ function getKlantStatusColor(r) {
 // Hulpfunctie: sla virtuele klant op zodra er actie/gesprek komt
 async function ensureCRMSaved(record) {
   if (record.virtual) {
-    // Maak Firestore-record aan
+    // Maak Firestore-record aan met alle actuele velden
     const data = {
-      linkedKlantName: record.linkedKlantName,
-      status: 'Klant',
-      name: record.name,
+      linkedKlantName: record.linkedKlantName || record.name,
+      status: (record.is_rvdl_klant || record.is_scm_klant) ? 'Klant' : 'Lead',
+      name: record.name || '',
       contact: record.contact || '',
       email: record.email || '',
       phone: record.phone || '',
@@ -1648,11 +1648,20 @@ async function ensureCRMSaved(record) {
       gesprekken: record.gesprekken || [],
       volgendeActie: record.volgendeActie || '',
       volgendeActieDatum: record.volgendeActieDatum || '',
+      is_rvdl_klant: !!record.is_rvdl_klant,
+      is_scm_klant: !!record.is_scm_klant,
+      rvdl_klantnr: record.rvdl_klantnr || null,
+      scm_klant_id: record.scm_klant_id || null,
+      scm_klantnr: record.scm_klantnr || null,
       aangemaakt: new Date().toISOString()
     };
     const docRef = await addDoc(collection(db,'crm_gedeeld'), data);
     record.id = docRef.id;
     record.virtual = false;
+    // Update global pointer als deze record momenteel in detail is
+    if (typeof crmCurrentDetailId !== 'undefined') {
+      crmCurrentDetailId = docRef.id;
+    }
     return docRef.id;
   }
   return record.id;
@@ -2149,6 +2158,28 @@ window.saveNewLead = async function() {
 }
 
 // ── GESPREK MODAL ──────────────────────────────
+
+// Verwijdert undefined/null velden uit een object (Firebase accepteert geen undefined)
+function sanitizeForFirebase(obj) {
+  if (obj === null || obj === undefined) return null;
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirebase).filter(x => x !== undefined);
+  if (typeof obj !== 'object') return obj;
+  const out = {};
+  for (const k in obj) {
+    const v = obj[k];
+    if (v === undefined) continue; // skip undefined
+    if (v === null) { out[k] = null; continue; }
+    if (typeof v === 'object' && !Array.isArray(v) && !(v instanceof Date)) {
+      out[k] = sanitizeForFirebase(v);
+    } else if (Array.isArray(v)) {
+      out[k] = v.map(sanitizeForFirebase).filter(x => x !== undefined);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 window.openGesprekModal = function() {
   const today = new Date();
   document.getElementById('g-datum').value = `${today.getFullYear()}-${p2(today.getMonth()+1)}-${p2(today.getDate())}`;
@@ -2178,14 +2209,19 @@ window.saveGesprek = async function() {
 
   try {
     await ensureCRMSaved(r);
+    const cleanGesprekken = sanitizeForFirebase(r.gesprekken);
     await setDoc(doc(db,'crm_gedeeld',r.id), {
-      gesprekken: r.gesprekken,
+      gesprekken: cleanGesprekken,
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
+    r.gesprekken = cleanGesprekken; // gebruik ook lokaal de opgeschoonde versie
     showToast('Gesprek toegevoegd ✓', 'ok');
     closeGesprekModal();
     openCRMDetail(r.id);
-  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+  } catch(e) {
+    console.error('saveGesprek error:', e);
+    showToast('Fout: ' + (e.message || e), 'bad');
+  }
 }
 
 window.deleteGesprek = async function(idx) {
@@ -2198,13 +2234,19 @@ window.deleteGesprek = async function(idx) {
   if (!confirm('Gesprek verwijderen?')) return;
   r.gesprekken = r.gesprekken.filter(g => g !== target);
   try {
+    await ensureCRMSaved(r);
+    const cleanGesprekken = sanitizeForFirebase(r.gesprekken);
     await setDoc(doc(db,'crm_gedeeld',r.id), {
-      gesprekken: r.gesprekken,
+      gesprekken: cleanGesprekken,
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
+    r.gesprekken = cleanGesprekken;
     showToast('Gesprek verwijderd', 'info');
     openCRMDetail(r.id);
-  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+  } catch(e) {
+    console.error('deleteGesprek error:', e);
+    showToast('Fout: ' + (e.message || e), 'bad');
+  }
 }
 
 // ── GESPREK DETAIL (bekijken + bewerken + verwijderen) ─────────
@@ -2299,30 +2341,44 @@ window.switchGesprekToEdit = function(idx) {
 
 window.saveGesprekEdit = async function(idx) {
   const r = crmRecords.find(x => x.id === crmCurrentDetailId);
-  if (!r || !r.gesprekken || !r.gesprekken[idx]) return;
+  if (!r || !r.gesprekken || !r.gesprekken[idx]) {
+    showToast('Gesprek niet gevonden', 'bad');
+    return;
+  }
   const datum = document.getElementById('gd-datum').value;
   const type = document.getElementById('gd-type').value;
   const verslag = document.getElementById('gd-verslag').value.trim();
   if (!datum || !verslag) { showToast('Vul datum en verslag in', 'bad'); return; }
 
-  r.gesprekken[idx] = {
-    ...r.gesprekken[idx],
+  // Bouw nieuw gesprek-object; Firebase accepteert geen 'undefined' — laat type gewoon leeg als niks
+  const updated = {
     datum,
-    type: type || undefined,
     verslag,
     bijgewerkt: new Date().toISOString()
   };
+  if (r.gesprekken[idx].toegevoegd) updated.toegevoegd = r.gesprekken[idx].toegevoegd;
+  if (type) updated.type = type; // alleen opnemen als er iets is gekozen
+
+  r.gesprekken[idx] = updated;
 
   try {
     await ensureCRMSaved(r);
-    await setDoc(doc(db,'crm_gedeeld',r.id), {
-      gesprekken: r.gesprekken,
+    // Belangrijk: crmCurrentDetailId kan zijn gewijzigd door ensureCRMSaved (virtual → echt id)
+    const targetId = r.id;
+    const cleanGesprekken = sanitizeForFirebase(r.gesprekken);
+    await setDoc(doc(db,'crm_gedeeld',targetId), {
+      gesprekken: cleanGesprekken,
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
+    r.gesprekken = cleanGesprekken;
+    crmCurrentDetailId = targetId; // update pointer
     showToast('Gesprek bijgewerkt ✓', 'ok');
     closeGesprekDetail();
-    openCRMDetail(r.id);
-  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+    openCRMDetail(targetId);
+  } catch(e) {
+    console.error('saveGesprekEdit error:', e);
+    showToast('Fout: ' + (e.message || e), 'bad');
+  }
 }
 
 window.deleteGesprekFromDetail = async function(idx) {
@@ -2332,14 +2388,21 @@ window.deleteGesprekFromDetail = async function(idx) {
   r.gesprekken.splice(idx, 1);
   try {
     await ensureCRMSaved(r);
-    await setDoc(doc(db,'crm_gedeeld',r.id), {
-      gesprekken: r.gesprekken,
+    const targetId = r.id;
+    const cleanGesprekken = sanitizeForFirebase(r.gesprekken);
+    await setDoc(doc(db,'crm_gedeeld',targetId), {
+      gesprekken: cleanGesprekken,
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
+    r.gesprekken = cleanGesprekken;
+    crmCurrentDetailId = targetId;
     showToast('Gesprek verwijderd', 'info');
     closeGesprekDetail();
-    openCRMDetail(r.id);
-  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+    openCRMDetail(targetId);
+  } catch(e) {
+    console.error('deleteGesprekFromDetail error:', e);
+    showToast('Fout: ' + (e.message || e), 'bad');
+  }
 }
 
 // ── ICS AGENDA-BESTAND ─────────────────────────
