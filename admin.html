@@ -1027,6 +1027,9 @@ select.edit-input{cursor:pointer}
 </div>
 
 <!-- GESPREK TOEVOEGEN MODAL -->
+<!-- GESPREK DETAIL MODAL (bekijken + bewerken) -->
+<div id="gesprekDetailModal" style="display:none"></div>
+
 <div id="gesprekModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--white);border-radius:var(--r);max-width:520px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25)">
     <div style="padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
@@ -1034,9 +1037,21 @@ select.edit-input{cursor:pointer}
       <button onclick="closeGesprekModal()" style="background:none;border:none;cursor:pointer;color:var(--ink3);font-size:22px;line-height:1;padding:4px 8px">&times;</button>
     </div>
     <div style="padding:20px">
-      <div class="field" style="margin-bottom:14px">
-        <label>Datum gesprek</label>
-        <input type="date" id="g-datum">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="field" style="margin-bottom:0">
+          <label>Datum gesprek</label>
+          <input type="date" id="g-datum">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Type</label>
+          <select id="g-type" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+            <option value="telefoon">☎️ Telefoon</option>
+            <option value="mail">✉️ Mail</option>
+            <option value="whatsapp">💬 WhatsApp</option>
+            <option value="persoon">👥 In persoon</option>
+            <option value="anders">• Anders</option>
+          </select>
+        </div>
       </div>
       <div class="field" style="margin-bottom:14px">
         <label>Verslag</label>
@@ -1751,13 +1766,41 @@ window.openCRMDetail = function(recordId) {
   const gesprekken = (r.gesprekken || []).slice().sort((a,b) => new Date(b.datum) - new Date(a.datum));
   const MOS_F = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 
+  // Helper: icoon voor communicatietype
+  function typeIcon(type) {
+    switch(type) {
+      case 'telefoon': return '☎️';
+      case 'mail': return '✉️';
+      case 'whatsapp': return '💬';
+      case 'persoon': return '👥';
+      case 'anders': return '•';
+      default: return '';
+    }
+  }
+  function typeLabel(type) {
+    switch(type) {
+      case 'telefoon': return 'Telefoon';
+      case 'mail': return 'Mail';
+      case 'whatsapp': return 'WhatsApp';
+      case 'persoon': return 'In persoon';
+      case 'anders': return 'Anders';
+      default: return '';
+    }
+  }
+
   const gesprekkenHTML = gesprekken.length > 0
     ? gesprekken.map((g, i) => {
         const d = new Date(g.datum);
-        return `<div style="border-left:3px solid var(--acc);padding:10px 14px;background:var(--cream);border-radius:0 var(--rsm) var(--rsm) 0;margin-bottom:10px;position:relative">
-          <button onclick="deleteGesprek(${i})" title="Verwijder" style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:var(--ink3);font-size:14px;padding:2px 6px">✕</button>
-          <div style="font-size:12px;color:var(--acc);font-weight:600;margin-bottom:4px">${d.getDate()} ${MOS_F[d.getMonth()]} ${d.getFullYear()}</div>
-          <div style="font-size:13px;color:var(--ink);white-space:pre-wrap;line-height:1.5">${(g.verslag||'').replace(/</g,'&lt;')}</div>
+        const icon = typeIcon(g.type);
+        const lbl = typeLabel(g.type);
+        const iconHtml = icon ? `<span title="${lbl}" style="margin-right:6px">${icon}</span>` : '';
+        // Verslag ingekort tot ~4 regels via CSS line-clamp
+        return `<div class="gesprek-item" onclick="openGesprekDetail(${i})" style="border-left:3px solid var(--acc);padding:10px 14px;background:var(--cream);border-radius:0 var(--rsm) var(--rsm) 0;margin-bottom:10px;position:relative;cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--acc-l)'" onmouseout="this.style.background='var(--cream)'">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div style="font-size:12px;color:var(--acc);font-weight:600">${iconHtml}${d.getDate()} ${MOS_F[d.getMonth()]} ${d.getFullYear()}${lbl?` · ${lbl}`:''}</div>
+            <div style="font-size:11px;color:var(--ink3)">klik om te openen ›</div>
+          </div>
+          <div style="font-size:13px;color:var(--ink);line-height:1.5;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;white-space:pre-wrap">${(g.verslag||'').replace(/</g,'&lt;')}</div>
         </div>`;
       }).join('')
     : '<div style="text-align:center;padding:30px;color:var(--ink3);font-size:13px">Nog geen gesprekken vastgelegd. Klik op + Gesprek toevoegen om te beginnen.</div>';
@@ -1854,7 +1897,9 @@ window.openCRMDetail = function(recordId) {
               <div style="min-width:0">
                 <div style="font-size:13px;font-weight:600;color:${r.is_scm_klant?'var(--acc)':'var(--ink2)'}">Supply Chain Meneer</div>
                 <div style="font-size:11px;color:var(--ink3);margin-top:2px">
-                  ${r.is_scm_klant ? 'Klant' : 'Nog geen klant'}
+                  ${r.is_scm_klant
+                    ? (r.scm_klantnr ? `Klant · nr ${r.scm_klantnr}` : 'Klant')
+                    : 'Nog geen klant'}
                 </div>
               </div>
               ${!r.is_scm_klant
@@ -2005,11 +2050,20 @@ window.makeKlantSCM = async function() {
   const r = crmRecords.find(x => x.id === crmCurrentDetailId);
   if (!r) return;
   if (r.is_scm_klant) { showToast('Al klant bij SCM', 'info'); return; }
-  if (!confirm(`"${r.name}" toevoegen als klant bij Supply Chain Meneer?\n\nDe klant wordt toegevoegd aan de SCM klantenlijst zodat je offertes kunt maken.`)) return;
+  if (!confirm(`"${r.name}" toevoegen als klant bij Supply Chain Meneer?\n\nEr wordt een nieuw SCM-klantnummer aangemaakt.`)) return;
 
   try {
-    // Voeg toe aan scm_klanten (voor offerte-dropdown)
+    // Genereer nieuw SCM klantnr via counter in Firebase
+    const counterRef = doc(db,'scm_klant_counter','main');
+    const counterSnap = await getDoc(counterRef);
+    const cur = counterSnap.exists() ? (counterSnap.data().counter||100000) : 100000;
+    const nieuw = cur + 1;
+    await setDoc(counterRef, {counter: nieuw});
+    const scmKlantnr = `SCM-${nieuw}`;
+
+    // Voeg toe aan scm_klanten (voor offerte-dropdown en klantenlijst)
     const scmData = {
+      klantnr: scmKlantnr,
       name: r.name,
       contact: r.contact || '',
       email: r.email || '',
@@ -2018,27 +2072,27 @@ window.makeKlantSCM = async function() {
       city: r.city || '',
       kvk: r.kvk || '',
       status: 'Klant',
-      gesprekken: [],
-      volgendeActie: '',
-      volgendeActieDatum: '',
       aangemaakt: new Date().toISOString(),
-      bron: 'gedeeld_crm'
+      bron: 'gedeeld_crm',
+      crm_contact_id: r.id
     };
     const scmDocRef = await addDoc(collection(db,'scm_klanten'), scmData);
 
     // Update CRM-record
     r.is_scm_klant = true;
     r.scm_klant_id = scmDocRef.id;
+    r.scm_klantnr = scmKlantnr;
     r.scm_sinds = new Date().toISOString();
 
     if (r.virtual) await ensureCRMSaved(r);
     await setDoc(doc(db,'crm_gedeeld',r.id), {
       is_scm_klant: true,
       scm_klant_id: r.scm_klant_id,
+      scm_klantnr: r.scm_klantnr,
       scm_sinds: r.scm_sinds,
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
-    showToast('✓ Klant SCM aangemaakt', 'ok');
+    showToast(`✓ Klant SCM aangemaakt (${scmKlantnr})`, 'ok');
     openCRMDetail(r.id);
   } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
 }
@@ -2099,6 +2153,7 @@ window.openGesprekModal = function() {
   const today = new Date();
   document.getElementById('g-datum').value = `${today.getFullYear()}-${p2(today.getMonth()+1)}-${p2(today.getDate())}`;
   document.getElementById('g-verslag').value = '';
+  document.getElementById('g-type').value = 'telefoon'; // default
   document.getElementById('gesprekModal').style.display = 'flex';
   setTimeout(() => document.getElementById('g-verslag').focus(), 50);
 }
@@ -2110,11 +2165,13 @@ window.saveGesprek = async function() {
   if (!r) return;
   const datum = document.getElementById('g-datum').value;
   const verslag = document.getElementById('g-verslag').value.trim();
+  const type = document.getElementById('g-type').value;
   if (!datum || !verslag) { showToast('Vul datum en verslag in', 'bad'); return; }
 
   if (!r.gesprekken) r.gesprekken = [];
   r.gesprekken.push({
     datum,
+    type,
     verslag,
     toegevoegd: new Date().toISOString()
   });
@@ -2146,6 +2203,141 @@ window.deleteGesprek = async function(idx) {
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
     showToast('Gesprek verwijderd', 'info');
+    openCRMDetail(r.id);
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+// ── GESPREK DETAIL (bekijken + bewerken + verwijderen) ─────────
+window.openGesprekDetail = function(idx) {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r || !r.gesprekken) return;
+  // Sortering in weergave = nieuwste eerst; idx is uit die gesorteerde lijst
+  const gesprekken = r.gesprekken.slice().sort((a,b) => new Date(b.datum) - new Date(a.datum));
+  const g = gesprekken[idx];
+  if (!g) return;
+  // Bepaal de originele index in r.gesprekken (voor opslag)
+  const origIdx = r.gesprekken.indexOf(g);
+
+  const MOS_F = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  const d = new Date(g.datum);
+  const datumStr = `${d.getDate()} ${MOS_F[d.getMonth()]} ${d.getFullYear()}`;
+  const curType = g.type || '';
+
+  const el = document.getElementById('gesprekDetailModal');
+  el.innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeGesprekDetail()">
+      <div style="background:var(--white);border-radius:var(--r);max-width:640px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,.25)">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);z-index:2">
+          <div>
+            <div style="font-family:'Fraunces',serif;font-size:17px;font-weight:600">Gesprek — ${datumStr}</div>
+            <div id="gd-typedisplay" style="font-size:12px;color:var(--ink3);margin-top:2px">${curType?(({telefoon:'☎️ Telefoon',mail:'✉️ Mail',whatsapp:'💬 WhatsApp',persoon:'👥 In persoon',anders:'• Anders'})[curType]||''):''}</div>
+          </div>
+          <button onclick="closeGesprekDetail()" style="background:none;border:none;font-size:24px;color:var(--ink3);cursor:pointer;padding:0 4px">&times;</button>
+        </div>
+
+        <div style="padding:20px" id="gd-body">
+          <!-- View mode -->
+          <div id="gd-view">
+            <div style="font-size:13px;color:var(--ink);line-height:1.6;white-space:pre-wrap">${(g.verslag||'').replace(/</g,'&lt;')}</div>
+          </div>
+          <!-- Edit mode (hidden) -->
+          <div id="gd-edit" style="display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="field" style="margin-bottom:0">
+                <label>Datum</label>
+                <input type="date" id="gd-datum" value="${g.datum}">
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>Type</label>
+                <select id="gd-type" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+                  <option value=""${!curType?' selected':''}>— Geen type —</option>
+                  <option value="telefoon"${curType==='telefoon'?' selected':''}>☎️ Telefoon</option>
+                  <option value="mail"${curType==='mail'?' selected':''}>✉️ Mail</option>
+                  <option value="whatsapp"${curType==='whatsapp'?' selected':''}>💬 WhatsApp</option>
+                  <option value="persoon"${curType==='persoon'?' selected':''}>👥 In persoon</option>
+                  <option value="anders"${curType==='anders'?' selected':''}>• Anders</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Verslag</label>
+              <textarea id="gd-verslag" rows="10" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;resize:vertical;line-height:1.6">${(g.verslag||'').replace(/</g,'&lt;')}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:12px 20px;background:var(--cream);border-top:1px solid var(--line);display:flex;gap:8px;justify-content:space-between;align-items:center;position:sticky;bottom:0;flex-wrap:wrap">
+          <div id="gd-left-buttons">
+            <button onclick="deleteGesprekFromDetail(${origIdx})" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);padding:8px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Verwijderen</button>
+          </div>
+          <div id="gd-right-buttons" style="display:flex;gap:8px">
+            <button onclick="closeGesprekDetail()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Sluiten</button>
+            <button id="gd-editBtn" onclick="switchGesprekToEdit(${origIdx})" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Wijzigen</button>
+            <button id="gd-saveBtn" onclick="saveGesprekEdit(${origIdx})" style="display:none;background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  el.style.display = 'block';
+}
+
+window.closeGesprekDetail = function() {
+  const el = document.getElementById('gesprekDetailModal');
+  el.style.display = 'none';
+  el.innerHTML = '';
+}
+
+window.switchGesprekToEdit = function(idx) {
+  document.getElementById('gd-view').style.display = 'none';
+  document.getElementById('gd-edit').style.display = 'block';
+  document.getElementById('gd-editBtn').style.display = 'none';
+  document.getElementById('gd-saveBtn').style.display = 'inline-flex';
+  // Verberg type-badge in header tijdens edit (want dropdown staat in body)
+  const td = document.getElementById('gd-typedisplay');
+  if (td) td.style.display = 'none';
+}
+
+window.saveGesprekEdit = async function(idx) {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r || !r.gesprekken || !r.gesprekken[idx]) return;
+  const datum = document.getElementById('gd-datum').value;
+  const type = document.getElementById('gd-type').value;
+  const verslag = document.getElementById('gd-verslag').value.trim();
+  if (!datum || !verslag) { showToast('Vul datum en verslag in', 'bad'); return; }
+
+  r.gesprekken[idx] = {
+    ...r.gesprekken[idx],
+    datum,
+    type: type || undefined,
+    verslag,
+    bijgewerkt: new Date().toISOString()
+  };
+
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
+      gesprekken: r.gesprekken,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('Gesprek bijgewerkt ✓', 'ok');
+    closeGesprekDetail();
+    openCRMDetail(r.id);
+  } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+window.deleteGesprekFromDetail = async function(idx) {
+  if (!confirm('Dit gesprek verwijderen?')) return;
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r || !r.gesprekken) return;
+  r.gesprekken.splice(idx, 1);
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
+      gesprekken: r.gesprekken,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('Gesprek verwijderd', 'info');
+    closeGesprekDetail();
     openCRMDetail(r.id);
   } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
 }
