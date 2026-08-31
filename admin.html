@@ -1667,12 +1667,133 @@ async function ensureCRMSaved(record) {
   return record.id;
 }
 
+// ── CRM KOLOM SORTING & FILTERS ─────────────
+let crmSortCol = 'volgendeActie'; // Default
+let crmSortDir = 'asc';           // 'asc' of 'desc'
+let crmColFilters = {
+  name: '',
+  contact: '',
+  email: '',
+  phone: '',
+  status: 'alle',           // 'alle'|'Lead'|'RvdL'|'SCM'|'Beide'|'Klant'
+  laatstecontact: 'alle',   // 'alle'|'geen'|'oud'|'week'|'maand'
+  volgendeactie: 'alle'     // 'alle'|'geen'|'achterstallig'|'vandaag'|'week'
+};
+
+window.crmSort = function(col) {
+  if (crmSortCol === col) {
+    crmSortDir = (crmSortDir === 'asc') ? 'desc' : 'asc';
+  } else {
+    crmSortCol = col;
+    crmSortDir = 'asc';
+  }
+  renderCRMList();
+};
+
+window.crmToggleFilter = function(col, evt) {
+  if (evt) evt.stopPropagation();
+  // Sluit alle open filter popups
+  document.querySelectorAll('.col-filter-popup').forEach(el => el.remove());
+  // Toon popup voor deze kolom
+  const btn = document.querySelector(`.col-filter-btn[data-col="${col}"]`);
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const popup = document.createElement('div');
+  popup.className = 'col-filter-popup';
+  popup.style.cssText = `position:fixed;top:${rect.bottom+4}px;left:${Math.max(8, rect.left-100)}px;background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);box-shadow:0 8px 24px rgba(0,0,0,.15);padding:10px;z-index:500;min-width:220px;max-width:280px`;
+  popup.onclick = (e) => e.stopPropagation();
+
+  const cur = crmColFilters[col];
+
+  if (col === 'status') {
+    popup.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:8px">Filter Status</div>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-status" value="alle" ${cur==='alle'?'checked':''} onchange="crmApplyFilter('status',this.value)"> Alle</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-status" value="Lead" ${cur==='Lead'?'checked':''} onchange="crmApplyFilter('status',this.value)"> Alleen leads</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-status" value="Klant" ${cur==='Klant'?'checked':''} onchange="crmApplyFilter('status',this.value)"> Alle klanten</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-status" value="RvdL" ${cur==='RvdL'?'checked':''} onchange="crmApplyFilter('status',this.value)"> Klant RvdL</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-status" value="SCM" ${cur==='SCM'?'checked':''} onchange="crmApplyFilter('status',this.value)"> Klant SCM</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-status" value="Beide" ${cur==='Beide'?'checked':''} onchange="crmApplyFilter('status',this.value)"> Klant bij beide</label>`;
+  } else if (col === 'laatstecontact') {
+    popup.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:8px">Filter Laatste contact</div>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-lc" value="alle" ${cur==='alle'?'checked':''} onchange="crmApplyFilter('laatstecontact',this.value)"> Alle</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-lc" value="geen" ${cur==='geen'?'checked':''} onchange="crmApplyFilter('laatstecontact',this.value)"> Nog geen contact</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-lc" value="week" ${cur==='week'?'checked':''} onchange="crmApplyFilter('laatstecontact',this.value)"> Afgelopen week</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-lc" value="maand" ${cur==='maand'?'checked':''} onchange="crmApplyFilter('laatstecontact',this.value)"> Afgelopen maand</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-lc" value="oud" ${cur==='oud'?'checked':''} onchange="crmApplyFilter('laatstecontact',this.value)">🚩 &gt; 3 maanden geleden</label>`;
+  } else if (col === 'volgendeactie') {
+    popup.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:8px">Filter Volgende actie</div>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-va" value="alle" ${cur==='alle'?'checked':''} onchange="crmApplyFilter('volgendeactie',this.value)"> Alle</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-va" value="geen" ${cur==='geen'?'checked':''} onchange="crmApplyFilter('volgendeactie',this.value)"> Geen actie ingepland</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-va" value="achterstallig" ${cur==='achterstallig'?'checked':''} onchange="crmApplyFilter('volgendeactie',this.value)"> Achterstallig</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-va" value="vandaag" ${cur==='vandaag'?'checked':''} onchange="crmApplyFilter('volgendeactie',this.value)"> Vandaag</label>
+      <label style="display:block;padding:6px 4px;cursor:pointer;font-size:13px"><input type="radio" name="cf-va" value="week" ${cur==='week'?'checked':''} onchange="crmApplyFilter('volgendeactie',this.value)"> Komende 7 dagen</label>`;
+  } else {
+    // Tekst-filter (name, contact, email, phone)
+    const labels = {name:'Bedrijf', contact:'Contactpersoon', email:'Email', phone:'Telefoon'};
+    popup.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin-bottom:8px">Filter ${labels[col]||col}</div>
+      <input type="text" id="cf-text-${col}" value="${(cur||'').replace(/"/g,'&quot;')}" placeholder="Typ om te filteren…" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 10px;font-size:13px;outline:none;box-sizing:border-box;font-family:'DM Sans',sans-serif" oninput="crmApplyFilter('${col}',this.value)" autofocus>
+      <div style="margin-top:8px;text-align:right"><button onclick="crmApplyFilter('${col}','');document.querySelectorAll('.col-filter-popup').forEach(el=>el.remove());" style="background:none;border:none;color:var(--acc);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Wissen</button></div>`;
+  }
+
+  document.body.appendChild(popup);
+  // Focus tekst-input als aanwezig
+  setTimeout(() => {
+    const input = popup.querySelector('input[type="text"]');
+    if (input) input.focus();
+  }, 20);
+};
+
+window.crmApplyFilter = function(col, val) {
+  crmColFilters[col] = val;
+  renderCRMList();
+};
+
+// Sluit filter-popups bij klik buiten
+document.addEventListener('click', function(){
+  document.querySelectorAll('.col-filter-popup').forEach(el => el.remove());
+});
+
+// Helper: bouw sortable header met filter-icoon
+function crmColHeader(col, label) {
+  const isSorted = crmSortCol === col;
+  const arrow = isSorted ? (crmSortDir === 'asc' ? ' ▲' : ' ▼') : '';
+  const filterVal = crmColFilters[col];
+  const hasFilter = filterVal && filterVal !== 'alle' && filterVal !== '';
+  const filterColor = hasFilter ? 'var(--acc)' : 'var(--ink3)';
+  return `<th style="padding:10px;user-select:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+      <span style="cursor:pointer" onclick="crmSort('${col}')">${label}${arrow}</span>
+      <button class="col-filter-btn" data-col="${col}" onclick="crmToggleFilter('${col}',event)" title="Filter" style="background:none;border:none;padding:2px 4px;cursor:pointer;color:${filterColor};font-size:11px;line-height:1">▽${hasFilter?'●':''}</button>
+    </div>
+  </th>`;
+}
+
 window.renderCRMList = function() {
-  const search = (document.getElementById('crmSearch')?.value || '').toLowerCase();
-  const statusFilter = document.getElementById('crmStatusFilter')?.value || 'alle';
+  // Legacy search-input + statusfilter blijven werken naast kolomfilters
+  const legacySearch = (document.getElementById('crmSearch')?.value || '').toLowerCase();
+  const legacyStatus = document.getElementById('crmStatusFilter')?.value || 'alle';
+
+  // Bepaal effectieve status-filter (kolomfilter override legacy)
+  const statusFilter = (crmColFilters.status !== 'alle') ? crmColFilters.status : legacyStatus;
+
+  const now = new Date();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const drieMaandenGeleden = new Date(); drieMaandenGeleden.setMonth(drieMaandenGeleden.getMonth() - 3);
+  const weekGeleden = new Date(); weekGeleden.setDate(weekGeleden.getDate() - 7);
+  const maandGeleden = new Date(); maandGeleden.setMonth(maandGeleden.getMonth() - 1);
+  const weekVooruit = new Date(); weekVooruit.setDate(weekVooruit.getDate() + 7);
+
+  // Helper: bepaal laatste contact datum
+  function laatsteContactDatum(r){
+    if (!r.gesprekken || !r.gesprekken.length) return null;
+    return r.gesprekken.reduce((max, g) => {
+      const d = new Date(g.datum);
+      return (!max || d > max) ? d : max;
+    }, null);
+  }
 
   const filtered = crmRecords.filter(r => {
-    // Filter op status/bedrijf
+    // Status-filter
     if (statusFilter === 'Lead') {
       if (r.is_rvdl_klant || r.is_scm_klant) return false;
     } else if (statusFilter === 'Klant') {
@@ -1684,18 +1805,62 @@ window.renderCRMList = function() {
     } else if (statusFilter === 'Beide') {
       if (!r.is_rvdl_klant || !r.is_scm_klant) return false;
     }
-    if (search) {
+
+    // Legacy zoekbalk (globaal)
+    if (legacySearch) {
       const blob = `${r.name||''} ${r.contact||''} ${r.email||''} ${r.phone||''}`.toLowerCase();
-      if (!blob.includes(search)) return false;
+      if (!blob.includes(legacySearch)) return false;
     }
+
+    // Kolom-filters tekst
+    if (crmColFilters.name && !(r.name||'').toLowerCase().includes(crmColFilters.name.toLowerCase())) return false;
+    if (crmColFilters.contact && !(r.contact||'').toLowerCase().includes(crmColFilters.contact.toLowerCase())) return false;
+    if (crmColFilters.email && !(r.email||'').toLowerCase().includes(crmColFilters.email.toLowerCase())) return false;
+    if (crmColFilters.phone && !(r.phone||'').toLowerCase().includes(crmColFilters.phone.toLowerCase())) return false;
+
+    // Laatste contact filter
+    if (crmColFilters.laatstecontact !== 'alle') {
+      const lc = laatsteContactDatum(r);
+      const filt = crmColFilters.laatstecontact;
+      if (filt === 'geen' && lc) return false;
+      if (filt === 'week' && (!lc || lc < weekGeleden)) return false;
+      if (filt === 'maand' && (!lc || lc < maandGeleden)) return false;
+      if (filt === 'oud' && (!lc || lc >= drieMaandenGeleden)) return false;
+    }
+
+    // Volgende actie filter
+    if (crmColFilters.volgendeactie !== 'alle') {
+      const va = r.volgendeActieDatum ? new Date(r.volgendeActieDatum) : null;
+      const filt = crmColFilters.volgendeactie;
+      if (filt === 'geen' && va) return false;
+      if (filt === 'achterstallig' && (!va || va >= today)) return false;
+      if (filt === 'vandaag' && (!va || va.toDateString() !== today.toDateString())) return false;
+      if (filt === 'week' && (!va || va < today || va > weekVooruit)) return false;
+    }
+
     return true;
   });
 
-  // Sorteer: eerst op volgende actie-datum (oudste/dichtstbijzijnde eerst), dan alfabetisch
+  // Sortering
   filtered.sort((a,b) => {
-    const ta = a.volgendeActieDatum ? new Date(a.volgendeActieDatum).getTime() : Infinity;
-    const tb = b.volgendeActieDatum ? new Date(b.volgendeActieDatum).getTime() : Infinity;
-    if (ta !== tb) return ta - tb;
+    let va, vb;
+    if (crmSortCol === 'name') { va = (a.name||'').toLowerCase(); vb = (b.name||'').toLowerCase(); }
+    else if (crmSortCol === 'contact') { va = (a.contact||'').toLowerCase(); vb = (b.contact||'').toLowerCase(); }
+    else if (crmSortCol === 'email') { va = (a.email||'').toLowerCase(); vb = (b.email||'').toLowerCase(); }
+    else if (crmSortCol === 'phone') { va = (a.phone||'').toLowerCase(); vb = (b.phone||'').toLowerCase(); }
+    else if (crmSortCol === 'status') { va = getKlantStatusLabel(a); vb = getKlantStatusLabel(b); }
+    else if (crmSortCol === 'laatstecontact') {
+      const la = laatsteContactDatum(a); const lb = laatsteContactDatum(b);
+      va = la ? la.getTime() : (crmSortDir==='asc' ? Infinity : -Infinity);
+      vb = lb ? lb.getTime() : (crmSortDir==='asc' ? Infinity : -Infinity);
+    }
+    else { // volgendeActie
+      va = a.volgendeActieDatum ? new Date(a.volgendeActieDatum).getTime() : (crmSortDir==='asc' ? Infinity : -Infinity);
+      vb = b.volgendeActieDatum ? new Date(b.volgendeActieDatum).getTime() : (crmSortDir==='asc' ? Infinity : -Infinity);
+    }
+    if (va < vb) return crmSortDir === 'asc' ? -1 : 1;
+    if (va > vb) return crmSortDir === 'asc' ? 1 : -1;
+    // Tiebreaker: bedrijfsnaam
     return (a.name||'').localeCompare(b.name||'');
   });
 
@@ -1704,7 +1869,6 @@ window.renderCRMList = function() {
   const leads = crmRecords.filter(r => !r.is_rvdl_klant && !r.is_scm_klant).length;
   const klantRvdl = crmRecords.filter(r => r.is_rvdl_klant).length;
   const klantScm = crmRecords.filter(r => r.is_scm_klant).length;
-  const today = new Date(); today.setHours(0,0,0,0);
   const overdue = crmRecords.filter(r => {
     if (!r.volgendeActieDatum) return false;
     return new Date(r.volgendeActieDatum) < today;
@@ -1722,11 +1886,6 @@ window.renderCRMList = function() {
     tbl.innerHTML = '<tr><td style="padding:30px;text-align:center;color:var(--ink3)">Geen relaties gevonden.</td></tr>';
     return;
   }
-
-  // Helper: 3 maanden geleden = grens voor "oud contact" vlag
-  const drieMaandenGeleden = new Date();
-  drieMaandenGeleden.setMonth(drieMaandenGeleden.getMonth() - 3);
-  const MND = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 
   const rows = filtered.map(r => {
     const label = getKlantStatusLabel(r);
@@ -1774,7 +1933,7 @@ window.renderCRMList = function() {
     </tr>`;
   }).join('');
 
-  tbl.innerHTML = `<thead><tr><th>Bedrijf</th><th>Contactpersoon</th><th>Email</th><th>Telefoon</th><th>Status</th><th>Laatste contact</th><th>Volgende actie</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+  tbl.innerHTML = `<thead><tr>${crmColHeader('name','Bedrijf')}${crmColHeader('contact','Contactpersoon')}${crmColHeader('email','Email')}${crmColHeader('phone','Telefoon')}${crmColHeader('status','Status')}${crmColHeader('laatstecontact','Laatste contact')}${crmColHeader('volgendeactie','Volgende actie')}<th></th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 // ── CRM DETAIL VIEW ────────────────────────────
