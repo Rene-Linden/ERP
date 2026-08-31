@@ -991,6 +991,35 @@ select.edit-input{cursor:pointer}
   </div>
 </div>
 
+<!-- CONTACTPERSOON MODAL -->
+<div id="cpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--white);border-radius:var(--r);max-width:480px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25)">
+    <div style="padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div id="cpModalTitle" style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--ink)">Contactpersoon toevoegen</div>
+      <button onclick="closeCpModal()" style="background:none;border:none;font-size:22px;color:var(--ink3);cursor:pointer;padding:0 4px">&times;</button>
+    </div>
+    <div style="padding:20px">
+      <input type="hidden" id="cp-id">
+      <div class="field" style="margin-bottom:14px">
+        <label>Naam *</label>
+        <input type="text" id="cp-naam" placeholder="Voor- en achternaam" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Email</label>
+        <input type="email" id="cp-email" placeholder="naam@bedrijf.nl" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+      </div>
+      <div class="field">
+        <label>Telefoon</label>
+        <input type="tel" id="cp-telefoon" placeholder="+31 6 12345678" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+      </div>
+    </div>
+    <div style="padding:14px 20px;background:var(--cream);border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeCpModal()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 16px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleren</button>
+      <button onclick="saveCp()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
+    </div>
+  </div>
+</div>
+
 <!-- LEAD-MODAL -->
 <div id="leadModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--white);border-radius:var(--r);max-width:480px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.25)">
@@ -1052,6 +1081,12 @@ select.edit-input{cursor:pointer}
             <option value="anders">• Anders</option>
           </select>
         </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Met wie</label>
+        <select id="g-cp" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+          <option value="">— Niemand specifiek —</option>
+        </select>
       </div>
       <div class="field" style="margin-bottom:14px">
         <label>Verslag</label>
@@ -1557,9 +1592,12 @@ async function loadCRMData() {
 
     crmRecords = [];
 
-    // Voeg bestaande CRM-records toe
+    // Helper: genereer unieke contactpersoon ID
+    const genCpId = () => 'cp_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+
+    // Voeg bestaande CRM-records toe (met migratie naar nieuw model)
     fbRecords.forEach(r => {
-      // Migratie: oude records zonder de nieuwe klant-status-velden krijgen defaults
+      // Migratie: oude records zonder klant-status-velden krijgen defaults
       if (r.is_rvdl_klant === undefined) {
         r.is_rvdl_klant = (r.status === 'Klant' && !!r.linkedKlantName);
       }
@@ -1568,6 +1606,25 @@ async function loadCRMData() {
         const link = clients.find(c => c.name === r.linkedKlantName);
         if (link) r.rvdl_klantnr = link.klantnr;
       }
+
+      // ── NIEUW: migratie naar contactpersonen-model ──
+      if (!Array.isArray(r.contactpersonen)) r.contactpersonen = [];
+      // Zet oud 'contact'/'email'/'phone' om naar 1 contactpersoon (als er iets is)
+      const hasOldContact = (r.contact && r.contact.trim()) || (r.email && r.email.trim()) || (r.phone && r.phone.trim());
+      if (r.contactpersonen.length === 0 && hasOldContact) {
+        r.contactpersonen.push({
+          id: genCpId(),
+          naam: r.contact || '',
+          email: r.email || '',
+          telefoon: r.phone || '',
+          primair: true
+        });
+      }
+      // Zorg dat er altijd exact 1 primair is (als er contactpersonen zijn)
+      if (r.contactpersonen.length > 0 && !r.contactpersonen.some(cp => cp.primair)) {
+        r.contactpersonen[0].primair = true;
+      }
+
       crmRecords.push(r);
     });
 
@@ -1575,6 +1632,16 @@ async function loadCRMData() {
     clients.forEach(c => {
       const existing = crmRecords.find(r => r.linkedKlantName === c.name || r.rvdl_klantnr === c.klantnr);
       if (!existing) {
+        const cpList = [];
+        if (c.contact || c.email || c.phone) {
+          cpList.push({
+            id: genCpId(),
+            naam: c.contact || '',
+            email: c.email || '',
+            telefoon: c.phone || '',
+            primair: true
+          });
+        }
         crmRecords.push({
           id: 'virtual-' + c.name.replace(/[^a-zA-Z0-9]/g,'_'),
           virtual: true,
@@ -1582,37 +1649,62 @@ async function loadCRMData() {
           rvdl_klantnr: c.klantnr,
           is_rvdl_klant: true,
           is_scm_klant: false,
-          status: 'Klant',  // backwards-compat
+          status: 'Klant',
           name: c.name,
-          contact: c.contact || '',
-          email: c.email || '',
-          phone: c.phone || '',
+          contact: c.contact || '',       // legacy sync
+          email: c.email || '',            // legacy sync
+          phone: c.phone || '',            // legacy sync
           address: c.address || '',
           city: c.city || '',
           kvk: c.kvk || '',
+          contactpersonen: cpList,
           gesprekken: [],
           volgendeActie: '',
           volgendeActieDatum: ''
         });
       } else {
-        // Sync basisgegevens van klantbeheer naar CRM-weergave (klant blijft master)
+        // Sync basisgegevens van klantbeheer naar CRM (klant blijft master op bedrijfsniveau)
         existing.name = c.name;
         existing.linkedKlantName = c.name;
         existing.rvdl_klantnr = c.klantnr;
         existing.is_rvdl_klant = true;
-        existing.status = existing.is_scm_klant ? 'Klant' : 'Klant'; // Blijft Klant
-        if (!existing.contact) existing.contact = c.contact || '';
-        if (!existing.email) existing.email = c.email || '';
-        if (!existing.phone) existing.phone = c.phone || '';
+        existing.status = 'Klant';
         if (!existing.address) existing.address = c.address || '';
         if (!existing.city) existing.city = c.city || '';
         if (!existing.kvk) existing.kvk = c.kvk || '';
+        // Als er nog geen contactpersonen zijn maar wel in klantbeheer: import
+        if (existing.contactpersonen.length === 0 && (c.contact || c.email || c.phone)) {
+          existing.contactpersonen.push({
+            id: genCpId(),
+            naam: c.contact || '',
+            email: c.email || '',
+            telefoon: c.phone || '',
+            primair: true
+          });
+        }
       }
     });
   } catch(e) {
     console.error('CRM load error:', e);
     crmRecords = [];
   }
+}
+
+// Helper: primaire contactpersoon van een record (of eerste, of null)
+function primaireCp(r) {
+  if (!r.contactpersonen || !r.contactpersonen.length) return null;
+  return r.contactpersonen.find(cp => cp.primair) || r.contactpersonen[0];
+}
+
+// Helper: contactpersoon opzoeken op ID
+function findCpById(r, id) {
+  if (!r.contactpersonen) return null;
+  return r.contactpersonen.find(cp => cp.id === id) || null;
+}
+
+// Helper: genereer unieke contactpersoon ID (global voor gebruik in functies)
+function genCpId() {
+  return 'cp_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
 }
 
 // Helper: bereken de status-string voor een record (voor tabel/badges)
@@ -1645,9 +1737,11 @@ async function ensureCRMSaved(record) {
       address: record.address || '',
       city: record.city || '',
       kvk: record.kvk || '',
+      contactpersonen: record.contactpersonen || [],
       gesprekken: record.gesprekken || [],
       volgendeActie: record.volgendeActie || '',
       volgendeActieDatum: record.volgendeActieDatum || '',
+      volgendeActieCpId: record.volgendeActieCpId || null,
       is_rvdl_klant: !!record.is_rvdl_klant,
       is_scm_klant: !!record.is_scm_klant,
       rvdl_klantnr: record.rvdl_klantnr || null,
@@ -1718,7 +1812,8 @@ window.renderCRMList = function() {
       if (!r.is_rvdl_klant || !r.is_scm_klant) return false;
     }
     if (search) {
-      const blob = `${r.name||''} ${r.contact||''} ${r.email||''} ${r.phone||''}`.toLowerCase();
+      const cpBlob = (r.contactpersonen||[]).map(cp => `${cp.naam||''} ${cp.email||''} ${cp.telefoon||''}`).join(' ');
+      const blob = `${r.name||''} ${cpBlob} ${r.contact||''} ${r.email||''} ${r.phone||''}`.toLowerCase();
       if (!blob.includes(search)) return false;
     }
     return true;
@@ -1728,9 +1823,9 @@ window.renderCRMList = function() {
   filtered.sort((a,b) => {
     let va, vb;
     if (crmSortCol === 'name') { va = (a.name||'').toLowerCase(); vb = (b.name||'').toLowerCase(); }
-    else if (crmSortCol === 'contact') { va = (a.contact||'').toLowerCase(); vb = (b.contact||'').toLowerCase(); }
-    else if (crmSortCol === 'email') { va = (a.email||'').toLowerCase(); vb = (b.email||'').toLowerCase(); }
-    else if (crmSortCol === 'phone') { va = (a.phone||'').toLowerCase(); vb = (b.phone||'').toLowerCase(); }
+    else if (crmSortCol === 'contact') { const ca=primaireCp(a); const cb=primaireCp(b); va = (ca?ca.naam:'').toLowerCase(); vb = (cb?cb.naam:'').toLowerCase(); }
+    else if (crmSortCol === 'email') { const ca=primaireCp(a); const cb=primaireCp(b); va = (ca?ca.email:'').toLowerCase(); vb = (cb?cb.email:'').toLowerCase(); }
+    else if (crmSortCol === 'phone') { const ca=primaireCp(a); const cb=primaireCp(b); va = (ca?ca.telefoon:'').toLowerCase(); vb = (cb?cb.telefoon:'').toLowerCase(); }
     else if (crmSortCol === 'status') { va = getKlantStatusLabel(a); vb = getKlantStatusLabel(b); }
     else if (crmSortCol === 'laatstecontact') {
       const la = laatsteContactDatum(a); const lb = laatsteContactDatum(b);
@@ -1803,11 +1898,18 @@ window.renderCRMList = function() {
       const cls = isOverdue ? 'color:var(--red);font-weight:600' : (isToday ? 'color:var(--amb);font-weight:600' : 'color:var(--ink2)');
       actieCel = `<div style="${cls};font-size:12px">${dStr}</div><div style="font-size:11px;color:var(--ink3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.volgendeActie||''}</div>`;
     }
+    const cp = primaireCp(r);
+    const cpNaam = cp ? cp.naam : '';
+    const cpEmail = cp ? cp.email : '';
+    const cpTelefoon = cp ? cp.telefoon : '';
+    const aantalCp = (r.contactpersonen||[]).length;
+    const cpBadge = aantalCp > 1 ? ` <span style="background:var(--acc-l);color:var(--acc);font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px">+${aantalCp-1}</span>` : '';
+
     return `<tr style="cursor:pointer" onclick="openCRMDetail('${r.id}')">
       <td style="padding:10px"><strong>${r.name||'(geen naam)'}</strong></td>
-      <td style="padding:10px">${r.contact||'<span style=\"color:var(--ink3)\">—</span>'}</td>
-      <td style="padding:10px;font-size:12px">${r.email||'<span style=\"color:var(--ink3)\">—</span>'}</td>
-      <td style="padding:10px;font-family:monospace;font-size:12px">${r.phone||'<span style=\"color:var(--ink3)\">—</span>'}</td>
+      <td style="padding:10px">${cpNaam?cpNaam+cpBadge:'<span style="color:var(--ink3)">—</span>'}</td>
+      <td style="padding:10px;font-size:12px">${cpEmail||'<span style=\"color:var(--ink3)\">—</span>'}</td>
+      <td style="padding:10px;font-family:monospace;font-size:12px">${cpTelefoon||'<span style=\"color:var(--ink3)\">—</span>'}</td>
       <td style="padding:10px"><span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;border:1px solid;${statusBg};white-space:nowrap">${label}</span></td>
       <td style="padding:10px">${laatsteContactCel}</td>
       <td style="padding:10px">${actieCel}</td>
@@ -1873,10 +1975,13 @@ window.openCRMDetail = function(recordId) {
         const icon = typeIcon(g.type);
         const lbl = typeLabel(g.type);
         const iconHtml = icon ? `<span title="${lbl}" style="margin-right:6px">${icon}</span>` : '';
+        // Contactpersoon
+        const cp = g.cp_id ? findCpById(r, g.cp_id) : null;
+        const cpHtml = cp ? `<span style="font-size:11px;color:var(--ink3);margin-left:8px">· met ${cp.naam}</span>` : '';
         // Verslag ingekort tot ~4 regels via CSS line-clamp
         return `<div class="gesprek-item" onclick="openGesprekDetail(${i})" style="border-left:3px solid var(--acc);padding:10px 14px;background:var(--cream);border-radius:0 var(--rsm) var(--rsm) 0;margin-bottom:10px;position:relative;cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--acc-l)'" onmouseout="this.style.background='var(--cream)'">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-            <div style="font-size:12px;color:var(--acc);font-weight:600">${iconHtml}${d.getDate()} ${MOS_F[d.getMonth()]} ${d.getFullYear()}${lbl?` · ${lbl}`:''}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:4px">
+            <div style="font-size:12px;color:var(--acc);font-weight:600">${iconHtml}${d.getDate()} ${MOS_F[d.getMonth()]} ${d.getFullYear()}${lbl?` · ${lbl}`:''}${cpHtml}</div>
             <div style="font-size:11px;color:var(--ink3)">klik om te openen ›</div>
           </div>
           <div style="font-size:13px;color:var(--ink);line-height:1.5;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;white-space:pre-wrap">${(g.verslag||'').replace(/</g,'&lt;')}</div>
@@ -1896,6 +2001,7 @@ window.openCRMDetail = function(recordId) {
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="openMergeModal()" style="background:none;color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif" title="Samenvoegen met een ander CRM-record">⇔ Samenvoegen</button>
         ${!r.is_rvdl_klant && !r.is_scm_klant ? `<button onclick="deleteCRMRecord()" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);padding:8px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Verwijderen</button>` : ''}
       </div>
     </div>
@@ -1908,17 +2014,41 @@ window.openCRMDetail = function(recordId) {
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Bedrijfsgegevens</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="field"><label>Bedrijfsnaam</label><input type="text" id="crm-name" value="${(r.name||'').replace(/"/g,'&quot;')}" ${r.linkedKlantName?'readonly title="Beheerd via Klantbeheer"':''}></div>
-            <div class="field"><label>Contactpersoon</label><input type="text" id="crm-contact" value="${(r.contact||'').replace(/"/g,'&quot;')}"></div>
-            <div class="field"><label>Email</label><input type="email" id="crm-email" value="${(r.email||'').replace(/"/g,'&quot;')}"></div>
-            <div class="field"><label>Telefoon</label><input type="tel" id="crm-phone" value="${(r.phone||'').replace(/"/g,'&quot;')}"></div>
+            <div class="field"><label>KvK-nummer</label><input type="text" id="crm-kvk" value="${(r.kvk||'').replace(/"/g,'&quot;')}"></div>
             <div class="field"><label>Adres</label><input type="text" id="crm-address" value="${(r.address||'').replace(/"/g,'&quot;')}"></div>
             <div class="field"><label>Plaats</label><input type="text" id="crm-city" value="${(r.city||'').replace(/"/g,'&quot;')}"></div>
-            <div class="field"><label>KvK-nummer</label><input type="text" id="crm-kvk" value="${(r.kvk||'').replace(/"/g,'&quot;')}"></div>
           </div>
           <div style="margin-top:14px;text-align:right">
             <button onclick="saveCRMDetails()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Opslaan</button>
           </div>
-          ${r.linkedKlantName ? '<div style="margin-top:8px;font-size:11px;color:var(--ink3);font-style:italic">Bedrijfsnaam wordt beheerd via Klantbeheer. Wijzigingen aan andere velden komen alleen in CRM terecht.</div>' : ''}
+          ${r.linkedKlantName ? '<div style="margin-top:8px;font-size:11px;color:var(--ink3);font-style:italic">Bedrijfsnaam wordt beheerd via Klantbeheer.</div>' : ''}
+        </div>
+
+        <!-- CONTACTPERSONEN -->
+        <div class="card" style="padding:18px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600">Contactpersonen</div>
+            <button onclick="openCpModal()" style="background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Toevoegen</button>
+          </div>
+          <div id="cp-list">
+            ${(r.contactpersonen||[]).length === 0
+              ? '<div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">Nog geen contactpersonen. Klik op + Toevoegen om te beginnen.</div>'
+              : (r.contactpersonen||[]).map(cp => `
+                <div style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;padding:10px 12px;background:var(--cream);border-radius:var(--rsm);margin-bottom:8px">
+                  <button onclick="cpSetPrimair('${cp.id}')" title="${cp.primair?'Primaire contactpersoon':'Maak primair'}" style="background:none;border:none;cursor:pointer;font-size:16px;padding:2px;color:${cp.primair?'#f5b400':'var(--ink3)'}">${cp.primair?'★':'☆'}</button>
+                  <div style="min-width:0">
+                    <div style="font-weight:600;color:var(--ink);font-size:14px">${cp.naam||'(geen naam)'}</div>
+                    <div style="font-size:12px;color:var(--ink3);display:flex;gap:12px;flex-wrap:wrap;margin-top:2px">
+                      ${cp.email?`<span>✉️ <a href="mailto:${cp.email}" style="color:var(--acc);text-decoration:none" onclick="event.stopPropagation()">${cp.email}</a></span>`:''}
+                      ${cp.telefoon?`<span>☎️ ${cp.telefoon}</span>`:''}
+                    </div>
+                  </div>
+                  <button onclick="openCpModal('${cp.id}')" title="Wijzigen" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Wijzigen</button>
+                  <button onclick="cpDelete('${cp.id}')" title="Verwijderen" style="background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:5px 10px;font-size:12px;color:var(--ink3);cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+                  <span></span>
+                </div>`).join('')
+            }
+          </div>
         </div>
 
         <!-- GESPREKKEN -->
@@ -1939,9 +2069,16 @@ window.openCRMDetail = function(recordId) {
             <label>Wat te doen</label>
             <textarea id="crm-actie" rows="3" placeholder="Bijv. Terugbellen voor offerte" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical">${(r.volgendeActie||'').replace(/</g,'&lt;')}</textarea>
           </div>
-          <div class="field">
+          <div class="field" style="margin-bottom:10px">
             <label>Wanneer</label>
             <input type="date" id="crm-actie-datum" value="${r.volgendeActieDatum||''}">
+          </div>
+          <div class="field">
+            <label>Aan wie</label>
+            <select id="crm-actie-cp" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+              <option value="">— Niemand specifiek —</option>
+              ${(r.contactpersonen||[]).map(cp => `<option value="${cp.id}" ${r.volgendeActieCpId===cp.id?'selected':''}>${cp.naam||'(geen naam)'}${cp.primair?' ★':''}</option>`).join('')}
+            </select>
           </div>
           <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
             ${r.volgendeActie && r.volgendeActieDatum ? `<button onclick="openInOutlook('${r.id}')" style="background:#0078D4;color:white;border:none;border-radius:var(--rsm);padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px" title="Download .ics-bestand voor Outlook agenda"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>📅 Agenda</button>` : ''}
@@ -2006,11 +2143,8 @@ window.closeCRMDetail = function() {
 window.saveCRMDetails = async function() {
   const r = crmRecords.find(x => x.id === crmCurrentDetailId);
   if (!r) return;
-  // Lees velden
+  // Lees velden (alleen bedrijfsvelden)
   if (!r.linkedKlantName) r.name = document.getElementById('crm-name').value.trim();
-  r.contact = document.getElementById('crm-contact').value.trim();
-  r.email = document.getElementById('crm-email').value.trim();
-  r.phone = document.getElementById('crm-phone').value.trim();
   r.address = document.getElementById('crm-address').value.trim();
   r.city = document.getElementById('crm-city').value.trim();
   r.kvk = document.getElementById('crm-kvk').value.trim();
@@ -2023,12 +2157,10 @@ window.saveCRMDetails = async function() {
         linkedKlantName: r.linkedKlantName||null,
         status: r.status,
         name: r.name,
-        contact: r.contact,
-        email: r.email,
-        phone: r.phone,
         address: r.address,
         city: r.city,
         kvk: r.kvk,
+        contactpersonen: r.contactpersonen||[],
         gesprekken: r.gesprekken||[],
         volgendeActie: r.volgendeActie||'',
         volgendeActieDatum: r.volgendeActieDatum||'',
@@ -2036,8 +2168,109 @@ window.saveCRMDetails = async function() {
       }, {merge:true});
     }
     showToast('Opgeslagen ✓', 'ok');
-    renderTopActies(); // Update dashboard widget
+    if (typeof renderTopActies === 'function') renderTopActies();
   } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
+}
+
+// ── CONTACTPERSONEN CRUD ──────────────────────
+window.openCpModal = function(cpId) {
+  document.getElementById('cp-id').value = cpId || '';
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  const cp = cpId && r ? findCpById(r, cpId) : null;
+  document.getElementById('cpModalTitle').textContent = cp ? 'Contactpersoon wijzigen' : 'Contactpersoon toevoegen';
+  document.getElementById('cp-naam').value = cp ? (cp.naam||'') : '';
+  document.getElementById('cp-email').value = cp ? (cp.email||'') : '';
+  document.getElementById('cp-telefoon').value = cp ? (cp.telefoon||'') : '';
+  document.getElementById('cpModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('cp-naam').focus(), 50);
+}
+
+window.closeCpModal = function() {
+  document.getElementById('cpModal').style.display = 'none';
+}
+
+window.saveCp = async function() {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r) return;
+  const cpId = document.getElementById('cp-id').value;
+  const naam = document.getElementById('cp-naam').value.trim();
+  const email = document.getElementById('cp-email').value.trim();
+  const telefoon = document.getElementById('cp-telefoon').value.trim();
+  if (!naam) { showToast('Naam is verplicht', 'bad'); return; }
+
+  if (!Array.isArray(r.contactpersonen)) r.contactpersonen = [];
+
+  if (cpId) {
+    // Wijzigen
+    const cp = findCpById(r, cpId);
+    if (cp) { cp.naam = naam; cp.email = email; cp.telefoon = telefoon; }
+  } else {
+    // Nieuw
+    r.contactpersonen.push({
+      id: genCpId(),
+      naam, email, telefoon,
+      primair: r.contactpersonen.length === 0 // eerste = automatisch primair
+    });
+  }
+
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
+      contactpersonen: r.contactpersonen,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast(cpId ? 'Contactpersoon bijgewerkt ✓' : 'Contactpersoon toegevoegd ✓', 'ok');
+    closeCpModal();
+    openCRMDetail(r.id);
+  } catch(e) {
+    console.error('saveCp error:', e);
+    showToast('Fout: ' + (e.message||e), 'bad');
+  }
+}
+
+window.cpDelete = async function(cpId) {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r || !r.contactpersonen) return;
+  const cp = findCpById(r, cpId);
+  if (!cp) return;
+  if (!confirm(`Contactpersoon "${cp.naam}" verwijderen?`)) return;
+
+  const wasPrimair = cp.primair;
+  r.contactpersonen = r.contactpersonen.filter(x => x.id !== cpId);
+  // Als de verwijderde primair was: maak eerste overgebleven primair
+  if (wasPrimair && r.contactpersonen.length > 0) r.contactpersonen[0].primair = true;
+
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
+      contactpersonen: r.contactpersonen,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('Contactpersoon verwijderd', 'info');
+    openCRMDetail(r.id);
+  } catch(e) {
+    console.error('cpDelete error:', e);
+    showToast('Fout: ' + (e.message||e), 'bad');
+  }
+}
+
+window.cpSetPrimair = async function(cpId) {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r || !r.contactpersonen) return;
+  r.contactpersonen.forEach(cp => cp.primair = (cp.id === cpId));
+
+  try {
+    await ensureCRMSaved(r);
+    await setDoc(doc(db,'crm_gedeeld',r.id), {
+      contactpersonen: r.contactpersonen,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    showToast('Primair ingesteld ✓', 'ok');
+    openCRMDetail(r.id);
+  } catch(e) {
+    console.error('cpSetPrimair error:', e);
+    showToast('Fout: ' + (e.message||e), 'bad');
+  }
 }
 
 window.saveCRMActie = async function() {
@@ -2045,17 +2278,21 @@ window.saveCRMActie = async function() {
   if (!r) return;
   r.volgendeActie = document.getElementById('crm-actie').value.trim();
   r.volgendeActieDatum = document.getElementById('crm-actie-datum').value;
+  // Contactpersoon voor volgende actie
+  const cpSelect = document.getElementById('crm-actie-cp');
+  if (cpSelect) r.volgendeActieCpId = cpSelect.value || null;
 
   try {
     await ensureCRMSaved(r);
     await setDoc(doc(db,'crm_gedeeld',r.id), {
       volgendeActie: r.volgendeActie,
       volgendeActieDatum: r.volgendeActieDatum,
+      volgendeActieCpId: r.volgendeActieCpId||null,
       bijgewerkt: new Date().toISOString()
     }, {merge:true});
     showToast('Actie opgeslagen ✓', 'ok');
-    openCRMDetail(r.id); // Re-render to update badge
-    renderTopActies();
+    openCRMDetail(r.id);
+    if (typeof renderTopActies === 'function') renderTopActies();
   } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
 }
 
@@ -2188,6 +2425,190 @@ window.deleteCRMRecord = async function() {
   } catch(e) { showToast('Fout: ' + e.message, 'bad'); }
 }
 
+// ── SAMENVOEGEN ────────────────────────────────
+window.openMergeModal = function() {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  if (!r) return;
+
+  // Verwijder eventueel bestaande modal
+  const bestaand = document.getElementById('mergeModal');
+  if (bestaand) bestaand.remove();
+
+  // Zoek kandidaten: alle andere records, sorteer op naam-overeenkomst
+  const huidigeNaam = (r.name||'').toLowerCase().trim();
+  const kandidaten = crmRecords
+    .filter(x => x.id !== r.id)
+    .map(x => {
+      const naam = (x.name||'').toLowerCase().trim();
+      let score = 0;
+      if (naam === huidigeNaam) score = 100;
+      else if (naam && (naam.includes(huidigeNaam) || huidigeNaam.includes(naam))) score = 50;
+      else if (naam && huidigeNaam && naam.split(' ')[0] === huidigeNaam.split(' ')[0]) score = 20;
+      return {rec: x, score};
+    })
+    .sort((a,b) => b.score - a.score);
+
+  // Top matches eerst (score > 0), dan alle overige
+  const topMatches = kandidaten.filter(k => k.score > 0);
+  const overige = kandidaten.filter(k => k.score === 0);
+
+  const kandidaatToHTML = (k) => {
+    const x = k.rec;
+    const label = getKlantStatusLabel(x);
+    const cpAantal = (x.contactpersonen||[]).length;
+    const gAantal = (x.gesprekken||[]).length;
+    return `<div onclick="doMerge('${x.id}')" style="padding:12px 14px;border:1px solid var(--line);border-radius:var(--rsm);margin-bottom:8px;cursor:pointer;background:var(--white);transition:background .1s" onmouseover="this.style.background='var(--acc-l)'" onmouseout="this.style.background='var(--white)'">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div style="min-width:0;flex:1">
+          <div style="font-weight:600;color:var(--ink);font-size:14px">${x.name||'(geen naam)'}${k.score===100?' <span style=&quot;background:var(--grn-l);color:var(--grn);font-size:10px;padding:2px 8px;border-radius:8px;margin-left:6px&quot;>identieke naam</span>':''}</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:3px">${label} · ${cpAantal} contactpersoon${cpAantal!==1?'en':''} · ${gAantal} gesprek${gAantal!==1?'ken':''}</div>
+        </div>
+        <span style="color:var(--acc);font-size:14px">→</span>
+      </div>
+    </div>`;
+  };
+
+  const modalHTML = `
+    <div id="mergeModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeMergeModal()">
+      <div style="background:var(--white);border-radius:var(--r);max-width:640px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,.25)">
+        <div style="padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:600">Samenvoegen met…</div>
+            <div style="font-size:12px;color:var(--ink3);margin-top:2px">"${r.name}" wordt behouden. Het gekozen record wordt eraan toegevoegd en verwijderd.</div>
+          </div>
+          <button onclick="closeMergeModal()" style="background:none;border:none;font-size:24px;color:var(--ink3);cursor:pointer;padding:0 4px">&times;</button>
+        </div>
+        <div style="padding:16px 22px;overflow-y:auto;flex:1">
+          ${topMatches.length > 0 ? `
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--acc);font-weight:600;margin-bottom:10px">Mogelijk duplicaat (${topMatches.length})</div>
+            ${topMatches.map(kandidaatToHTML).join('')}
+          ` : ''}
+          ${overige.length > 0 ? `
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink3);font-weight:600;margin:${topMatches.length>0?'18px':'0'} 0 10px">Alle andere records (${overige.length})</div>
+            <input type="text" id="mergeSearch" oninput="mergeFilterList()" placeholder="Zoeken…" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:8px 12px;font-size:13px;outline:none;box-sizing:border-box;font-family:'DM Sans',sans-serif;margin-bottom:10px">
+            <div id="mergeOverige">${overige.map(kandidaatToHTML).join('')}</div>
+          ` : ''}
+          ${kandidaten.length === 0 ? '<div style="text-align:center;padding:30px;color:var(--ink3);font-size:13px">Geen andere records om mee samen te voegen.</div>' : ''}
+        </div>
+        <div style="padding:12px 22px;background:var(--cream);border-top:1px solid var(--line);text-align:right">
+          <button onclick="closeMergeModal()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:9px 18px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Annuleren</button>
+        </div>
+      </div>
+    </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+window.closeMergeModal = function() {
+  const m = document.getElementById('mergeModal');
+  if (m) m.remove();
+}
+
+window.mergeFilterList = function() {
+  const q = (document.getElementById('mergeSearch').value||'').toLowerCase();
+  const cont = document.getElementById('mergeOverige');
+  if (!cont) return;
+  const items = cont.querySelectorAll('div[onclick^="doMerge"]');
+  items.forEach(el => {
+    const naam = el.querySelector('div > div:first-child').textContent.toLowerCase();
+    el.style.display = naam.includes(q) ? '' : 'none';
+  });
+}
+
+window.doMerge = async function(otherId) {
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  const other = crmRecords.find(x => x.id === otherId);
+  if (!r || !other) return;
+
+  if (!confirm(`Samenvoegen bevestigen:\n\n"${other.name}" wordt toegevoegd aan "${r.name}":\n• Alle contactpersonen worden overgenomen\n• Alle gespreksverslagen worden overgenomen\n• Klantstatussen worden gecombineerd\n• "${other.name}" wordt daarna verwijderd\n\nDoorgaan?`)) return;
+
+  try {
+    // Combineer contactpersonen (dubbele op naam+email vermijden)
+    const eigen = Array.isArray(r.contactpersonen) ? r.contactpersonen.slice() : [];
+    const andere = Array.isArray(other.contactpersonen) ? other.contactpersonen : [];
+    andere.forEach(cp => {
+      const dup = eigen.find(e =>
+        (e.naam||'').toLowerCase().trim() === (cp.naam||'').toLowerCase().trim() &&
+        (e.email||'').toLowerCase().trim() === (cp.email||'').toLowerCase().trim()
+      );
+      if (!dup) {
+        // Kopie zonder primair (r behoudt zijn primaire)
+        eigen.push({...cp, primair: false});
+      }
+    });
+    // Zorg dat er 1 primair blijft
+    if (eigen.length > 0 && !eigen.some(cp => cp.primair)) eigen[0].primair = true;
+    r.contactpersonen = eigen;
+
+    // Combineer gesprekken (sorteer op datum)
+    const gEigen = Array.isArray(r.gesprekken) ? r.gesprekken.slice() : [];
+    const gAndere = Array.isArray(other.gesprekken) ? other.gesprekken : [];
+    r.gesprekken = gEigen.concat(gAndere).sort((a,b) => new Date(a.datum) - new Date(b.datum));
+
+    // Combineer klantstatussen
+    if (other.is_rvdl_klant && !r.is_rvdl_klant) {
+      r.is_rvdl_klant = true;
+      r.rvdl_klantnr = other.rvdl_klantnr || r.rvdl_klantnr;
+      r.rvdl_sinds = other.rvdl_sinds || r.rvdl_sinds;
+    }
+    if (other.is_scm_klant && !r.is_scm_klant) {
+      r.is_scm_klant = true;
+      r.scm_klant_id = other.scm_klant_id || r.scm_klant_id;
+      r.scm_klantnr = other.scm_klantnr || r.scm_klantnr;
+      r.scm_sinds = other.scm_sinds || r.scm_sinds;
+    }
+    r.status = (r.is_rvdl_klant || r.is_scm_klant) ? 'Klant' : 'Lead';
+
+    // Vul lege bedrijfsvelden aan vanuit other
+    if (!r.address && other.address) r.address = other.address;
+    if (!r.city && other.city) r.city = other.city;
+    if (!r.kvk && other.kvk) r.kvk = other.kvk;
+
+    // Als r nog geen volgende actie heeft: neem van other
+    if (!r.volgendeActie && other.volgendeActie) {
+      r.volgendeActie = other.volgendeActie;
+      r.volgendeActieDatum = other.volgendeActieDatum;
+      r.volgendeActieCpId = other.volgendeActieCpId;
+    }
+
+    // Sla r op (virtual → echt indien nodig)
+    await ensureCRMSaved(r);
+    const cleanData = sanitizeForFirebase({
+      contactpersonen: r.contactpersonen,
+      gesprekken: r.gesprekken,
+      is_rvdl_klant: r.is_rvdl_klant,
+      is_scm_klant: r.is_scm_klant,
+      rvdl_klantnr: r.rvdl_klantnr||null,
+      scm_klant_id: r.scm_klant_id||null,
+      scm_klantnr: r.scm_klantnr||null,
+      status: r.status,
+      address: r.address||'',
+      city: r.city||'',
+      kvk: r.kvk||'',
+      volgendeActie: r.volgendeActie||'',
+      volgendeActieDatum: r.volgendeActieDatum||'',
+      volgendeActieCpId: r.volgendeActieCpId||null,
+      bijgewerkt: new Date().toISOString()
+    });
+    await setDoc(doc(db,'crm_gedeeld',r.id), cleanData, {merge:true});
+
+    // Verwijder het andere record uit Firebase (indien niet virtual)
+    if (!other.virtual) {
+      await deleteDoc(doc(db,'crm_gedeeld', other.id));
+    }
+    // Verwijder uit lokale array
+    crmRecords = crmRecords.filter(x => x.id !== other.id);
+
+    showToast(`✓ "${other.name}" samengevoegd met "${r.name}"`, 'ok');
+    closeMergeModal();
+    openCRMDetail(r.id);
+  } catch(e) {
+    console.error('doMerge error:', e);
+    showToast('Fout bij samenvoegen: ' + (e.message||e), 'bad');
+  }
+}
+
+
 // ── LEAD MODAL ─────────────────────────────────
 window.openLeadModal = function() {
   document.getElementById('lead-name').value = '';
@@ -2203,16 +2624,29 @@ window.closeLeadModal = function() {
 window.saveNewLead = async function() {
   const name = document.getElementById('lead-name').value.trim();
   if (!name) { showToast('Bedrijfsnaam is verplicht', 'bad'); return; }
+  const cName = document.getElementById('lead-contact').value.trim();
+  const cEmail = document.getElementById('lead-email').value.trim();
+  const cPhone = document.getElementById('lead-phone').value.trim();
+  const contactpersonen = [];
+  if (cName || cEmail || cPhone) {
+    contactpersonen.push({
+      id: genCpId(),
+      naam: cName,
+      email: cEmail,
+      telefoon: cPhone,
+      primair: true
+    });
+  }
   const data = {
     linkedKlantName: null,
     status: 'Lead',
+    is_rvdl_klant: false,
+    is_scm_klant: false,
     name,
-    contact: document.getElementById('lead-contact').value.trim(),
-    email: document.getElementById('lead-email').value.trim(),
-    phone: document.getElementById('lead-phone').value.trim(),
     address: '',
     city: '',
     kvk: '',
+    contactpersonen,
     gesprekken: [],
     volgendeActie: '',
     volgendeActieDatum: '',
@@ -2254,7 +2688,18 @@ window.openGesprekModal = function() {
   const today = new Date();
   document.getElementById('g-datum').value = `${today.getFullYear()}-${p2(today.getMonth()+1)}-${p2(today.getDate())}`;
   document.getElementById('g-verslag').value = '';
-  document.getElementById('g-type').value = 'telefoon'; // default
+  document.getElementById('g-type').value = 'telefoon';
+
+  // Vul contactpersoon-dropdown, preselecteer primair (of eerste)
+  const r = crmRecords.find(x => x.id === crmCurrentDetailId);
+  const cpSel = document.getElementById('g-cp');
+  cpSel.innerHTML = '<option value="">— Niemand specifiek —</option>' +
+    (r && r.contactpersonen ? r.contactpersonen.map(cp =>
+      `<option value="${cp.id}">${cp.naam||'(geen naam)'}${cp.primair?' ★':''}</option>`
+    ).join('') : '');
+  const prim = r ? primaireCp(r) : null;
+  if (prim) cpSel.value = prim.id;
+
   document.getElementById('gesprekModal').style.display = 'flex';
   setTimeout(() => document.getElementById('g-verslag').focus(), 50);
 }
@@ -2267,15 +2712,18 @@ window.saveGesprek = async function() {
   const datum = document.getElementById('g-datum').value;
   const verslag = document.getElementById('g-verslag').value.trim();
   const type = document.getElementById('g-type').value;
+  const cpId = document.getElementById('g-cp').value;
   if (!datum || !verslag) { showToast('Vul datum en verslag in', 'bad'); return; }
 
   if (!r.gesprekken) r.gesprekken = [];
-  r.gesprekken.push({
+  const entry = {
     datum,
-    type,
     verslag,
     toegevoegd: new Date().toISOString()
-  });
+  };
+  if (type) entry.type = type;
+  if (cpId) entry.cp_id = cpId;
+  r.gesprekken.push(entry);
 
   try {
     await ensureCRMSaved(r);
@@ -2342,7 +2790,7 @@ window.openGesprekDetail = function(idx) {
         <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);z-index:2">
           <div>
             <div style="font-family:'Fraunces',serif;font-size:17px;font-weight:600">Gesprek — ${datumStr}</div>
-            <div id="gd-typedisplay" style="font-size:12px;color:var(--ink3);margin-top:2px">${curType?(({telefoon:'☎️ Telefoon',mail:'✉️ Mail',whatsapp:'💬 WhatsApp',persoon:'👥 In persoon',anders:'• Anders'})[curType]||''):''}</div>
+            <div id="gd-typedisplay" style="font-size:12px;color:var(--ink3);margin-top:2px">${curType?(({telefoon:'☎️ Telefoon',mail:'✉️ Mail',whatsapp:'💬 WhatsApp',persoon:'👥 In persoon',anders:'• Anders'})[curType]||''):''}${(function(){ const cp = g.cp_id ? findCpById(r, g.cp_id) : null; return cp ? (curType?' · ':'') + 'met ' + cp.naam : ''; })()}</div>
           </div>
           <button onclick="closeGesprekDetail()" style="background:none;border:none;font-size:24px;color:var(--ink3);cursor:pointer;padding:0 4px">&times;</button>
         </div>
@@ -2370,6 +2818,13 @@ window.openGesprekDetail = function(idx) {
                   <option value="anders"${curType==='anders'?' selected':''}>• Anders</option>
                 </select>
               </div>
+            </div>
+            <div class="field" style="margin-bottom:14px">
+              <label>Met wie</label>
+              <select id="gd-cp" style="width:100%;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+                <option value=""${!g.cp_id?' selected':''}>— Niemand specifiek —</option>
+                ${(r.contactpersonen||[]).map(cp => `<option value="${cp.id}"${g.cp_id===cp.id?' selected':''}>${cp.naam||'(geen naam)'}${cp.primair?' ★':''}</option>`).join('')}
+              </select>
             </div>
             <div class="field">
               <label>Verslag</label>
@@ -2418,6 +2873,8 @@ window.saveGesprekEdit = async function(idx) {
   const datum = document.getElementById('gd-datum').value;
   const type = document.getElementById('gd-type').value;
   const verslag = document.getElementById('gd-verslag').value.trim();
+  const cpSel = document.getElementById('gd-cp');
+  const cpId = cpSel ? cpSel.value : '';
   if (!datum || !verslag) { showToast('Vul datum en verslag in', 'bad'); return; }
 
   // Bouw nieuw gesprek-object; Firebase accepteert geen 'undefined' — laat type gewoon leeg als niks
@@ -2427,7 +2884,8 @@ window.saveGesprekEdit = async function(idx) {
     bijgewerkt: new Date().toISOString()
   };
   if (r.gesprekken[idx].toegevoegd) updated.toegevoegd = r.gesprekken[idx].toegevoegd;
-  if (type) updated.type = type; // alleen opnemen als er iets is gekozen
+  if (type) updated.type = type;
+  if (cpId) updated.cp_id = cpId;
 
   r.gesprekken[idx] = updated;
 
