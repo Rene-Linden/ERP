@@ -1723,6 +1723,11 @@ window.renderCRMList = function() {
     return;
   }
 
+  // Helper: 3 maanden geleden = grens voor "oud contact" vlag
+  const drieMaandenGeleden = new Date();
+  drieMaandenGeleden.setMonth(drieMaandenGeleden.getMonth() - 3);
+  const MND = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+
   const rows = filtered.map(r => {
     const label = getKlantStatusLabel(r);
     const color = getKlantStatusColor(r);
@@ -1732,12 +1737,28 @@ window.renderCRMList = function() {
     else if (color === 'purple') statusBg = 'background:#f0e6f7;color:#7a3e9e;border-color:rgba(122,62,158,.3)';
     else statusBg = 'background:var(--amb-l);color:var(--amb);border-color:rgba(184,92,0,.25)';
 
+    // Laatste contact — datum van meest recente gesprek
+    let laatsteContactCel = '<span style="color:var(--ink3);font-size:11px">—</span>';
+    if (r.gesprekken && r.gesprekken.length > 0) {
+      const laatst = r.gesprekken.reduce((max, g) => {
+        const d = new Date(g.datum);
+        return (!max || d > max) ? d : max;
+      }, null);
+      if (laatst) {
+        const dStr = `${laatst.getDate()} ${MND[laatst.getMonth()]}${laatst.getFullYear() !== today.getFullYear() ? ' ' + laatst.getFullYear() : ''}`;
+        const oud = laatst < drieMaandenGeleden;
+        const flag = oud ? '<span title="Meer dan 3 maanden geleden" style="margin-right:4px">🚩</span>' : '';
+        const cls = oud ? 'color:var(--red);font-weight:600' : 'color:var(--ink2)';
+        laatsteContactCel = `<div style="${cls};font-size:12px;white-space:nowrap">${flag}${dStr}</div>`;
+      }
+    }
+
     let actieCel = '<span style="color:var(--ink3);font-size:11px">—</span>';
     if (r.volgendeActieDatum) {
       const d = new Date(r.volgendeActieDatum);
       const isOverdue = d < today;
       const isToday = d.toDateString() === today.toDateString();
-      const dStr = `${d.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]}`;
+      const dStr = `${d.getDate()} ${MND[d.getMonth()]}`;
       const cls = isOverdue ? 'color:var(--red);font-weight:600' : (isToday ? 'color:var(--amb);font-weight:600' : 'color:var(--ink2)');
       actieCel = `<div style="${cls};font-size:12px">${dStr}</div><div style="font-size:11px;color:var(--ink3);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.volgendeActie||''}</div>`;
     }
@@ -1747,12 +1768,13 @@ window.renderCRMList = function() {
       <td style="padding:10px;font-size:12px">${r.email||'<span style=\"color:var(--ink3)\">—</span>'}</td>
       <td style="padding:10px;font-family:monospace;font-size:12px">${r.phone||'<span style=\"color:var(--ink3)\">—</span>'}</td>
       <td style="padding:10px"><span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;border:1px solid;${statusBg};white-space:nowrap">${label}</span></td>
+      <td style="padding:10px">${laatsteContactCel}</td>
       <td style="padding:10px">${actieCel}</td>
       <td style="padding:10px;text-align:right"><button onclick="event.stopPropagation();openCRMDetail('${r.id}')" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Open</button></td>
     </tr>`;
   }).join('');
 
-  tbl.innerHTML = `<thead><tr><th>Bedrijf</th><th>Contactpersoon</th><th>Email</th><th>Telefoon</th><th>Status</th><th>Volgende actie</th><th></th></tr></thead><tbody>${rows}</tbody>`;
+  tbl.innerHTML = `<thead><tr><th>Bedrijf</th><th>Contactpersoon</th><th>Email</th><th>Telefoon</th><th>Status</th><th>Laatste contact</th><th>Volgende actie</th><th></th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 // ── CRM DETAIL VIEW ────────────────────────────
