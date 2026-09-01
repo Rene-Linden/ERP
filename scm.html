@@ -272,7 +272,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v65-crm-samentab</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v66-consultants</span>
     </div>
     <div class="topbar-right">
       <a href="start.html" title="Terug naar startscherm">🏠 Start</a>
@@ -295,6 +295,9 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M22 11l-3 3-1.5-1.5" style="stroke:currentColor"/></svg>
         <span style="flex:1">CRM</span>
       </a>
+      <button class="nav-item" onclick="showPage('consultants',this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>Consultants
+      </button>
       <button class="nav-item" onclick="showPage('templates',this)">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Offerte-templates
       </button>
@@ -394,6 +397,20 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         </div>
         <div id="projectenDetailView" style="display:none"></div>
       </div>
+
+      <!-- CONSULTANTS -->
+      <div class="page" id="page-consultants">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Consultants</div>
+            <div class="page-sub">Wie kan er uren schrijven voor SCM-projecten</div>
+          </div>
+          <button class="btn-primary" onclick="openConsultantModal()">+ Nieuwe consultant</button>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;margin-top:14px">
+          <div id="consultants-lijst"></div>
+        </div>
+      </div>
     </main>
   </div>
 </div>
@@ -466,6 +483,13 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div style="font-size:11px;color:var(--ink3);margin-top:4px">Als aangevinkt moet er bij elke urenpost een tekstregel worden ingevuld</div>
       </div>
       <div class="field" style="margin-top:14px">
+        <label>Consultants op dit project</label>
+        <div id="proj-consultants-lijst" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px;max-height:180px;overflow-y:auto">
+          <div style="color:var(--ink3);font-size:12px;text-align:center;padding:8px">Geen consultants beschikbaar</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px">Vink aan wie er uren op dit project mag schrijven</div>
+      </div>
+      <div class="field" style="margin-top:14px">
         <label>Status</label>
         <select id="proj-status">
           <option value="actief">Actief</option>
@@ -476,6 +500,28 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeProjectModal()">Annuleren</button>
       <button class="btn-primary" onclick="saveProject()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONSULTANT MODAL -->
+<div class="modal" id="consultantModal">
+  <div class="modal-body" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title" id="consultantModalTitle">Nieuwe consultant</div>
+      <button class="modal-close" onclick="closeConsultantModal()">&times;</button>
+    </div>
+    <div class="modal-content">
+      <input type="hidden" id="cons-id">
+      <div class="field">
+        <label>Naam *</label>
+        <input type="text" id="cons-naam" placeholder="Voor- en achternaam">
+      </div>
+      <div style="font-size:11px;color:var(--ink3);font-style:italic;margin-top:4px">Later kunnen we email, telefoon en tarief toevoegen.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeConsultantModal()">Annuleren</button>
+      <button class="btn-primary" onclick="saveConsultant()">Opslaan</button>
     </div>
   </div>
 </div>
@@ -644,7 +690,7 @@ function toast(msg, type='info'){
 window.toast=toast;
 
 // ── DATA ──────────────────────────────────────
-let klanten=[], templates=[], offertes=[], crmContacten=[], projecten=[];
+let klanten=[], templates=[], offertes=[], crmContacten=[], projecten=[], consultants=[];
 
 async function loadKlanten(){
   const snap=await getDocs(collection(db,'scm_klanten'));
@@ -673,6 +719,23 @@ async function loadProjecten(){
     console.warn('Projecten laden gefaald:',e);
     projecten = [];
   }
+}
+
+async function loadConsultants(){
+  try {
+    const snap = await getDocs(collection(db,'scm_consultants'));
+    consultants = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b) => (a.naam||'').localeCompare(b.naam||''));
+  } catch(e){
+    console.warn('Consultants laden gefaald:',e);
+    consultants = [];
+  }
+}
+
+// Helper: naam van consultant op basis van id
+function consultantNaam(id) {
+  const c = consultants.find(x => x.id === id);
+  return c ? c.naam : '(onbekend)';
 }
 
 // Genereer projectnummer: SCM-P-YYYYnnn (nnn per jaar oplopend)
@@ -831,17 +894,24 @@ window.openProjectDetail = function(id) {
           <div><strong style="color:var(--ink3);font-weight:500">Tarief:</strong> ${tariefInfo}</div>
           <div><strong style="color:var(--ink3);font-weight:500">Km:</strong> ${kmInfo}</div>
           <div><strong style="color:var(--ink3);font-weight:500">Verantwoording:</strong> ${verInfo}</div>
+          <div><strong style="color:var(--ink3);font-weight:500">Consultants:</strong> ${(Array.isArray(p.consultant_ids)&&p.consultant_ids.length) ? p.consultant_ids.map(id=>consultantNaam(id)).join(', ') : '<span style="color:var(--ink3);font-style:italic">geen gekoppeld</span>'}</div>
         </div>
       </div>
     </div>
 
     <div class="card" style="padding:18px;margin-top:14px">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Geschreven uren</div>
-      <div style="text-align:center;padding:30px;color:var(--ink3);font-size:13px">
-        Uren-invoer voor dit project volgt in de volgende sessie (urenstaat-uitbreiding).
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600">Geschreven uren</div>
+        <div id="uren-summary" style="font-size:12px;color:var(--ink3)"></div>
+      </div>
+      <div id="uren-overzicht">
+        <div style="text-align:center;padding:20px;color:var(--ink3);font-size:13px">Laden…</div>
       </div>
     </div>
   `;
+
+  // Laad en render de urenposten
+  renderProjectUrenOverzicht(p.id);
 }
 
 window.closeProjectDetail = function() {
@@ -861,6 +931,7 @@ window.openProjectModal = async function(id) {
 
   // Vul klanten-dropdown vanuit CRM
   await loadCRMContacten();
+  await loadConsultants();
   const klantSel = document.getElementById('proj-klant');
   const sorted = crmContacten.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
   klantSel.innerHTML = '<option value="">— Kies klant uit CRM —</option>' +
@@ -887,6 +958,7 @@ window.openProjectModal = async function(id) {
     document.getElementById('proj-km-tarief').value = p.km_tarief != null ? p.km_tarief : 0.21;
     document.getElementById('proj-verantwoording').checked = !!p.verantwoording_verplicht;
     document.getElementById('proj-status').value = p.status || 'actief';
+    renderProjectConsultantsPicker(Array.isArray(p.consultant_ids) ? p.consultant_ids : []);
   } else {
     document.getElementById('proj-nummer').value = '';
     document.getElementById('proj-naam').value = '';
@@ -895,6 +967,7 @@ window.openProjectModal = async function(id) {
     document.getElementById('proj-start').value = '';
     document.getElementById('proj-eind').value = '';
     document.getElementById('proj-tarieftype').value = 'uur';
+    renderProjectConsultantsPicker([]);
     onProjectTarieftypeChange();
     document.getElementById('proj-tarief').value = '';
     document.getElementById('proj-totaal').value = '';
@@ -963,6 +1036,9 @@ window.saveProject = async function() {
   const verantwoording = document.getElementById('proj-verantwoording').checked;
   const status = document.getElementById('proj-status').value;
 
+  // Lees aangevinkte consultants
+  const consultantIds = Array.from(document.querySelectorAll('.proj-cons-cb:checked')).map(cb => cb.value);
+
   if (!naam) { toast('Projectnaam is verplicht','bad'); return; }
   if (!klantCrmId) { toast('Kies een klant','bad'); return; }
 
@@ -992,6 +1068,7 @@ window.saveProject = async function() {
       km_on,
       km_tarief: km_on ? km_tarief : 0,
       verantwoording_verplicht: verantwoording,
+      consultant_ids: consultantIds,
       status,
       bijgewerkt: new Date().toISOString()
     });
@@ -1032,7 +1109,264 @@ window.deleteProject = async function(id) {
   }
 }
 
-// Maak nieuw project met prefill vanuit offerte
+// ═════════════════════════════════════════════════
+// CONSULTANTS CRUD
+// ═════════════════════════════════════════════════
+window.renderConsultants = function() {
+  const el = document.getElementById('consultants-lijst');
+  if (!el) return;
+  if (!consultants.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink3)"><div style="font-size:32px;margin-bottom:8px">👤</div><div style="font-size:14px">Nog geen consultants.</div><div style="font-size:12px;margin-top:6px">Klik <strong>+ Nieuwe consultant</strong> om te beginnen.</div></div>';
+    return;
+  }
+  const header = `<div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:10px 16px;background:var(--cream);border-bottom:2px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:700">
+    <span>Naam</span><span>Projecten</span><span></span>
+  </div>`;
+  const rows = consultants.map(c => {
+    const projectenAantal = projecten.filter(p => Array.isArray(p.consultant_ids) && p.consultant_ids.includes(c.id)).length;
+    return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)">
+      <div style="font-weight:600;color:var(--ink);font-size:14px">${c.naam||'(geen naam)'}</div>
+      <div style="font-size:12px;color:var(--ink3);white-space:nowrap">${projectenAantal} project${projectenAantal!==1?'en':''}</div>
+      <div style="display:flex;gap:6px">
+        <button onclick="openConsultantModal('${c.id}')" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:5px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Wijzigen</button>
+        <button onclick="deleteConsultant('${c.id}')" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rxs);padding:5px 10px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML = header + rows;
+}
+
+window.openConsultantModal = function(id) {
+  const isEdit = !!id;
+  const c = isEdit ? consultants.find(x => x.id === id) : null;
+  document.getElementById('consultantModalTitle').textContent = isEdit ? 'Consultant wijzigen' : 'Nieuwe consultant';
+  document.getElementById('cons-id').value = id || '';
+  document.getElementById('cons-naam').value = c ? (c.naam||'') : '';
+  document.getElementById('consultantModal').classList.add('show');
+  setTimeout(() => document.getElementById('cons-naam').focus(), 50);
+}
+
+window.closeConsultantModal = function() {
+  document.getElementById('consultantModal').classList.remove('show');
+}
+
+window.saveConsultant = async function() {
+  const id = document.getElementById('cons-id').value;
+  const naam = document.getElementById('cons-naam').value.trim();
+  if (!naam) { toast('Naam is verplicht','bad'); return; }
+  try {
+    if (id) {
+      await setDoc(doc(db,'scm_consultants', id), {naam, bijgewerkt: new Date().toISOString()}, {merge:true});
+      toast('Consultant bijgewerkt ✓','ok');
+    } else {
+      await addDoc(collection(db,'scm_consultants'), {naam, aangemaakt: new Date().toISOString()});
+      toast('Consultant toegevoegd ✓','ok');
+    }
+    closeConsultantModal();
+    await loadConsultants();
+    renderConsultants();
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
+}
+
+window.deleteConsultant = async function(id) {
+  const c = consultants.find(x => x.id === id);
+  if (!c) return;
+  if (!confirm(`Consultant "${c.naam}" verwijderen?\n\nZe worden ook van alle projecten losgekoppeld.`)) return;
+  try {
+    await deleteDoc(doc(db,'scm_consultants', id));
+    // Ook van alle projecten losmaken
+    for (const p of projecten) {
+      if (Array.isArray(p.consultant_ids) && p.consultant_ids.includes(id)) {
+        const nieuw = p.consultant_ids.filter(x => x !== id);
+        await setDoc(doc(db,'scm_projecten', p.id), {consultant_ids: nieuw}, {merge:true});
+      }
+    }
+    toast('Verwijderd','info');
+    await loadConsultants();
+    await loadProjecten();
+    renderConsultants();
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
+}
+
+// Vul de consultants-checkboxen in de project modal
+function renderProjectConsultantsPicker(geselecteerdIds) {
+  const el = document.getElementById('proj-consultants-lijst');
+  if (!el) return;
+  geselecteerdIds = geselecteerdIds || [];
+  if (!consultants.length) {
+    el.innerHTML = '<div style="color:var(--ink3);font-size:12px;text-align:center;padding:8px">Geen consultants beschikbaar. Voeg ze eerst toe onder <strong>Consultants</strong>.</div>';
+    return;
+  }
+  el.innerHTML = consultants.map(c => `
+    <label style="display:flex;align-items:center;gap:10px;padding:6px 4px;cursor:pointer;font-size:13px">
+      <input type="checkbox" class="proj-cons-cb" value="${c.id}" ${geselecteerdIds.includes(c.id)?'checked':''} style="width:16px;height:16px">
+      <span>${c.naam||'(geen naam)'}</span>
+    </label>
+  `).join('');
+}
+
+
+// ═════════════════════════════════════════════════
+// UREN-OVERZICHT PER PROJECT
+// ═════════════════════════════════════════════════
+
+// ISO-weeknummer
+function isoWeek(d) {
+  const target = new Date(d.valueOf());
+  const dayNr = (d.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = new Date(target.getFullYear(), 0, 4);
+  const diff = target - firstThursday;
+  return 1 + Math.round(((diff / 86400000) - 3 + ((firstThursday.getDay() + 6) % 7)) / 7);
+}
+
+async function renderProjectUrenOverzicht(projectId) {
+  const el = document.getElementById('uren-overzicht');
+  const summary = document.getElementById('uren-summary');
+  if (!el) return;
+  const p = projecten.find(x => x.id === projectId);
+  if (!p) return;
+
+  try {
+    const snap = await getDocs(collection(db,'scm_urenstaten'));
+    const posts = snap.docs
+      .map(d => ({id:d.id,...d.data()}))
+      .filter(x => x.project_id === projectId)
+      .sort((a,b) => (b.datum||'').localeCompare(a.datum||''));
+
+    if (!posts.length) {
+      el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink3);font-size:13px">Nog geen uren geschreven voor dit project.</div>';
+      if (summary) summary.textContent = '';
+      return;
+    }
+
+    // Groepeer per week
+    const perWeek = {};
+    let totaalUren = 0;
+    let totaalGefactureerd = 0;
+    posts.forEach(post => {
+      const d = new Date(post.datum);
+      const wk = isoWeek(d);
+      const jaar = d.getFullYear();
+      const key = `${jaar}-W${String(wk).padStart(2,'0')}`;
+      if (!perWeek[key]) perWeek[key] = {key, weekNr:wk, jaar, posts:[], totaal:0, totaalKm:0, alleGefactureerd:true};
+      perWeek[key].posts.push(post);
+      perWeek[key].totaal += Number(post.aantal||0);
+      perWeek[key].totaalKm += Number(post.km||0);
+      if (!post.gefactureerd) perWeek[key].alleGefactureerd = false;
+      totaalUren += Number(post.aantal||0);
+      if (post.gefactureerd) totaalGefactureerd += Number(post.aantal||0);
+    });
+    const weken = Object.values(perWeek).sort((a,b) => b.key.localeCompare(a.key));
+
+    const isDag = p.tarieftype === 'dag';
+    const eenheid = isDag ? 'd' : 'u';
+
+    // Summary bovenaan
+    if (summary) {
+      const openUren = totaalUren - totaalGefactureerd;
+      summary.innerHTML = `Totaal: <strong style="color:var(--ink)">${totaalUren} ${eenheid}</strong> · Gefactureerd: <strong style="color:var(--grn)">${totaalGefactureerd} ${eenheid}</strong> · Open: <strong style="color:var(--amb)">${openUren} ${eenheid}</strong>`;
+    }
+
+    // Render weken
+    const wekenHTML = weken.map(w => {
+      const bedragTot = p.tarieftype === 'uur'
+        ? (w.totaal * (p.tarief||0))
+        : p.tarieftype === 'dag'
+        ? (w.totaal * (p.tarief||0))
+        : 0;
+      const kmBedrag = w.totaalKm * (p.km_tarief||0);
+      const totBedrag = bedragTot + kmBedrag;
+
+      const postsHTML = w.posts.map(post => {
+        const cpNaam = post.consultant_id ? consultantNaam(post.consultant_id) : (post.consultant_naam || 'Onbekend');
+        const gefactureerd = !!post.gefactureerd;
+        const gefactureerdBadge = gefactureerd
+          ? `<span style="background:var(--grn-l);color:var(--grn);font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;white-space:nowrap">✓ Gefactureerd</span>`
+          : `<span style="background:var(--amb-l);color:var(--amb);font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;white-space:nowrap">Open</span>`;
+        return `<div style="display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:flex-start;padding:10px 12px;border-top:1px solid var(--line);font-size:13px">
+          <div style="font-size:11px;color:var(--ink3);white-space:nowrap;padding-top:2px">${formatDatum(post.datum)}</div>
+          <div style="min-width:0">
+            <div style="font-weight:600;color:var(--ink);font-size:13px">${cpNaam}</div>
+            ${post.verantwoording ? `<div style="font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.4;white-space:pre-wrap">${(post.verantwoording||'').replace(/</g,'&lt;')}</div>` : ''}
+            ${post.km ? `<div style="font-size:11px;color:var(--ink3);margin-top:2px">🚗 ${post.km} km</div>` : ''}
+          </div>
+          <div style="text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap">${post.aantal} ${eenheid}</div>
+          <div>${gefactureerdBadge}</div>
+        </div>`;
+      }).join('');
+
+      const weekActieBtn = w.alleGefactureerd
+        ? `<button onclick="markeerWeekGefactureerd('${projectId}','${w.key}',false)" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rxs);padding:5px 10px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">↺ Markeer open</button>`
+        : `<button onclick="markeerWeekGefactureerd('${projectId}','${w.key}',true)" style="background:var(--grn);color:#fff;border:none;border-radius:var(--rxs);padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✓ Markeer gefactureerd</button>`;
+
+      return `<div style="background:var(--white);border:1px solid var(--line);border-radius:var(--rsm);margin-bottom:10px;overflow:hidden">
+        <div style="padding:10px 14px;background:var(--cream);display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);flex-wrap:wrap">
+          <div style="font-weight:600;font-size:13px;color:var(--ink)">Week ${w.weekNr} · ${w.jaar}</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="text-align:right">
+              <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--ink)">${w.totaal} ${eenheid}${w.totaalKm?` · ${w.totaalKm}km`:''}</div>
+              ${totBedrag ? `<div style="font-size:11px;color:var(--ink3)">€ ${totBedrag.toFixed(2)}</div>` : ''}
+            </div>
+            ${weekActieBtn}
+          </div>
+        </div>
+        ${postsHTML}
+      </div>`;
+    }).join('');
+
+    el.innerHTML = wekenHTML;
+
+  } catch(e) {
+    console.error('Uren overzicht laden mislukt:',e);
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">Fout bij laden: ${e.message}</div>`;
+  }
+}
+
+// Markeer alle urenposten van een week (voor een project) als gefactureerd of open
+window.markeerWeekGefactureerd = async function(projectId, weekKey, gefactureerd) {
+  const [jaarStr, weekStr] = weekKey.split('-W');
+  const jaar = parseInt(jaarStr);
+  const wkNr = parseInt(weekStr);
+  const label = gefactureerd ? 'als gefactureerd' : 'als open';
+  if (!confirm(`Week ${wkNr} (${jaar}) markeren ${label}?`)) return;
+
+  try {
+    const snap = await getDocs(collection(db,'scm_urenstaten'));
+    const posts = snap.docs
+      .map(d => ({id:d.id,...d.data()}))
+      .filter(x => x.project_id === projectId);
+
+    // Filter alleen posts in deze week
+    const inWeek = posts.filter(post => {
+      const d = new Date(post.datum);
+      return d.getFullYear() === jaar && isoWeek(d) === wkNr;
+    });
+
+    if (!inWeek.length) { toast('Geen uren in deze week gevonden','bad'); return; }
+
+    // Update elk document
+    for (const post of inWeek) {
+      const payload = {
+        gefactureerd: !!gefactureerd,
+        bijgewerkt: new Date().toISOString()
+      };
+      if (gefactureerd) payload.gefactureerd_datum = new Date().toISOString();
+      else payload.gefactureerd_datum = null;
+      await setDoc(doc(db,'scm_urenstaten', post.id), payload, {merge:true});
+    }
+    toast(`Week ${wkNr}: ${inWeek.length} post(en) bijgewerkt ✓`, 'ok');
+    renderProjectUrenOverzicht(projectId);
+  } catch(e) {
+    console.error('markeerWeekGefactureerd error:', e);
+    toast('Fout: '+e.message,'bad');
+  }
+}
+
 window.maakProjectVanOfferte = async function(offerteId) {
   const off = offertes.find(o => o.id === offerteId);
   if (!off) { toast('Offerte niet gevonden','bad'); return; }
@@ -1115,6 +1449,7 @@ async function init(){
     await loadOffertes();
     await loadCRMContacten();
     await loadProjecten();
+    await loadConsultants();
     badge.className='sync-badge';
     badgeText.textContent='Live';
     renderDashboard();
@@ -1155,6 +1490,7 @@ window.showPage=function(name,btn){
   }
   else if(name==='templates')renderTemplates();
   else if(name==='offertes')renderOffertes();
+  else if(name==='consultants')renderConsultants();
 };
 
 // ── DASHBOARD ─────────────────────────────────

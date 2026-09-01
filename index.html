@@ -168,7 +168,7 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:.4;cursor:pointer}
             <div class="sync-dot"></div>
             <span id="syncText">Verbinden…</span>
           </div>
-          <span style="font-size:9px;color:#c8c8c2;font-family:monospace;margin-left:4px" title="Versie">v63-uren-scm</span>
+          <span style="font-size:9px;color:#c8c8c2;font-family:monospace;margin-left:4px" title="Versie">v66-consultants</span>
         </div>
       </div>
     </div>
@@ -318,6 +318,7 @@ function onBedrijfActief() {
 // SCM-URENMODUS — uren schrijven per project
 // ═════════════════════════════════════════════════
 let scmProjecten = [];
+let scmConsultants = [];
 let scmUrenPosten = []; // alle urenposten uit scm_urenstaten collectie
 let scmActiefProject = null; // id van geselecteerd project
 
@@ -330,6 +331,17 @@ async function loadScmProjecten() {
   } catch(e) {
     console.error('scm_projecten laden mislukt:', e);
     scmProjecten = [];
+  }
+}
+
+async function loadScmConsultants() {
+  try {
+    const snap = await getDocs(collection(db,'scm_consultants'));
+    scmConsultants = snap.docs.map(d => ({id:d.id, ...d.data()}))
+      .sort((a,b) => (a.naam||'').localeCompare(b.naam||''));
+  } catch(e) {
+    console.error('scm_consultants laden mislukt:', e);
+    scmConsultants = [];
   }
 }
 
@@ -365,6 +377,7 @@ async function toonSCMModus() {
 
   syncStatus('syncing','Projecten laden…');
   await loadScmProjecten();
+  await loadScmConsultants();
   syncStatus('synced','Gesynchroniseerd');
 
   renderSCMProjectKeuze();
@@ -465,13 +478,14 @@ function renderSCMInvoer(project) {
         const postsHTML = w.posts.map(p => `
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 12px;border-top:1px solid #f0efea;font-size:13px">
             <div style="min-width:0;flex:1">
-              <div style="font-weight:600;color:#1a1a18">${formatDatumKort(p.datum)}</div>
+              <div style="font-weight:600;color:#1a1a18">${formatDatumKort(p.datum)}${p.consultant_naam?` · <span style="font-weight:400;color:#8a8a84;font-size:11px">${escapeHTML(p.consultant_naam)}</span>`:''}</div>
               ${p.verantwoording ? `<div style="font-size:12px;color:#4a4a46;margin-top:2px;line-height:1.4;white-space:pre-wrap">${escapeHTML(p.verantwoording)}</div>` : ''}
               ${p.km ? `<div style="font-size:11px;color:#8a8a84;margin-top:2px">🚗 ${p.km} km</div>` : ''}
+              ${p.gefactureerd ? `<div style="display:inline-block;margin-top:4px;background:#eaf5ee;color:#1e7a4a;font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px">✓ Gefactureerd</div>` : ''}
             </div>
             <div style="text-align:right;flex-shrink:0">
               <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:#1a1a18">${p.aantal} ${isDag?'d':'u'}</div>
-              <button onclick="scmVerwijderPost('${p.id}')" style="background:none;border:none;color:#c0392b;font-size:11px;cursor:pointer;padding:2px 0;margin-top:2px">verwijderen</button>
+              ${p.gefactureerd ? '<div style="font-size:11px;color:#c8c8c2;margin-top:2px">vergrendeld</div>' : `<button onclick="scmVerwijderPost('${p.id}')" style="background:none;border:none;color:#c0392b;font-size:11px;cursor:pointer;padding:2px 0;margin-top:2px">verwijderen</button>`}
             </div>
           </div>`).join('');
 
@@ -498,6 +512,21 @@ function renderSCMInvoer(project) {
 
     <div style="background:#fff;border:1px solid #e8e7e2;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)">
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#8a8a84;font-weight:600;margin-bottom:10px">Nieuwe post</div>
+      ${(function(){
+        // Filter consultants op degene die aan dit project zijn gekoppeld
+        const gekoppeld = Array.isArray(project.consultant_ids) ? project.consultant_ids : [];
+        const beschikbaar = scmConsultants.filter(c => gekoppeld.includes(c.id));
+        if (beschikbaar.length === 0) {
+          return `<div style="margin-bottom:10px;padding:8px 10px;background:#fdf3e8;border:1px solid #f0d9a8;border-radius:6px;font-size:12px;color:#b85c00">⚠️ Geen consultants aan dit project gekoppeld. Voeg ze toe via SCM → Projecten → Wijzigen.</div>`;
+        }
+        return `<div style="margin-bottom:10px">
+          <label style="display:block;font-size:11px;color:#8a8a84;margin-bottom:4px">Consultant *</label>
+          <select id="scmConsultant" style="width:100%;background:#f8f7f4;border:1px solid #d4d3cc;border-radius:6px;padding:9px 10px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;appearance:none">
+            ${beschikbaar.length===1 ? '' : '<option value="">— Kies —</option>'}
+            ${beschikbaar.map(c=>`<option value="${c.id}"${beschikbaar.length===1?' selected':''}>${c.naam||'(geen naam)'}</option>`).join('')}
+          </select>
+        </div>`;
+      })()}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
         <div>
           <label style="display:block;font-size:11px;color:#8a8a84;margin-bottom:4px">Datum</label>
@@ -534,9 +563,13 @@ window.scmOpslaanPost = async function() {
   const aantal = parseFloat(document.getElementById('scmAantal').value);
   const km = document.getElementById('scmKm') ? (parseFloat(document.getElementById('scmKm').value) || 0) : 0;
   const verantwoording = document.getElementById('scmVerantwoording').value.trim();
+  const consEl = document.getElementById('scmConsultant');
+  const consultantId = consEl ? consEl.value : '';
+  const consultant = consultantId ? scmConsultants.find(c => c.id === consultantId) : null;
 
   if (!datum) { showToast('Kies een datum', 'bad'); return; }
   if (!aantal || aantal <= 0) { showToast('Vul een geldig aantal in', 'bad'); return; }
+  if (!consultantId && consEl) { showToast('Kies een consultant', 'bad'); return; }
   if (project.verantwoording_verplicht && !verantwoording) {
     showToast('Verantwoording is verplicht voor dit project', 'bad');
     return;
@@ -549,6 +582,8 @@ window.scmOpslaanPost = async function() {
       project_nummer: project.nummer || '',
       project_naam: project.naam || '',
       klant_naam: project.klant_naam || '',
+      consultant_id: consultantId || null,
+      consultant_naam: consultant ? consultant.naam : '',
       datum,
       aantal,
       eenheid: project.tarieftype === 'dag' ? 'dag' : 'uur',
@@ -556,6 +591,7 @@ window.scmOpslaanPost = async function() {
       km,
       km_tarief_snapshot: project.km_on ? (project.km_tarief||0.21) : 0,
       verantwoording,
+      gefactureerd: false,
       aangemaakt: new Date().toISOString()
     };
     await addDoc(collection(db,'scm_urenstaten'), data);
@@ -571,6 +607,12 @@ window.scmOpslaanPost = async function() {
 }
 
 window.scmVerwijderPost = async function(postId) {
+  // Zoek de post om te checken of hij gefactureerd is
+  const post = scmUrenPosten.find(p => p.id === postId);
+  if (post && post.gefactureerd) {
+    showToast('Gefactureerde posten kunnen niet verwijderd worden', 'bad');
+    return;
+  }
   if (!confirm('Deze urenpost verwijderen?')) return;
   const project = scmProjecten.find(p => p.id === scmActiefProject);
   syncStatus('syncing','Verwijderen…');
