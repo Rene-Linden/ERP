@@ -272,7 +272,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v66-consultants</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v67-snel-wijzig</span>
     </div>
     <div class="topbar-right">
       <a href="start.html" title="Terug naar startscherm">🏠 Start</a>
@@ -522,6 +522,37 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeConsultantModal()">Annuleren</button>
       <button class="btn-primary" onclick="saveConsultant()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- SNEL-WIJZIGEN MODAL (project naam + consultants) -->
+<div class="modal" id="snelWijzigModal">
+  <div class="modal-body" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title">Snel wijzigen</div>
+      <button class="modal-close" onclick="closeSnelWijzigen()">&times;</button>
+    </div>
+    <div class="modal-content">
+      <input type="hidden" id="sw-project-id">
+      <div class="field">
+        <label>Projectnaam *</label>
+        <input type="text" id="sw-naam" placeholder="Naam van het project">
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>Consultants op dit project</label>
+        <div id="sw-consultants-lijst" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:10px;max-height:200px;overflow-y:auto">
+          <div style="color:var(--ink3);font-size:12px;text-align:center;padding:8px">Geen consultants beschikbaar</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px">Vink aan wie er uren op dit project mag schrijven</div>
+      </div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:14px;padding:10px;background:var(--cream);border-radius:var(--rxs);border-left:3px solid var(--acc)">
+        💡 Voor volledige aanpassingen (tarief, adres, contactpersoon, etc.) gebruik <strong>✏️ Wijzigen</strong> rechtsboven.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeSnelWijzigen()">Annuleren</button>
+      <button class="btn-primary" onclick="saveSnelWijzigen()">Opslaan</button>
     </div>
   </div>
 </div>
@@ -888,13 +919,16 @@ window.openProjectDetail = function(id) {
           <div><strong style="color:var(--ink3);font-weight:500">Status:</strong> ${(p.status||'actief').charAt(0).toUpperCase()+(p.status||'actief').slice(1)}</div>
         </div>
       </div>
-      <div class="card" style="padding:18px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Financieel & instellingen</div>
+      <div class="card" style="padding:18px" id="finKaart">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600">Financieel & instellingen</div>
+          <button onclick="openSnelWijzigen('${p.id}')" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif" title="Snel naam en consultants wijzigen">✏️ Snel wijzigen</button>
+        </div>
         <div style="display:grid;gap:10px;font-size:13px">
           <div><strong style="color:var(--ink3);font-weight:500">Tarief:</strong> ${tariefInfo}</div>
           <div><strong style="color:var(--ink3);font-weight:500">Km:</strong> ${kmInfo}</div>
           <div><strong style="color:var(--ink3);font-weight:500">Verantwoording:</strong> ${verInfo}</div>
-          <div><strong style="color:var(--ink3);font-weight:500">Consultants:</strong> ${(Array.isArray(p.consultant_ids)&&p.consultant_ids.length) ? p.consultant_ids.map(id=>consultantNaam(id)).join(', ') : '<span style="color:var(--ink3);font-style:italic">geen gekoppeld</span>'}</div>
+          <div><strong style="color:var(--ink3);font-weight:500">Consultants:</strong> ${(Array.isArray(p.consultant_ids)&&p.consultant_ids.length) ? p.consultant_ids.map(id=>consultantNaam(id)).join(', ') : '<span style="color:var(--red);font-style:italic;font-weight:600">geen gekoppeld \u2014 klik ✏️ om toe te voegen</span>'}</div>
         </div>
       </div>
     </div>
@@ -1209,6 +1243,65 @@ function renderProjectConsultantsPicker(geselecteerdIds) {
   `).join('');
 }
 
+
+// ═════════════════════════════════════════════════
+// SNEL WIJZIGEN: projectnaam + consultants
+// ═════════════════════════════════════════════════
+window.openSnelWijzigen = async function(projectId) {
+  // Zorg dat consultants geladen zijn
+  await loadConsultants();
+  const p = projecten.find(x => x.id === projectId);
+  if (!p) { toast('Project niet gevonden','bad'); return; }
+
+  document.getElementById('sw-project-id').value = projectId;
+  document.getElementById('sw-naam').value = p.naam || '';
+
+  // Vul checkbox-lijst
+  const el = document.getElementById('sw-consultants-lijst');
+  const gekoppeld = Array.isArray(p.consultant_ids) ? p.consultant_ids : [];
+  if (!consultants.length) {
+    el.innerHTML = '<div style="color:var(--ink3);font-size:12px;text-align:center;padding:8px">Geen consultants beschikbaar. Voeg ze eerst toe onder <strong>Consultants</strong>.</div>';
+  } else {
+    el.innerHTML = consultants.map(c => `
+      <label style="display:flex;align-items:center;gap:10px;padding:6px 4px;cursor:pointer;font-size:13px">
+        <input type="checkbox" class="sw-cons-cb" value="${c.id}" ${gekoppeld.includes(c.id)?'checked':''} style="width:16px;height:16px">
+        <span>${c.naam||'(geen naam)'}</span>
+      </label>
+    `).join('');
+  }
+
+  document.getElementById('snelWijzigModal').classList.add('show');
+  setTimeout(() => document.getElementById('sw-naam').focus(), 50);
+}
+
+window.closeSnelWijzigen = function() {
+  document.getElementById('snelWijzigModal').classList.remove('show');
+}
+
+window.saveSnelWijzigen = async function() {
+  const projectId = document.getElementById('sw-project-id').value;
+  const naam = document.getElementById('sw-naam').value.trim();
+  const consultantIds = Array.from(document.querySelectorAll('.sw-cons-cb:checked')).map(cb => cb.value);
+
+  if (!naam) { toast('Projectnaam is verplicht','bad'); return; }
+
+  try {
+    await setDoc(doc(db,'scm_projecten', projectId), {
+      naam,
+      consultant_ids: consultantIds,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    toast('Project bijgewerkt ✓','ok');
+    closeSnelWijzigen();
+    await loadProjecten();
+    // Detail-pagina opnieuw tonen met vernieuwde data
+    if (projectCurrentDetailId === projectId) {
+      openProjectDetail(projectId);
+    }
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
+}
 
 // ═════════════════════════════════════════════════
 // UREN-OVERZICHT PER PROJECT
