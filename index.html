@@ -250,6 +250,18 @@ const BEDRIJF_KEY = 'dagstaat_bedrijf_v1';
 
 // Toon of verberg bedrijfskeuze-scherm bij bootstrap
 function bootBedrijfsKeuze() {
+  // Check URL-parameter eerst (bijv. vanuit hub.html: index.html?bedrijf=SCM)
+  const urlParams = new URLSearchParams(location.search);
+  const urlBedrijf = urlParams.get('bedrijf');
+  if (urlBedrijf === 'RvdL' || urlBedrijf === 'SCM') {
+    huidigBedrijf = urlBedrijf;
+    sessionStorage.setItem(BEDRIJF_KEY, urlBedrijf);
+    document.getElementById('bedrijfsKeuze').style.display = 'none';
+    document.getElementById('mainApp').style.display = '';
+    onBedrijfActief();
+    return;
+  }
+  // Anders: uit sessionStorage
   const opgeslagen = sessionStorage.getItem(BEDRIJF_KEY);
   if (opgeslagen === 'RvdL' || opgeslagen === 'SCM') {
     huidigBedrijf = opgeslagen;
@@ -273,7 +285,13 @@ window.kiesBedrijf = function(bedrijf) {
 window.wisselBedrijf = function() {
   sessionStorage.removeItem(BEDRIJF_KEY);
   huidigBedrijf = null;
-  location.reload();
+  // Terug naar hub als die er is; anders reload
+  if (document.referrer && document.referrer.includes('hub.html')) {
+    location.href = 'hub.html';
+  } else {
+    // Reload zonder ?bedrijf parameter
+    location.href = location.pathname;
+  }
 }
 
 // Wordt aangeroepen zodra bedrijf actief is — pas UI aan

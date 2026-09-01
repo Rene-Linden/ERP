@@ -89,12 +89,14 @@ header{background:var(--white);border-bottom:1px solid var(--line);padding:16px 
 }
 .app-card:active{transform:scale(.99);background:var(--cream)}
 .app-card.accent-blue{border-left:4px solid var(--acc)}
+.app-card.accent-scm{border-left:4px solid #003366}
 .app-card.accent-green{border-left:4px solid var(--grn)}
 .app-card.accent-amber{border-left:4px solid var(--amb)}
 
 .card-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .card-icon svg{width:22px;height:22px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .card-icon.blue{background:var(--acc)}
+.card-icon.scm{background:#003366}
 .card-icon.green{background:var(--grn)}
 .card-icon.amber{background:var(--amb)}
 
@@ -104,6 +106,7 @@ header{background:var(--white);border-bottom:1px solid var(--line);padding:16px 
 
 .card-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
 .card-badge.blue{background:var(--acc-l);color:var(--acc)}
+.card-badge.scm{background:#e6ecf2;color:#003366}
 .card-badge.green{background:var(--grn-l);color:var(--grn)}
 .card-badge.amber{background:var(--amb-l);color:var(--amb)}
 
@@ -189,15 +192,26 @@ header{background:var(--white);border-bottom:1px solid var(--line);padding:16px 
 
     <!-- DAGELIJKS -->
     <p class="sec">Dagelijks gebruik</p>
-    <a href="index.html" class="app-card accent-blue">
+    <a href="index.html?bedrijf=RvdL" class="app-card accent-blue">
       <div class="card-icon blue">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
       </div>
       <div class="card-body">
-        <div class="card-title">Dagstaat</div>
+        <div class="card-title">Dagstaat RvdL</div>
         <div class="card-desc">Uren per dag registreren per opdrachtgever</div>
       </div>
       <div class="card-badge blue" id="badge-today">–</div>
+      <div class="card-arrow">›</div>
+    </a>
+
+    <a href="index.html?bedrijf=SCM" class="app-card accent-scm">
+      <div class="card-icon scm">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Uren SCM</div>
+        <div class="card-desc">Uren per project registreren</div>
+      </div>
       <div class="card-arrow">›</div>
     </a>
 
