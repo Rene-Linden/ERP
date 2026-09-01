@@ -272,7 +272,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v67-snel-wijzig</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v68-post-wijzig</span>
     </div>
     <div class="topbar-right">
       <a href="start.html" title="Terug naar startscherm">🏠 Start</a>
@@ -500,6 +500,48 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeProjectModal()">Annuleren</button>
       <button class="btn-primary" onclick="saveProject()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- URENPOST WIJZIG MODAL -->
+<div class="modal" id="urenpostModal">
+  <div class="modal-body" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Urenpost wijzigen</div>
+      <button class="modal-close" onclick="closeUrenpostWijzigen()">&times;</button>
+    </div>
+    <div class="modal-content">
+      <input type="hidden" id="up-post-id">
+      <input type="hidden" id="up-project-id">
+      <div class="field">
+        <label>Consultant *</label>
+        <select id="up-consultant">
+          <option value="">— Kies consultant —</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+        <div class="field">
+          <label>Datum *</label>
+          <input type="date" id="up-datum">
+        </div>
+        <div class="field">
+          <label id="up-aantal-label">Uren *</label>
+          <input type="number" id="up-aantal" step="0.25" min="0">
+        </div>
+      </div>
+      <div class="field" id="up-km-wrap" style="margin-top:14px;display:none">
+        <label>Kilometers</label>
+        <input type="number" id="up-km" step="1" min="0" placeholder="0">
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label id="up-ver-label">Verantwoording</label>
+        <textarea id="up-verantwoording" rows="3" placeholder="Wat is er gedaan?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeUrenpostWijzigen()">Annuleren</button>
+      <button class="btn-primary" onclick="saveUrenpostWijzigen()">Opslaan</button>
     </div>
   </div>
 </div>
@@ -1376,20 +1418,33 @@ async function renderProjectUrenOverzicht(projectId) {
       const totBedrag = bedragTot + kmBedrag;
 
       const postsHTML = w.posts.map(post => {
-        const cpNaam = post.consultant_id ? consultantNaam(post.consultant_id) : (post.consultant_naam || 'Onbekend');
+        const heeftConsultant = !!post.consultant_id || !!post.consultant_naam;
+        const cpNaam = post.consultant_id ? consultantNaam(post.consultant_id) : (post.consultant_naam || '');
+        const cpDisplay = heeftConsultant
+          ? cpNaam
+          : `<span style="color:var(--red);font-style:italic">⚠️ Geen consultant \u2014 klik ✏️</span>`;
         const gefactureerd = !!post.gefactureerd;
         const gefactureerdBadge = gefactureerd
           ? `<span style="background:var(--grn-l);color:var(--grn);font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;white-space:nowrap">✓ Gefactureerd</span>`
           : `<span style="background:var(--amb-l);color:var(--amb);font-size:10px;font-weight:600;padding:2px 8px;border-radius:8px;white-space:nowrap">Open</span>`;
+        const actieKnoppen = gefactureerd
+          ? '<span style="font-size:10px;color:var(--ink3);font-style:italic">vergrendeld</span>'
+          : `<div style="display:flex;gap:4px;justify-content:flex-end">
+              <button onclick="openUrenpostWijzigen('${post.id}','${projectId}')" title="Wijzig deze urenpost" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rxs);padding:3px 8px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">✏️</button>
+              <button onclick="verwijderUrenpost('${post.id}','${projectId}')" title="Verwijder deze urenpost" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rxs);padding:3px 8px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">✕</button>
+            </div>`;
         return `<div style="display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:flex-start;padding:10px 12px;border-top:1px solid var(--line);font-size:13px">
           <div style="font-size:11px;color:var(--ink3);white-space:nowrap;padding-top:2px">${formatDatum(post.datum)}</div>
           <div style="min-width:0">
-            <div style="font-weight:600;color:var(--ink);font-size:13px">${cpNaam}</div>
+            <div style="font-weight:600;color:var(--ink);font-size:13px">${cpDisplay}</div>
             ${post.verantwoording ? `<div style="font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.4;white-space:pre-wrap">${(post.verantwoording||'').replace(/</g,'&lt;')}</div>` : ''}
             ${post.km ? `<div style="font-size:11px;color:var(--ink3);margin-top:2px">🚗 ${post.km} km</div>` : ''}
           </div>
-          <div style="text-align:right;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap">${post.aantal} ${eenheid}</div>
-          <div>${gefactureerdBadge}</div>
+          <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;white-space:nowrap">
+            <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--ink)">${post.aantal} ${eenheid}</div>
+            ${gefactureerdBadge}
+          </div>
+          <div style="min-width:60px">${actieKnoppen}</div>
         </div>`;
       }).join('');
 
@@ -1421,6 +1476,129 @@ async function renderProjectUrenOverzicht(projectId) {
 }
 
 // Markeer alle urenposten van een week (voor een project) als gefactureerd of open
+// Wijzig een individuele urenpost (alleen als niet gefactureerd)
+window.openUrenpostWijzigen = async function(postId, projectId) {
+  const project = projecten.find(p => p.id === projectId);
+  if (!project) { toast('Project niet gevonden','bad'); return; }
+
+  try {
+    // Haal de urenpost op uit Firestore (verse data)
+    const snap = await getDoc(doc(db,'scm_urenstaten', postId));
+    if (!snap.exists()) { toast('Urenpost niet gevonden','bad'); return; }
+    const post = {id:postId, ...snap.data()};
+
+    if (post.gefactureerd) {
+      toast('Deze post is gefactureerd en kan niet meer worden gewijzigd','bad');
+      return;
+    }
+
+    // Zorg dat consultants geladen zijn
+    await loadConsultants();
+
+    // Vul modal
+    document.getElementById('up-post-id').value = postId;
+    document.getElementById('up-project-id').value = projectId;
+
+    // Consultant dropdown: filter op gekoppelde consultants van dit project
+    const gekoppelde = Array.isArray(project.consultant_ids) ? project.consultant_ids : [];
+    let beschikbaar = consultants.filter(c => gekoppelde.includes(c.id));
+    // Als post een consultant heeft die niet meer in gekoppelde staat: voeg toe zodat huidige waarde behouden blijft
+    if (post.consultant_id && !beschikbaar.some(c => c.id === post.consultant_id)) {
+      const oude = consultants.find(c => c.id === post.consultant_id);
+      if (oude) beschikbaar = [oude, ...beschikbaar];
+    }
+    const consSel = document.getElementById('up-consultant');
+    consSel.innerHTML = '<option value="">— Kies consultant —</option>' +
+      beschikbaar.map(c => `<option value="${c.id}"${post.consultant_id===c.id?' selected':''}>${c.naam||'(geen naam)'}</option>`).join('');
+
+    // Labels aanpassen op basis van tarieftype (uur vs dag)
+    const isDag = project.tarieftype === 'dag';
+    document.getElementById('up-aantal-label').textContent = isDag ? 'Dagen *' : 'Uren *';
+    document.getElementById('up-aantal').step = isDag ? '0.5' : '0.25';
+
+    // Verantwoording label
+    document.getElementById('up-ver-label').innerHTML = project.verantwoording_verplicht
+      ? 'Verantwoording <span style="color:var(--red)">*verplicht</span>'
+      : 'Verantwoording <span style="color:var(--ink3)">(optioneel)</span>';
+
+    // Km-veld tonen indien project km_on
+    document.getElementById('up-km-wrap').style.display = project.km_on ? 'block' : 'none';
+
+    // Vul velden
+    document.getElementById('up-datum').value = post.datum || '';
+    document.getElementById('up-aantal').value = post.aantal || '';
+    document.getElementById('up-km').value = post.km || '';
+    document.getElementById('up-verantwoording').value = post.verantwoording || '';
+
+    document.getElementById('urenpostModal').classList.add('show');
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
+}
+
+window.closeUrenpostWijzigen = function() {
+  document.getElementById('urenpostModal').classList.remove('show');
+}
+
+window.saveUrenpostWijzigen = async function() {
+  const postId = document.getElementById('up-post-id').value;
+  const projectId = document.getElementById('up-project-id').value;
+  const project = projecten.find(p => p.id === projectId);
+  if (!project) { toast('Project niet gevonden','bad'); return; }
+
+  const consultantId = document.getElementById('up-consultant').value;
+  const datum = document.getElementById('up-datum').value;
+  const aantal = parseFloat(document.getElementById('up-aantal').value);
+  const km = parseFloat(document.getElementById('up-km').value) || 0;
+  const verantwoording = document.getElementById('up-verantwoording').value.trim();
+
+  if (!consultantId) { toast('Kies een consultant','bad'); return; }
+  if (!datum) { toast('Kies een datum','bad'); return; }
+  if (!aantal || aantal <= 0) { toast('Vul een geldig aantal in','bad'); return; }
+  if (project.verantwoording_verplicht && !verantwoording) {
+    toast('Verantwoording is verplicht voor dit project','bad');
+    return;
+  }
+
+  const consultant = consultants.find(c => c.id === consultantId);
+
+  try {
+    await setDoc(doc(db,'scm_urenstaten', postId), {
+      consultant_id: consultantId,
+      consultant_naam: consultant ? consultant.naam : '',
+      datum,
+      aantal,
+      km,
+      verantwoording,
+      bijgewerkt: new Date().toISOString()
+    }, {merge:true});
+    toast('Urenpost bijgewerkt ✓','ok');
+    closeUrenpostWijzigen();
+    renderProjectUrenOverzicht(projectId);
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
+}
+
+// Verwijder een individuele urenpost (alleen als niet gefactureerd)
+window.verwijderUrenpost = async function(postId, projectId) {
+  try {
+    const snap = await getDoc(doc(db,'scm_urenstaten', postId));
+    if (!snap.exists()) { toast('Urenpost niet gevonden','bad'); return; }
+    const post = snap.data();
+    if (post.gefactureerd) {
+      toast('Gefactureerde posten kunnen niet worden verwijderd','bad');
+      return;
+    }
+    if (!confirm('Deze urenpost verwijderen? Dit kan niet ongedaan worden gemaakt.')) return;
+    await deleteDoc(doc(db,'scm_urenstaten', postId));
+    toast('Urenpost verwijderd','info');
+    renderProjectUrenOverzicht(projectId);
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
+}
+
 window.markeerWeekGefactureerd = async function(projectId, weekKey, gefactureerd) {
   const [jaarStr, weekStr] = weekKey.split('-W');
   const jaar = parseInt(jaarStr);
