@@ -272,7 +272,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v69-crm-leidend</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v71-cascade-delete</span>
     </div>
     <div class="topbar-right">
       <a href="start.html" title="Terug naar startscherm">🏠 Start</a>
@@ -1177,10 +1177,44 @@ window.saveProject = async function() {
 window.deleteProject = async function(id) {
   const p = projecten.find(x => x.id === id);
   if (!p) return;
-  if (!confirm(`Project "${p.naam}" (${p.nummer}) verwijderen?\n\nDit kan niet ongedaan gemaakt worden.`)) return;
+
   try {
+    // Haal alle urenposten voor dit project op
+    const snap = await getDocs(collection(db,'scm_urenstaten'));
+    const posts = snap.docs.map(d => ({id:d.id,...d.data()})).filter(x => x.project_id === id);
+    const gefactureerd = posts.filter(x => x.gefactureerd === true);
+    const open = posts.filter(x => x.gefactureerd !== true);
+
+    // Scenario 2 & 4: er zijn gefactureerde posten → NIET verwijderen
+    if (gefactureerd.length > 0) {
+      alert(`Project "${p.naam}" kan niet worden verwijderd.\n\nEr staan ${gefactureerd.length} gefactureerde urenpost${gefactureerd.length===1?'':'en'} op dit project. Deze horen bewaard te blijven voor de historie.\n\n${open.length > 0 ? `(Ook ${open.length} open post${open.length===1?'':'en'}, maar die blokkeren niet.)` : ''}`);
+      return;
+    }
+
+    // Scenario 3: er zijn alleen open posten → waarschuwing met bevestiging
+    if (open.length > 0) {
+      const bevestiging = confirm(
+        `Let op: project "${p.naam}" (${p.nummer}) heeft ${open.length} open urenpost${open.length===1?'':'en'}.\n\n` +
+        `Bij verwijderen worden ook ALLE ${open.length} urenpost${open.length===1?'':'en'} verwijderd.\n\n` +
+        `Weet je dit zeker? Dit kan niet ongedaan gemaakt worden.`
+      );
+      if (!bevestiging) return;
+
+      // Verwijder eerst alle urenposten
+      for (const post of open) {
+        await deleteDoc(doc(db,'scm_urenstaten', post.id));
+      }
+    } else {
+      // Scenario 1: geen posten → simpele confirm
+      if (!confirm(`Project "${p.naam}" (${p.nummer}) verwijderen?\n\nDit kan niet ongedaan gemaakt worden.`)) return;
+    }
+
+    // Verwijder het project zelf
     await deleteDoc(doc(db,'scm_projecten', id));
-    toast('Project verwijderd','info');
+    const msg = open.length > 0
+      ? `Project + ${open.length} urenpost${open.length===1?'':'en'} verwijderd`
+      : 'Project verwijderd';
+    toast(msg,'info');
     projectCurrentDetailId = null;
     await loadProjecten();
     document.getElementById('projectenDetailView').style.display='none';
@@ -1846,6 +1880,9 @@ window.renderKlantenLijst = function(){
       </div>`
     : '';
 
+  // Orphaned urenposten (posten zonder bestaand project) — check async
+  const orphanBannerEl = '<div id="orphanUrenBanner"></div>';
+
   document.getElementById('klanten-kpis').innerHTML = `
     <div class="kpi"><div class="kpi-label">SCM-klanten totaal</div><div class="kpi-val">${totaal}</div></div>
     <div class="kpi"><div class="kpi-label">Met SCM-nummer</div><div class="kpi-val">${metNr}${zonderNr?` <span style="font-size:12px;color:var(--amb)">(${zonderNr} zonder)</span>`:''}</div></div>
@@ -1853,7 +1890,8 @@ window.renderKlantenLijst = function(){
 
   const el = document.getElementById('klanten-lijst');
   if (!list.length) {
-    el.innerHTML = opruimBanner + '<div style="padding:40px;text-align:center;color:var(--ink3)"><div style="font-size:32px;margin-bottom:8px">🏢</div><div style="font-size:14px">Geen SCM-klanten gevonden.</div><div style="font-size:12px;color:var(--ink3);margin-top:6px">Ga naar <strong>CRM</strong> en vink bij een contact <strong>"Klant SCM"</strong> aan.</div></div>';
+    el.innerHTML = opruimBanner + orphanBannerEl + '<div style="padding:40px;text-align:center;color:var(--ink3)"><div style="font-size:32px;margin-bottom:8px">🏢</div><div style="font-size:14px">Geen SCM-klanten gevonden.</div><div style="font-size:12px;color:var(--ink3);margin-top:6px">Ga naar <strong>CRM</strong> en vink bij een contact <strong>"Klant SCM"</strong> aan.</div></div>';
+    checkOrphanUrenposten();
     return;
   }
 
@@ -1888,7 +1926,68 @@ window.renderKlantenLijst = function(){
     </div>`;
   }).join('');
 
-  el.innerHTML = opruimBanner + header + rows;
+  el.innerHTML = opruimBanner + orphanBannerEl + header + rows;
+  checkOrphanUrenposten();
+}
+
+// Check of er urenposten zijn zonder bestaand project (orphans)
+async function checkOrphanUrenposten() {
+  const el = document.getElementById('orphanUrenBanner');
+  if (!el) return;
+  try {
+    const snap = await getDocs(collection(db,'scm_urenstaten'));
+    const posts = snap.docs.map(d => ({id:d.id,...d.data()}));
+    const projectIds = new Set(projecten.map(p => p.id));
+    const orphans = posts.filter(p => p.project_id && !projectIds.has(p.project_id));
+
+    if (!orphans.length) { el.innerHTML = ''; return; }
+
+    // Bundel per project_naam voor overzicht
+    const perProject = {};
+    orphans.forEach(o => {
+      const naam = o.project_naam || o.project_nummer || 'Onbekend project';
+      if (!perProject[naam]) perProject[naam] = {count:0, uren:0};
+      perProject[naam].count++;
+      perProject[naam].uren += Number(o.aantal||0);
+    });
+    const projectenLijst = Object.entries(perProject).map(([n,i]) => `${n} (${i.count} post${i.count===1?'':'en'})`).join(', ');
+
+    el.innerHTML = `<div style="background:#fdf0ee;border:1px solid #f5b8b0;border-radius:var(--rsm);padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:13px;color:#7a1f10">
+        <strong>⚠️ Wees-urenposten:</strong> ${orphans.length} urenpost${orphans.length===1?'':'en'} verwijzen naar verwijderde projecten (${projectenLijst}).
+      </div>
+      <button onclick="verwijderOrphanUrenposten()" style="background:var(--red);color:#fff;border:none;border-radius:var(--rxs);padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Verwijder allemaal</button>
+    </div>`;
+  } catch(e) {
+    console.warn('Orphan check gefaald:', e);
+  }
+}
+
+window.verwijderOrphanUrenposten = async function() {
+  try {
+    const snap = await getDocs(collection(db,'scm_urenstaten'));
+    const posts = snap.docs.map(d => ({id:d.id,...d.data()}));
+    const projectIds = new Set(projecten.map(p => p.id));
+    const orphans = posts.filter(p => p.project_id && !projectIds.has(p.project_id));
+    if (!orphans.length) { toast('Geen wees-posten gevonden','info'); return; }
+
+    // Check op gefactureerd — hoewel dat theoretisch niet kan bij verwijderd project, veilig checken
+    const gefactureerd = orphans.filter(o => o.gefactureerd === true);
+    if (gefactureerd.length > 0) {
+      alert(`Kan niet verwijderen: ${gefactureerd.length} van de ${orphans.length} wees-posten zijn gefactureerd.\n\nVerwijder deze handmatig via Firebase Console als je zeker weet dat het kan.`);
+      return;
+    }
+
+    if (!confirm(`${orphans.length} wees-urenpost${orphans.length===1?'':'en'} verwijderen?\n\nDit kan niet ongedaan gemaakt worden.`)) return;
+
+    for (const post of orphans) {
+      await deleteDoc(doc(db,'scm_urenstaten', post.id));
+    }
+    toast(`${orphans.length} wees-post${orphans.length===1?'':'en'} verwijderd`,'ok');
+    renderKlantenLijst();
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
 }
 
 // Helper: pak eerste contactpersoon uit crm_gedeeld record
