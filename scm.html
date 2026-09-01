@@ -272,7 +272,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v72-scm-nav</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v73-klant-detail</span>
     </div>
     <div class="topbar-right">
       <a href="admin.html?from=scm" style="background:var(--acc);color:#fff;border-color:var(--acc)" title="Naar RvdL beheer">🏢 RvdL</a>
@@ -1913,11 +1913,11 @@ window.renderKlantenLijst = function(){
       : `<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--amb);font-weight:600;background:var(--amb-l);padding:3px 10px;border-radius:20px;white-space:nowrap" title="Nog geen klantnr toegewezen">geen nr</span>`;
     const primair = primaireContactpersoon(k);
 
-    return `<div class="klant-row" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''">
+    return `<div class="klant-row" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''" onclick="openScmKlantDetail('${k.id}')">
       ${klantnrDisplay}
       <div style="min-width:0">
         <div style="font-weight:600;color:var(--ink);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.name||'(geen naam)'}</div>
-        <div class="klant-contact" style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${primair ? primair.naam : '<span style="font-style:italic">Geen contactpersoon</span>'}${primair && primair.mail ? ' · '+primair.mail : ''}</div>
+        <div class="klant-contact" style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${primair ? primair.naam : '<span style="font-style:italic">Geen contactpersoon</span>'}${primair && (primair.email || primair.mail) ? ' · '+(primair.email||primair.mail) : ''}</div>
       </div>
       <div class="klant-offertes" style="font-size:12px;color:var(--ink2);text-align:right;white-space:nowrap">
         <div style="font-weight:600">${nr} offerte${nr===1?'':'s'}</div>
@@ -1998,6 +1998,102 @@ function primaireContactpersoon(crmKlant) {
   if (!cps.length) return null;
   return cps[0];
 }
+
+function escapeHTML(s) {
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═════════════════════════════════════════════════
+// SCM KLANT DETAIL MODAL (contactpersonen + kopieer)
+// ═════════════════════════════════════════════════
+window.openScmKlantDetail = function(crmId) {
+  const k = (crmContacten||[]).find(c => c.id === crmId);
+  if (!k) { toast('Klant niet gevonden','bad'); return; }
+
+  const cps = Array.isArray(k.contactpersonen) ? k.contactpersonen : [];
+  const klantOffertes = (offertes||[]).filter(o => o.crm_contact_id === k.id);
+
+  const cpHtml = cps.length === 0
+    ? `<div style="padding:24px;text-align:center;color:var(--ink3);font-size:13px;background:var(--cream);border-radius:var(--rxs)">
+        Geen contactpersonen. Voeg ze toe via <strong>RvdL Admin → CRM</strong>.
+       </div>`
+    : cps.map(cp => {
+        const email = cp.email || cp.mail || '';
+        const tel = cp.telefoon || cp.tel || cp.phone || '';
+        return `<div style="padding:14px;border:1px solid var(--line);border-radius:var(--rxs);margin-bottom:8px;background:var(--white)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px">
+            <div style="font-weight:600;color:var(--ink);font-size:14px">${escapeHTML(cp.naam||'(geen naam)')}${cp.primair?' <span style="color:var(--acc);font-size:11px">★ primair</span>':''}</div>
+            ${cp.functie ? `<div style="font-size:11px;color:var(--ink3)">${escapeHTML(cp.functie)}</div>` : ''}
+          </div>
+          ${email ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--ink3);width:60px;flex-shrink:0">Email</span>
+            <a href="mailto:${email}" style="font-size:13px;color:var(--acc);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${email}</a>
+            <button onclick="kopieerEmail('${email.replace(/'/g,"\\'")}',this)" style="background:var(--cream);border:1px solid var(--line2);border-radius:var(--rxs);padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink2);white-space:nowrap;flex-shrink:0" title="Kopieer email">📋 Kopieer</button>
+          </div>` : ''}
+          ${tel ? `<div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--ink3);width:60px;flex-shrink:0">Tel</span>
+            <a href="tel:${tel}" style="font-size:13px;color:var(--acc);text-decoration:none">${escapeHTML(tel)}</a>
+          </div>` : ''}
+        </div>`;
+      }).join('');
+
+  const html = `<div style="padding:22px 22px 12px">
+    <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--ink);margin-bottom:4px">${escapeHTML(k.name||'(geen naam)')}</div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:18px">
+      ${k.scm_klantnr ? `<code style="background:var(--acc-l);color:var(--acc);padding:2px 8px;border-radius:10px;font-weight:600">${k.scm_klantnr}</code>` : '<span style="color:var(--amb)">geen klantnr</span>'}
+      · ${klantOffertes.length} offerte${klantOffertes.length===1?'':'s'}
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">Contactpersonen</div>
+    ${cpHtml}
+  </div>`;
+
+  let modal = document.getElementById('scmKlantDetailModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'scmKlantDetailModal';
+    modal.className = 'modal';
+    modal.innerHTML = `<div class="modal-body" style="max-width:520px">
+      <div class="modal-header">
+        <div class="modal-title">Klant</div>
+        <button class="modal-close" onclick="document.getElementById('scmKlantDetailModal').classList.remove('show')">&times;</button>
+      </div>
+      <div class="modal-content" id="scmKlantDetailContent"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('scmKlantDetailModal').classList.remove('show')">Sluiten</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+  }
+  document.getElementById('scmKlantDetailContent').innerHTML = html;
+  modal.classList.add('show');
+};
+
+window.kopieerEmail = async function(email, btn) {
+  try {
+    await navigator.clipboard.writeText(email);
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '✓ Gekopieerd';
+    btn.style.background = 'var(--grn)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--grn)';
+    setTimeout(() => {
+      btn.innerHTML = origHtml;
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 1400);
+  } catch(e) {
+    // Fallback voor oudere browsers
+    const ta = document.createElement('textarea');
+    ta.value = email;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('Gekopieerd ✓','ok'); }
+    catch(err) { toast('Kopiëren mislukt','bad'); }
+    document.body.removeChild(ta);
+  }
+};
 
 // Toon legacy scm_klanten records met verwijder-knop
 window.toonLegacyOpruimen = function() {
