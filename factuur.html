@@ -1,130 +1,334 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAOjklEQVR42s2be5Rd8xXHv3funclMgmmYhpBIJAhLaFMj6RJWK8RjVYsgiVfEKFGPRiOyiIqSMIqKalOqSEQoUqQerUSlmpQi4hVRJEIe8iBGKplkZnLvPf1jPlt2fuucmXvzwFnrrHvvefx+e+/ffnz33r+b0vY7SjglKbuFY2T4zHNu8yO1HcYrkRTFELy7pK6S9pS0q6T2ksq5t0HS/yStlLRE0mJJH8cINMW40TdNAMZ4LmD4h5KOlNRbUjdJbQscb72kRZLmSPqHpOclLXf309taEFtzpN33MkknSXpUUh0Exp1Nkja6c737no95vo4xT2KOuLm/8sPbeIWkCyXNjyHeM/ZvSU9yPcu1UZJWObOxz40JwpvPXBUxdHwtqz5Y0jvB6mYlvSrpE8dQTtJnkgZKWsD1v0i6zgnExsjx+bmkv0uaFaMZ/5V02tehDeaZ95L0RMwKGSM3SbrHaYEx9ZakGtR+CELJOwbtuZkI6/eSruedTxm/yc33BLR42rbLkXJSHihptSOiXtIUSZMlNXDtdUnDA6HY50OS+vHpr5sglkv6sTONSNJUSaOdlnmhr4Ym04TU9mDe7Gycm3iDpOcknS3pXkm/lXQeBDawwutgKosmGLPHx6y+3Zso6U43h11f5L7PJkp40xkXhMxtynyJpElM1IiqfiCpT+DxL5P0H76PhNDQTPKSfibpw8D5meObIOlxmGt0DtPeXyLpKN7PB2Zxn6M3VYgnL3TlH2alcy4U7UWcn83vT1DHXfldjeevkzRDUq2kl7jXrQV6qvEBaeYytbZoMlzS7QCrPPdLuT8EWgvShHQBNp/DtgdzPYfXr+J+T0k3QsgESWdJOphnd5N0m6T3Wclqni+TdJikb7n5vBl0lvQmIXMj9p+T1F3SWEnzJO0jaX+YbJB0raS+0N2TZx/FMUZb4+1vcKq3EG98paRBmEAk6U+SDndq6NX18xYAUWvnTEl/hJF1mOAwhDlG0giuXyrpLidAo+OGLY0O3tvboItwcG9y7RlJlzvQcg4hLstqZQNm3sU+h0v6EavUQ9JBkg6UdDT37kfQoTDWc7/eXZvBqo+JiSaNfB9YLE4wu+kiaY1zTCNQs8jF81Hu92xJdzB5k/PgkyQdIalNMM+5ktrx/XAYsaOcd+6VtDYGKNn3BZJOxgQaY9BjDh66BP6soNV/hkEaGHgdTvAe1PpUCMg78OLPB7DRpOMVwtjtZIKXJTzXU9KDAdLMS1oq6RhJH8XMvZwIkXXaWpAW2AODEuBpo6SLJH2HlNUjN1v1FSQt3peUsgIDUOPaGKJXY2LX4eBCYk9mbKNrFiaQBXT9VdJvAEsXSzoxoGtQa0IwFanA3nOo31hJLweCuFjSeAdxTfVeITQlJU490CSDsPtRFzjGCfQ5TCMF1q91oawbcxgtnyK0UZL6S3oagYwl/HqNWQRviaHRPOWFDpRkycdr8L6vusl/IenFALvv4MY7UdJcSZXBPB85LDCcEPd9SXugYbe7Z0/Ahudgx5K0E0KKnO2bPxiPL7oy0GDTgguTokKKsw2hLS4dfR41vDuwxwiG2jonM4zr1zup98KpRQjnuMCptZP0GExdJakjY7VnEdYQLYSgX4rx+A+CQdY56O3R5wfwmAq1wCQyIMaLbgx8wWmS3uaeJS4d3YBDee70IKocKelf3OvPOH6uXQBclgt0Dez1PkJhd1dxWh6Y4FWk2GHqvNDxMCBOC2yip3i5DvX1grD4O4kszpKYY5wWHcIzNVwrjSm9rcT+hTbNR2jlrPIDMf7D6HsS727FkGPd6r7hzDciskyWdCZ+xBbsqdAZljiJWua2Gkd3nls1O8+T9J5LPGywDCtyd8C8h9UdXOJ0s6QdgcXd8OoR3rwsWCFzomUI8C53b7JDnBsAXGMlnQFEXxg4w3p4/ZJ3m2hIkJGZbV8k6acMVuOKHOtwTCbAWlawTUxObtI+gwLHn50T83WFW2Bo/5hkLe1AU4TjTJGQWWR5jVxkigNQUUylaYg3AxPA/YHzywUx+lmkayo3MVj9+ZLOLwJ7v0Rcfxb7/FUBWaoJ4WmSLDsmOrgcBYWa94lWD2AWEbxuRmfaMRfhdZucLb0cFDkjsrkSVjzj1DnDeEmAo4yVGyvpAOc4B7v0N84HpB2oaocfsFT5MOeT5kr6JZo7VNIVkg7FVzW6vGQz+jpjPxFOYjSrsgbIO4zTHOEHgY1viwLr1lR2S52tz6OQ+j5aPI9ErcFFh0ZJncICZ7nD6EMg7D6k+3NCzDwqQC+gCacAMXOOEa+CYyCkJKG1leLduPtWixgM/sgFq5bnvTsAYS8TIntyioW6jJQ6w6KmneNdZgLoEgxsvbzZOD3L0ExIc/icS/UlbvXmgPpKWujrRW7OUDB51PzXtNOSjl0l/ZOFO53VLQMmjyRidHFCzUJTF68BuzlCBlBIaELyOyHJJc47L3BNzw2oYM4RnkHlmrawOBm5nuGhQXPV2msN0Fbv7NqYrKdIMpQI8TD4IQ2E/5LnjIObVu7qBR6vIyuLJP2NVLjM1f7Md7RLYKIrDrIRIUQJyVc+pq9o6t+PVc05r/073jkfzP8Hrn3onrmFst1scMyeLF4PN0d7T8z4mAZGlJDnZ8nihIOMwPjX4NmvIRNrcJpVrIPLuGQpnP8cmI/QPIPWVe6ZVQk4wEex8X6iVBB2ohjCzQn51rclLLOoEJU5D9uXoufKhI50OWiwN45sYoy/sJ5A1gmmARO8H2bWBOAtBeL0dEdJFaGMs6fW2uZp9055YI8T3RgZN25FwjhZosdFXDsE7LE0ILIkAFUZTGs6UL2z04JyR3cU080Kj0a/wmsKVE1bnSo+6/l8g7y/UtL3gs5R0tHRVZksG0xyiJHTvqux92VoXQXzdHA0pgpwvmu8BqwsQgAlkvYm9poz7O6aI5Zvf0HrSwl1+ZRboVQrBVoPuipiNCvr0uR8gT5npRfA4iKdVTXxdQW/d8SW/fEpkSTpWOoYzJFvhMd6xsgGquzxQwYf0KeIqrfn+UsgFNfUSMqm3nM1OqsaW3nKdntMTxBqyuUQ1vEZlvBsGxypne0l7cynv9aG/QJJkSsKeGsKwJ/SbtNCrpVujd3vhSomPfcuhJXErEC5S23XORpKtzAn6F0k7QtMozIOI8/BtluzIbt/AZ74goRVziAgD4QMKTa4GkQ7EOejDvD45+XC485UpC5BhUtZzWEF2r/dn8Ncm9UDamIKIklqlEfV9yywve4/+wCWfFFzo6RptMw7B897J/kiyVUldBumrw/2GUStgKAaDwNKYlLi1gayAuMUB2osV88Aoc+MwRsXJNhk2CDZL4jhJXR3VqIFcrB8SkwTpyX73+CEXBJ6xukuG4wKEEKOpqbciqTo60Xs8qh0jMxxpbBcQFzWLcAVLs/vAc74yHJ4x/zRCY3YJHrzSc7ZVmhwgdL0PYHPXJHRq2tvCpV3uVC5rBUNsw0QdzukuQSUuFNQbN2dueP2DLWktYPiynYGSipwLvkWPKq/N0PNm5kecdlV2km3vWuV7Ru0r1si8nlH2/5B5UeEv0eYe4bz8PkWvH8e3iqSkKJJZEQLztBrRq1T7X7E9PaBOfjjKAhp4jPutGw0ruRW6oQ6lTlN4LUJNIbOb0RLRVuTyg6gtFALNrpU8wT3TpkTwmMuVU4HRc7Li9wd0s3Zuwl6P+bo54SScn3EVTGLl3Pt9B1ayxPSMT2CfNAA7eqkmIrp5U+lEuNXLs21t0lg5iecb3O+Rp3Sa9HZjH1Q0CxJuRXtCo2ecRPGWcXuEZgZrEitIyjjJNkWx5J2yco4iiR9Y7Qs7Qj3Z9LWtr6MNc5Vn1IxtYyME0y4/2Bmocz7DKw74Wox3VwFRQWbcKybwENZK61NYMNEVRHQdhfemcAY1e7ewWreqnMzDVcf0rwAT4T2BnhpsSASwsU0juhykNY0wE6Dy82zav4/QBUeOY262fE654E0MY/i/SXY42rQpIW7KgBKZ7dJ405K8XYMZLw7yBJrqUyvdTDbgNk0SvqL4SUd1B1bbGHlXAHyNgqTD7LCBig6QNCtAJ8c0HgQDF3LWPMcE/viyPYA4JS7itQXEPuMyzYFkDqWun+W5Gk5c5Q6UJVyWtgAzcZDRgl/20m1guGtJDUJO3yWDK8Jm3yEysolILW2bHwYg1O7Bcz/JmdDEWbQHjXugWN8HMx/NQCoHeAoQ+V3ukuO+oP3h2rzbbZFHym3ClMZ2KTcyXWVbiICHEsXyZKr4/HaowhdXbRpd2cpGmA9xR9Q8b0SIVZp05ZXE4j1FWc6v9AJf2Pa3B9aKwtY5KIqKJVsjBgUEzGsQ3OvK1dNQSD+GACuL2PcvoS3NjBbjQM0okdSer+U1LvCleBui+lJDILGykIrXIWEhUib9uM+Scp6kDbtAi9zNfzJ4H2z9bX4iTpASk9Uch9MoxpNeE3SdxFCB4S5GpUfjp+xNnoGE1iIPzDHO5oxrInbUkuuKAHIFSeydI/7MNE8bdrg8CrMp9S8oWIWnngmhDahEZMRYL3D5e9I+gle+9s4xOUI7QAaLb3UvLv0cwSwGua70+RYgRByCZ2orRJA6BhfgIDRdH/mwqCBnI709PZGc2yD4xEwO1PN+3nKCVGL0ZhptOGWOsGnMYV1tL3nw2QpY9QQLh9yKr/d/06Xds5wpJp3X5waOJx2MFzjGihjXTGiGkb3cVj+ViDraJyZL635RTiFOUe6JCm9NV5+S51j3nnic8His1iplTFC60gvwQogJxPC6khx+6n5H6Mf835T0Eg5jkLqYmoGy2Jo+coEEHZyreV8kpr3EtfhF+aGNfgijk5oSm9KYW+BB1bEzK2vSwDeN3hiDsEPdIPQz1jZ5Xxf6zK2UvBAB4S4O+EwByR+UZs2ZRjj2+Svs9vrz9PhqlQhiC6EuEocYNpB7wY1b8hahcYsiukWfaP+M1yIj8ho6zY/bYsxWjz+D32PD8XnuuP8AAAAAElFTkSuQmCC">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#f8f7f4">
-<title>Factuur — Ordinatio Groep</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1214">
+<title>Ordinatio · Factuur</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --cream:#f8f7f4;--white:#fff;--ink:#1a1a18;--ink2:#4a4a46;--ink3:#8a8a84;
-  --line:#e8e7e2;--line2:#d4d3cc;
-  --acc:#2d5a8e;--acc-l:#edf3f9;--acc-m:#c8daf0;
-  --grn:#1e7a4a;--grn-l:#eaf5ee;
-  --amb:#b85c00;--amb-l:#fdf3e8;
-  --red:#c0392b;--red-l:#fdf0ee;
-  --r:12px;--rsm:8px;--rxs:6px;
-  --shadow-sm:0 1px 2px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04);
+  --bg:#0f1214;
+  --surface:#1a1f24;
+  --surface-2:#242a30;
+  --surface-3:#2d343b;
+  --line:#2a3138;
+  --line-2:#374049;
+  --ink:#f5f7fa;
+  --ink-2:#c6ccd4;
+  --ink-3:#8892a0;
+  --ink-4:#525a66;
+  --rvdl:#4a90e2;
+  --rvdl-soft:rgba(74,144,226,.14);
+  --rvdl-line:rgba(74,144,226,.32);
+  --green:#51cf66;
+  --green-soft:rgba(81,207,102,.14);
+  --amber:#ffa94d;
+  --amber-soft:rgba(255,169,77,.14);
+  --red:#ff6b6b;
+  --red-soft:rgba(255,107,107,.14);
+  --r-lg:20px;
+  --r:14px;
+  --r-sm:10px;
+  --r-xs:8px;
+
+  /* Aliases voor bestaande inline styles */
+  --grn:var(--green);
+  --grn-l:var(--green-soft);
+  --acc:var(--rvdl);
+  --acc-l:var(--rvdl-soft);
+  --acc-m:var(--rvdl-line);
+  --ink3:var(--ink-3);
+  --amb:var(--amber);
+  --amb-l:var(--amber-soft);
+  --red-l:var(--red-soft);
+  --line2:var(--line-2);
+  --cream:var(--surface);
+  --white:var(--surface);
+  --rsm:var(--r-sm);
+  --rxs:var(--r-xs);
 }
-html,body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
-.app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-header{background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;padding:env(safe-area-inset-top) 0 0}
-.hinner{padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
-.brand{display:flex;align-items:center;gap:10px}
-.bicon{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center}
-.bicon svg{width:18px;height:18px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.bname{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
-.bsub{font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
-.back-btn{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink3);text-decoration:none;background:var(--cream);border:1px solid var(--line2);border-radius:20px;padding:5px 12px}
-/* Als in iframe (ingebed in admin.html): verberg terug-knoppen want admin heeft eigen navigatie */
-html.embedded .back-btn, body.embedded .back-btn{display:none !important}
+html,body{
+  background:var(--bg);color:var(--ink);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  min-height:100vh;overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;font-feature-settings:'cv11';
+}
+.app{
+  max-width:560px;margin:0 auto;min-height:100vh;
+  display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 8px) 18px calc(env(safe-area-inset-bottom) + 24px);
+}
 
-.tabs{display:flex;border-top:1px solid var(--line)}
-.tab{flex:1;padding:11px 0;text-align:center;font-size:13px;font-weight:500;color:var(--ink3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s}
-.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+/* HEADER */
+.top-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 14px;gap:10px}
+.brand-block{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--rvdl-soft);border:1px solid var(--rvdl-line);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.brand-icon svg{width:18px;height:18px;stroke:var(--rvdl);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bname,.brand-name{
+  font-family:'Fraunces',serif;font-weight:600;font-size:17px;
+  color:var(--ink);letter-spacing:-0.01em;
+}
+.bsub,.brand-sub{
+  font-size:10px;color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:0.08em;margin-top:1px;
+  display:flex;align-items:center;gap:6px;
+}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);display:inline-block;transition:background .2s}
+.sync-dot.ok{background:var(--green)}
+.sync-dot.err,.sync-dot.off{background:var(--red)}
+.sync-dot.syncing{background:var(--amber)}
 
-.main{flex:1;overflow-y:auto;padding-bottom:20px}
-.pane{display:none;padding:20px}
+.top-actions{display:flex;gap:6px;flex-shrink:0}
+.top-btn,.back-btn{
+  min-width:38px;height:38px;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  color:var(--ink-2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-family:inherit;font-size:12px;font-weight:500;
+  padding:0 10px;gap:6px;text-decoration:none;
+  transition:background .12s;
+}
+.top-btn:active,.back-btn:active{background:var(--surface-2)}
+.top-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* TABS */
+.tabs{
+  display:flex;gap:0;
+  border-bottom:1px solid var(--line);margin-bottom:20px;
+}
+.tab{
+  flex:1;background:none;border:none;color:var(--ink-3);
+  font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  padding:12px 0;position:relative;transition:color .12s;
+}
+.tab.on{color:var(--ink)}
+.tab.on::after{
+  content:'';position:absolute;bottom:-1px;left:0;right:0;
+  height:2px;background:var(--rvdl);border-radius:2px;
+}
+
+.pane{display:none}
 .pane.on{display:block}
 
-.sec{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:10px}
-.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+/* HEADER SUBSTITUTES for compat */
+header{display:contents}
+.hinner,.hrow,.main{display:contents}
+
+/* SECTION TITLE */
+.sec,.section-title{
+  font-size:11px;font-weight:600;color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:0.1em;
+  margin:16px 4px 8px;
+}
+
+/* CARDS */
+.card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);padding:16px;margin-bottom:12px;
+}
+
+/* FIELDS */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .field:last-child{margin-bottom:0}
-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:600}
-input,select,textarea{background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;padding:10px 12px;width:100%;outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
-input:focus,select:focus,textarea:focus{border-color:var(--acc);background:var(--white);box-shadow:0 0 0 3px var(--acc-l)}
-select{cursor:pointer}
-textarea{resize:vertical;min-height:70px;font-size:14px;line-height:1.5}
-.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.field label{
+  font-size:10px;font-weight:600;color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:0.08em;
+}
+.field input,.field select,.field textarea{
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--r-xs);padding:12px;
+  color:var(--ink);font-family:inherit;font-size:15px;
+  outline:none;transition:border-color .12s;
+  -webkit-appearance:none;appearance:none;
+  min-height:46px;width:100%;
+  text-overflow:ellipsis;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--rvdl-line)}
+.field input[readonly]{color:var(--rvdl);font-family:'JetBrains Mono',monospace;font-weight:600}
+.field select{
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%238892a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
+  background-repeat:no-repeat;background-position:right 12px center;
+  padding-right:36px;
+}
+.field textarea{resize:vertical;min-height:80px;line-height:1.4;font-size:14px}
+
+/* Field grids */
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.fg2 .field{margin-bottom:0}
+
+/* UREN TABLE (in urenCard) */
+.uren-tabel{width:100%;border-collapse:collapse;font-size:12px}
+.uren-tabel th{
+  text-align:left;padding:8px 4px;
+  font-size:10px;font-weight:600;color:var(--ink-3);
+  text-transform:uppercase;letter-spacing:0.06em;
+  border-bottom:1px solid var(--line);
+}
+.uren-tabel td{padding:8px 4px;color:var(--ink-2);border-bottom:1px solid var(--line)}
+.uren-tabel tr:last-child td{border-bottom:none}
+.uren-tabel td strong,.uren-tabel td b{color:var(--ink);font-weight:600}
 
 /* EXTRA KOSTEN */
-.extra-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.extra-row input{flex:1}
-.extra-row input.amount{width:100px;flex:none;text-align:right}
-.extra-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:18px;padding:2px 6px;border-radius:4px;transition:color .15s}
-.extra-del:hover{color:var(--red)}
-.add-extra-btn{background:none;border:1.5px dashed var(--line2);border-radius:var(--rsm);padding:8px;width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink3);cursor:pointer;transition:all .15s}
-.add-extra-btn:hover{border-color:var(--acc-m);color:var(--acc);background:var(--acc-l)}
+#extraKosten{margin-bottom:12px}
+.extra-row{
+  display:grid;grid-template-columns:1fr auto 32px;gap:8px;margin-bottom:8px;
+  align-items:center;
+}
+.extra-row input{
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--r-xs);padding:10px 12px;
+  color:var(--ink);font-family:inherit;font-size:14px;
+  min-height:42px;outline:none;
+}
+.extra-row input.amount{
+  width:110px;text-align:right;
+  font-family:'JetBrains Mono',monospace;font-weight:600;
+}
+.extra-del{
+  width:32px;height:32px;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--r-xs);color:var(--red);cursor:pointer;
+  font-size:18px;line-height:1;
+}
+.add-extra-btn{
+  width:100%;background:transparent;
+  border:2px dashed var(--line-2);border-radius:var(--r-xs);
+  color:var(--ink-3);cursor:pointer;
+  padding:12px;font-family:inherit;font-size:13px;font-weight:600;
+  transition:border-color .12s, color .12s;
+}
+.add-extra-btn:active{border-color:var(--rvdl);color:var(--rvdl)}
 
-/* TOTAAL */
-.totaal-card{background:var(--acc-l);border:1px solid var(--acc-m);border-radius:var(--r);padding:16px;margin-bottom:14px}
-.totaal-row{display:flex;justify-content:space-between;padding:5px 0;font-size:14px;color:var(--ink2)}
-.totaal-row.sub{border-top:1px solid var(--acc-m);margin-top:8px;padding-top:12px;font-weight:600;color:var(--acc);font-size:15px}
-.totaal-val{font-family:'DM Mono',monospace;font-size:14px}
-.totaal-row.sub .totaal-val{font-size:16px;color:var(--acc)}
-
-/* PREVIEW */
-.preview-wrap{background:var(--white);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-sm)}
-#invoicePreview{padding:24px;font-family:Arial,sans-serif;font-size:13px;color:#1a1a18;line-height:1.5}
+/* TOTAAL CARD */
+.totaal-card{
+  background:var(--rvdl-soft);border:1px solid var(--rvdl-line);
+  border-radius:var(--r);padding:14px 16px;margin-bottom:14px;
+}
+.totaal-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;font-size:13px;color:var(--ink-2);
+}
+.totaal-row.sub{
+  border-top:1px solid var(--rvdl-line);margin-top:6px;padding-top:10px;
+  font-size:15px;font-weight:700;color:var(--ink);
+}
+.totaal-val{
+  font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink);
+}
 
 /* BUTTONS */
-.btn-primary{width:100%;background:var(--acc);color:white;border:none;border-radius:var(--rsm);padding:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
-.btn-primary:hover{background:#234d7a}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed}
-.btn-primary .spin{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:sp .7s linear infinite}
-.btn-primary.loading .spin{display:block}
-.btn-primary.loading .bic{display:none}
-@keyframes sp{to{transform:rotate(360deg)}}
-.btn-secondary{width:100%;background:var(--cream);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:8px}
-.btn-secondary:hover{background:var(--acc-l);border-color:var(--acc-m);color:var(--acc)}
+.btn-primary,.btn-secondary{
+  width:100%;border:none;border-radius:var(--r);
+  padding:14px;font-family:inherit;font-size:14px;font-weight:600;
+  cursor:pointer;transition:opacity .12s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:48px;
+}
+.btn-primary{background:var(--rvdl);color:#fff}
+.btn-primary:active{opacity:0.85}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-secondary{
+  background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--line);
+}
+.btn-secondary:active{background:var(--surface-2)}
+.spin{
+  display:none;width:16px;height:16px;
+  border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;
+  border-radius:50%;animation:spin 0.7s linear infinite;
+}
+.btn-primary.loading .spin,.btn-primary.loading + .spin{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bic{width:18px;height:18px;flex-shrink:0}
 
 /* HISTORY */
-.hist-item{border-bottom:1px solid var(--line)}
-.hist-item:last-child{border-bottom:none}
-.hist-header{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background .1s}
-.hist-header:hover{background:var(--cream)}
-.hist-title{font-size:13px;font-weight:600;color:var(--ink)}
-.hist-sub{font-size:11px;color:var(--ink3);margin-top:2px}
-.hist-detail{display:none;padding:12px 16px;background:var(--cream);border-top:1px solid var(--line)}
-.hist-detail.on{display:block}
-.status-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
-.status-pill.sent{background:var(--grn-l);color:var(--grn)}
-.status-pill.draft{background:var(--amb-l);color:var(--amb)}
-.abtn{background:none;border:1px solid var(--line2);border-radius:var(--rxs);padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink3);transition:all .15s}
-.abtn:hover{border-color:var(--acc-m);color:var(--acc);background:var(--acc-l)}
-.abtn.del:hover{border-color:var(--red);color:var(--red);background:var(--red-l)}
+.hist-item{
+  padding:14px 16px;border-bottom:1px solid var(--line);
+  cursor:pointer;transition:background .12s;
+  background:var(--surface);
+}
+.hist-item:first-child{border-radius:var(--r) var(--r) 0 0}
+.hist-item:last-child{border-bottom:none;border-radius:0 0 var(--r) var(--r)}
+.hist-item:active{background:var(--surface-2)}
+.hist-header{
+  display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;
+}
+.hist-body-text{min-width:0}
+.hist-title{
+  font-size:14px;font-weight:600;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.hist-sub{font-size:11px;color:var(--ink-3);margin-top:3px}
+.status-pill{
+  font-size:10px;font-weight:600;
+  padding:3px 8px;border-radius:8px;white-space:nowrap;flex-shrink:0;
+}
+.status-pill.wait{background:var(--amber-soft);color:var(--amber)}
+.status-pill.ok{background:var(--green-soft);color:var(--green)}
 
-.empty{text-align:center;padding:40px 20px;color:var(--ink3)}
-.empty-icon{font-size:32px;margin-bottom:8px;opacity:.4}
+.hist-detail{
+  margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--line);display:none;
+}
+.hist-detail.on{display:block}
+
+.act-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.abtn{
+  background:var(--surface-2);border:1px solid var(--line);
+  color:var(--ink-2);border-radius:var(--r-xs);
+  padding:8px 12px;font-family:inherit;font-size:12px;font-weight:500;
+  cursor:pointer;
+}
+.abtn:active{background:var(--surface-3)}
+.abtn.del{color:var(--red);border-color:rgba(255,107,107,.3)}
+
+.empty{padding:40px 20px;text-align:center;color:var(--ink-3)}
+.empty-icon{font-size:32px;margin-bottom:8px;opacity:0.5}
 .empty-text{font-size:14px}
 
-.sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
-.sync-dot.ok{background:var(--grn)}
-.sync-dot.err{background:var(--red)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.sync-dot.syncing{animation:pulse .8s infinite;background:var(--amb)}
-
-.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);border-radius:20px;padding:10px 18px;font-size:13px;font-weight:500;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;max-width:92vw;text-align:center}
-.toast.show{transform:translateX(-50%) translateY(0)}
-.toast.ok{background:var(--grn-l);border:1px solid rgba(30,122,74,.25);color:var(--grn)}
-.toast.bad{background:var(--red-l);border:1px solid rgba(192,57,43,.25);color:var(--red)}
-.toast.info{background:var(--acc-l);border:1px solid var(--acc-m);color:var(--acc)}
-
-@media print{
-  body > *{display:none!important}
-  #printArea{display:block!important;padding:0}
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--surface-2);color:var(--ink);
+  padding:12px 20px;border-radius:var(--r);
+  font-family:inherit;font-size:13px;font-weight:500;
+  z-index:10000;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  border:1px solid var(--line);
+  opacity:0;transition:opacity .2s;
+  max-width:340px;text-align:center;
 }
-@page{size:A4;margin:1cm 1.2cm}
-.btn-secondary{width:100%;background:var(--cream);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s}
-.btn-secondary:hover{background:var(--acc-l);border-color:var(--acc-m);color:var(--acc)}
+.toast.show{opacity:1}
+.toast.ok{border-color:rgba(81,207,102,.4);color:var(--green)}
+.toast.bad{border-color:rgba(255,107,107,.4);color:var(--red)}
+
+/* PRINT AREA - blijft altijd LICHT voor factuur output */
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{position:absolute;left:0;top:0;width:100%;display:block;background:#fff;color:#000}
+}
+
+/* Version footer */
+.version-footer{
+  margin-top:32px;padding-top:20px;
+  border-top:1px solid var(--line);
+  text-align:center;font-size:10px;color:var(--ink-4);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* Iframe embedding: verberg header knoppen */
+.embedded .top-actions{display:none}
 </style>
 </head>
 <body>
@@ -136,143 +340,152 @@ if (window !== window.top) {
 }
 </script>
 <div class="app">
-  <header>
-    <div class="hinner">
-      <div class="brand">
-        <div class="bicon">
-          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>
-        </div>
-        <div>
-          <div class="bname">Factuur</div>
-          <div class="bsub"><span class="sync-dot syncing" id="syncDot"></span><span id="syncTxt">Verbinden…</span></div>
-        </div>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="brand-block">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>
       </div>
-      <div style="display:flex;gap:8px">
-        <a href="verstuur.html" class="back-btn">← Verstuur</a>
-        <a href="index.html" class="back-btn">Dagstaat</a>
+      <div>
+        <div class="brand-name">Factuur</div>
+        <div class="brand-sub">
+          <span class="sync-dot syncing" id="syncDot"></span>
+          <span id="syncTxt">Verbinden…</span>
+        </div>
       </div>
     </div>
-    <div class="tabs">
-      <button class="tab on" onclick="showTab('nieuw',this)">Nieuwe factuur</button>
-      <button class="tab" onclick="showTab('history',this)">Facturen</button>
+    <div class="top-actions">
+      <a href="hub.html" class="top-btn" title="Home">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </a>
+      <a href="verstuur.html" class="top-btn" title="Goedkeuring">
+        <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </a>
+      <a href="index.html?bedrijf=RvdL" class="top-btn" title="Dagstaat">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+      </a>
     </div>
-  </header>
+  </div>
 
-  <div class="main">
-    <!-- NIEUWE FACTUUR -->
-    <div class="pane on" id="pane-nieuw">
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('nieuw',this)">Nieuwe factuur</button>
+    <button class="tab" onclick="showTab('history',this)">Facturen</button>
+  </div>
 
-      <p class="sec">Factuurgegevens</p>
-      <div class="card">
-        <div class="fg2">
-          <div class="field">
-            <label>Factuurnummer</label>
-            <input type="text" id="f-nummer" readonly placeholder="(wordt toegekend bij opslaan)" style="background:var(--acc-l);border-color:var(--acc-m);color:var(--acc);font-family:'DM Mono',monospace;font-weight:600">
-          </div>
-          <div class="field">
-            <label>Factuurdatum</label>
-            <input type="date" id="f-datum">
-          </div>
-          <div class="field">
-            <label>Opdrachtgever</label>
-            <select id="f-klant" onchange="onKlantChange()">
-              <option value="">Kies opdrachtgever…</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Geaccordeerde periode</label>
-            <select id="f-spec">
-              <option value="">Kies periode…</option>
-            </select>
-          </div>
+  <!-- PANE: NIEUWE FACTUUR -->
+  <div class="pane on" id="pane-nieuw">
+
+    <p class="sec">Factuurgegevens</p>
+    <div class="card">
+      <div class="fg2">
+        <div class="field">
+          <label>Factuurnummer</label>
+          <input type="text" id="f-nummer" readonly placeholder="(bij opslaan)">
         </div>
         <div class="field">
-          <label>Omschrijving / referentie</label>
-          <input type="text" id="f-omschrijving" placeholder="Bijv. Interim Operationeel Manager">
+          <label>Factuurdatum</label>
+          <input type="date" id="f-datum">
+        </div>
+      </div>
+      <div class="field">
+        <label>Opdrachtgever</label>
+        <select id="f-klant" onchange="onKlantChange()">
+          <option value="">Kies opdrachtgever…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Geaccordeerde periode</label>
+        <select id="f-spec">
+          <option value="">Kies periode…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Omschrijving / referentie</label>
+        <input type="text" id="f-omschrijving" placeholder="Bijv. Interim Operationeel Manager">
+      </div>
+      <div class="field">
+        <label>Uw referentie (optioneel)</label>
+        <input type="text" id="f-ref" placeholder="PO-nummer of inkoopordernummer">
+      </div>
+      <div class="fg2">
+        <div class="field">
+          <label>BTW percentage</label>
+          <select id="f-btw">
+            <option value="21">21%</option>
+            <option value="0">0%</option>
+          </select>
         </div>
         <div class="field">
-          <label>Uw referentie (optioneel)</label>
-          <input type="text" id="f-ref" placeholder="PO-nummer of inkoopordernummer">
-        </div>
-        <div class="fg2">
-          <div class="field">
-            <label>BTW percentage</label>
-            <select id="f-btw">
-              <option value="21">21%</option>
-              <option value="0">0%</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Betalingstermijn (dagen)</label>
-            <input type="number" id="f-termijn" value="21" min="0" max="90">
-          </div>
+          <label>Betalingstermijn (dagen)</label>
+          <input type="number" id="f-termijn" value="21" min="0" max="90">
         </div>
       </div>
+    </div>
 
-      <p class="sec">Uren & kilometers</p>
-      <div class="card" id="urenCard">
-        <div style="font-size:13px;color:var(--ink3);text-align:center;padding:10px">Kies eerst een geaccordeerde periode</div>
-      </div>
+    <p class="sec">Uren &amp; kilometers</p>
+    <div class="card" id="urenCard">
+      <div style="font-size:13px;color:var(--ink-3);text-align:center;padding:10px">Kies eerst een geaccordeerde periode</div>
+    </div>
 
-      <p class="sec">Overige kosten</p>
-      <div class="card">
-        <div id="extraKosten"></div>
-        <button class="add-extra-btn" onclick="addExtraRegel()">+ Overige kostenregel toevoegen</button>
-      </div>
+    <p class="sec">Overige kosten</p>
+    <div class="card">
+      <div id="extraKosten"></div>
+      <button class="add-extra-btn" onclick="addExtraRegel()">+ Overige kostenregel toevoegen</button>
+    </div>
 
-      <div class="totaal-card" id="totaalCard">
-        <div class="totaal-row"><span>Subtotaal uren</span><span class="totaal-val" id="tot-uren">€ 0,00</span></div>
-        <div class="totaal-row"><span>Subtotaal kilometers</span><span class="totaal-val" id="tot-km">€ 0,00</span></div>
-        <div class="totaal-row"><span>Subtotaal overige kosten</span><span class="totaal-val" id="tot-extra">€ 0,00</span></div>
-        <div class="totaal-row" style="border-top:1px solid var(--acc-m);padding-top:8px;margin-top:4px"><span>Subtotaal excl. BTW</span><span class="totaal-val" id="tot-excl">€ 0,00</span></div>
-        <div class="totaal-row"><span id="btw-label">BTW 21%</span><span class="totaal-val" id="tot-btw">€ 0,00</span></div>
-        <div class="totaal-row sub"><span>Totaal incl. BTW</span><span class="totaal-val" id="tot-incl">€ 0,00</span></div>
-      </div>
+    <div class="totaal-card" id="totaalCard">
+      <div class="totaal-row"><span>Subtotaal uren</span><span class="totaal-val" id="tot-uren">€ 0,00</span></div>
+      <div class="totaal-row"><span>Subtotaal kilometers</span><span class="totaal-val" id="tot-km">€ 0,00</span></div>
+      <div class="totaal-row"><span>Subtotaal overige kosten</span><span class="totaal-val" id="tot-extra">€ 0,00</span></div>
+      <div class="totaal-row" style="border-top:1px solid var(--rvdl-line);padding-top:8px;margin-top:4px"><span>Subtotaal excl. BTW</span><span class="totaal-val" id="tot-excl">€ 0,00</span></div>
+      <div class="totaal-row"><span id="btw-label">BTW 21%</span><span class="totaal-val" id="tot-btw">€ 0,00</span></div>
+      <div class="totaal-row sub"><span>Totaal incl. BTW</span><span class="totaal-val" id="tot-incl">€ 0,00</span></div>
+    </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
-        <button class="btn-secondary" onclick="printFactuur()" style="display:flex;align-items:center;justify-content:center;gap:6px">
-          🖨 Afdrukken / PDF
-        </button>
-        <button class="btn-secondary" onclick="toggleEmailSection()" style="display:flex;align-items:center;justify-content:center;gap:6px" id="toggleEmailBtn">
-          📧 Ook e-mailen
-        </button>
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <button class="btn-secondary" onclick="printFactuur()">🖨 Afdrukken</button>
+      <button class="btn-secondary" onclick="toggleEmailSection()" id="toggleEmailBtn">📧 Ook e-mailen</button>
+    </div>
 
-      <div id="emailSection" style="display:none;margin-bottom:8px">
-        <div class="card" style="margin-bottom:8px">
-          <div class="field" style="margin-bottom:0">
-            <label>Emailadres ontvanger</label>
-            <input type="email" id="f-email" placeholder="naam@bedrijf.nl">
-          </div>
+    <div id="emailSection" style="display:none;margin-bottom:10px">
+      <div class="card" style="margin-bottom:10px">
+        <div class="field" style="margin-bottom:0">
+          <label>Emailadres ontvanger</label>
+          <input type="email" id="f-email" placeholder="naam@bedrijf.nl">
         </div>
-        <button class="btn-primary" id="sendFactuurBtn" onclick="verstuurFactuur()">
-          <svg class="bic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          <div class="spin"></div>
-          Factuur versturen per email
-        </button>
       </div>
-
-      <button class="btn-primary" onclick="slaFactuurOp()" style="background:var(--grn)" id="saveFactuurBtn">
-        <svg class="bic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      <button class="btn-primary" id="sendFactuurBtn" onclick="verstuurFactuur()">
+        <svg class="bic" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         <div class="spin"></div>
-        Factuur opslaan (zonder email)
+        Factuur versturen per email
       </button>
     </div>
 
-    <!-- FACTUREN OVERZICHT -->
-    <div class="pane" id="pane-history">
-      <p class="sec">Verstuurde facturen</p>
-      <div class="card" style="padding:0;overflow:hidden" id="factuurList">
-        <div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Laden…</div></div>
-      </div>
+    <button class="btn-primary" onclick="slaFactuurOp()" style="background:var(--green);color:#0a1810" id="saveFactuurBtn">
+      <svg class="bic" viewBox="0 0 24 24" fill="none" stroke="#0a1810" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+      <div class="spin"></div>
+      Factuur opslaan (zonder email)
+    </button>
+  </div>
+
+  <!-- PANE: FACTUREN -->
+  <div class="pane" id="pane-history">
+    <p class="sec">Verstuurde facturen</p>
+    <div id="factuurList" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden">
+      <div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">Laden…</div></div>
     </div>
   </div>
+
+  <div class="version-footer">v74-dark</div>
 </div>
 
-<!-- PRINT AREA (hidden, only shown on print) -->
-<div id="printArea" style="display:none;padding:40px;font-family:Arial,sans-serif;font-size:13px;color:#1a1a18"></div>
-
+<!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- PRINT AREA (dynamic) -->
+<div id="printArea"></div>
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
