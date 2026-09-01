@@ -198,6 +198,18 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
   .modal-header{padding:14px 16px}
   .modal-footer{padding:12px 16px;flex-wrap:wrap}
 
+  /* Klanten-lijst compact op mobiel */
+  .klant-list-header,
+  .klant-row{
+    grid-template-columns:auto 1fr auto !important;
+    gap:10px !important;
+    padding:12px 14px !important;
+  }
+  .klant-list-header .klant-offertes-header,
+  .klant-row .klant-offertes{
+    display:none;
+  }
+
   /* Formulier velden — grotere tap targets */
   .field input,.field select,.field textarea{padding:11px 12px;font-size:15px}
 
@@ -260,6 +272,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v62-projecten</span>
     </div>
     <div class="topbar-right">
       <a href="start.html" title="Terug naar startscherm">🏠 Start</a>
@@ -275,11 +288,17 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
       </button>
       <div class="nav-section">Beheer</div>
+      <button class="nav-item" onclick="showPage('klanten',this)">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Klanten
+      </button>
       <button class="nav-item" onclick="showPage('templates',this)">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Offerte-templates
       </button>
       <button class="nav-item" onclick="showPage('offertes',this)">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Offertes
+      </button>
+      <button class="nav-item" onclick="showPage('projecten',this)">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Projecten
       </button>
     </nav>
 
@@ -296,6 +315,23 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="card">
           <div class="card-header"><span class="card-title">Recente offertes</span></div>
           <table class="data-table" id="dash-recent-offertes"></table>
+        </div>
+      </div>
+
+      <!-- KLANTEN -->
+      <div class="page" id="page-klanten">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Klanten SCM</div>
+            <div class="page-sub">Alle klanten met SCM-klantnummer</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="klantSearch" placeholder="Zoeken…" oninput="renderKlantenLijst()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:220px">
+          </div>
+        </div>
+        <div class="kpi-grid" id="klanten-kpis"></div>
+        <div class="card" style="padding:0;overflow:hidden;margin-top:14px">
+          <div id="klanten-lijst"></div>
         </div>
       </div>
 
@@ -328,11 +364,117 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
           <table class="data-table" id="offertes-table"></table>
         </div>
       </div>
+
+      <!-- PROJECTEN -->
+      <div class="page" id="page-projecten">
+        <div id="projectenListView">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Projecten</div>
+              <div class="page-sub">Projecten waarvoor uren geschreven worden</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <input type="text" id="projectSearch" placeholder="Zoeken…" oninput="renderProjecten()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:200px">
+              <select id="projectStatusFilter" onchange="renderProjecten()" style="background:var(--white);border:1px solid var(--line2);border-radius:var(--rsm);padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+                <option value="alle">Alle statussen</option>
+                <option value="actief">Alleen actief</option>
+                <option value="afgerond">Alleen afgerond</option>
+              </select>
+              <button class="btn-primary" onclick="openProjectModal()">+ Nieuw project</button>
+            </div>
+          </div>
+          <div class="kpi-grid" id="projecten-kpis"></div>
+          <div class="card" style="padding:0;overflow:hidden;margin-top:14px">
+            <div id="projecten-lijst"></div>
+          </div>
+        </div>
+        <div id="projectenDetailView" style="display:none"></div>
+      </div>
     </main>
   </div>
 </div>
 
 <!-- MODALS -->
+
+<!-- PROJECT MODAL -->
+<div class="modal" id="projectModal">
+  <div class="modal-body" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title" id="projectModalTitle">Nieuw project</div>
+      <button class="modal-close" onclick="closeProjectModal()">&times;</button>
+    </div>
+    <div class="modal-content">
+      <input type="hidden" id="proj-id">
+      <input type="hidden" id="proj-nummer">
+      <div class="field">
+        <label>Projectnaam *</label>
+        <input type="text" id="proj-naam" placeholder="Bijv. Interim Ops Manager Broshuis">
+      </div>
+      <div class="field">
+        <label>Klant *</label>
+        <select id="proj-klant" onchange="onProjectKlantChange()">
+          <option value="">— Kies klant uit CRM —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Contactpersoon bij klant</label>
+        <select id="proj-cp">
+          <option value="">— Kies eerst een klant —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Projectlocatie / adres</label>
+        <input type="text" id="proj-adres" placeholder="Bijv. Ondernemingsweg 1, 1234 AB Amsterdam (leeg = klantadres)">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Startdatum</label><input type="date" id="proj-start"></div>
+        <div class="field"><label>Einddatum</label><input type="date" id="proj-eind"></div>
+      </div>
+      <div class="field">
+        <label>Tariefstructuur *</label>
+        <select id="proj-tarieftype" onchange="onProjectTarieftypeChange()">
+          <option value="uur">Per uur</option>
+          <option value="dag">Per dag</option>
+          <option value="vast">Vast bedrag (totaal)</option>
+        </select>
+      </div>
+      <div id="proj-tarief-wrapper" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label id="proj-tarief-label">Uurtarief (€)</label><input type="number" id="proj-tarief" step="0.01" placeholder="Bijv. 125.00"></div>
+        <div class="field" id="proj-totaal-wrapper" style="display:none"><label>Totaalbedrag (€)</label><input type="number" id="proj-totaal" step="0.01"></div>
+      </div>
+      <div style="padding:12px;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);margin-top:12px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px">
+          <input type="checkbox" id="proj-km-on" onchange="onProjectKmToggle()" style="width:18px;height:18px">
+          <span style="font-weight:600">Kilometervergoeding</span>
+        </label>
+        <div id="proj-km-tarief-wrapper" style="display:none">
+          <div class="field" style="margin-bottom:0">
+            <label>Km-tarief (€/km)</label>
+            <input type="number" id="proj-km-tarief" step="0.01" value="0.21">
+          </div>
+        </div>
+      </div>
+      <div style="padding:12px;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);margin-top:12px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="proj-verantwoording" style="width:18px;height:18px">
+          <span style="font-weight:600">Verantwoording per urenpost verplicht</span>
+        </label>
+        <div style="font-size:11px;color:var(--ink3);margin-top:4px">Als aangevinkt moet er bij elke urenpost een tekstregel worden ingevuld</div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>Status</label>
+        <select id="proj-status">
+          <option value="actief">Actief</option>
+          <option value="afgerond">Afgerond</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeProjectModal()">Annuleren</button>
+      <button class="btn-primary" onclick="saveProject()">Opslaan</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal" id="templateModal">
   <div class="modal-body">
@@ -498,7 +640,7 @@ function toast(msg, type='info'){
 window.toast=toast;
 
 // ── DATA ──────────────────────────────────────
-let klanten=[], templates=[], offertes=[], crmContacten=[];
+let klanten=[], templates=[], offertes=[], crmContacten=[], projecten=[];
 
 async function loadKlanten(){
   const snap=await getDocs(collection(db,'scm_klanten'));
@@ -515,6 +657,412 @@ async function loadCRMContacten(){
     crmContacten=[];
   }
 }
+
+// ── PROJECTEN ──────────────────────────────────
+let projectCurrentDetailId = null;
+
+async function loadProjecten(){
+  try {
+    const snap = await getDocs(collection(db,'scm_projecten'));
+    projecten = snap.docs.map(d=>({id:d.id,...d.data()}));
+  } catch(e){
+    console.warn('Projecten laden gefaald:',e);
+    projecten = [];
+  }
+}
+
+// Genereer projectnummer: SCM-P-YYYYnnn (nnn per jaar oplopend)
+async function getNextProjectnr() {
+  const jaar = new Date().getFullYear();
+  const counterId = `main_${jaar}`;
+  const ref = doc(db,'scm_project_counter', counterId);
+  const snap = await getDoc(ref);
+  const cur = snap.exists() ? (snap.data().counter||0) : 0;
+  const nieuw = cur + 1;
+  await setDoc(ref, {counter: nieuw, jaar});
+  return `SCM-P-${jaar}${String(nieuw).padStart(3,'0')}`;
+}
+
+// Firebase-safe: verwijder undefined-velden
+function sanitize(obj){
+  if (obj === undefined) return null;
+  if (obj === null) return null;
+  if (Array.isArray(obj)) return obj.map(sanitize).filter(x => x !== undefined);
+  if (typeof obj !== 'object') return obj;
+  const out = {};
+  for (const k in obj) {
+    const v = obj[k];
+    if (v === undefined) continue;
+    if (typeof v === 'object' && v !== null && !(v instanceof Date)) out[k] = sanitize(v);
+    else out[k] = v;
+  }
+  return out;
+}
+
+// Helper: klant-naam en cp-naam voor project
+function projectKlantNaam(p) {
+  if (!p.klant_crm_id) return p.klant_naam || '(geen klant)';
+  const k = crmContacten.find(c => c.id === p.klant_crm_id);
+  return k ? k.name : (p.klant_naam || '(klant weg)');
+}
+function projectCpNaam(p) {
+  if (!p.klant_crm_id || !p.cp_id) return '';
+  const k = crmContacten.find(c => c.id === p.klant_crm_id);
+  if (!k || !k.contactpersonen) return '';
+  const cp = k.contactpersonen.find(c => c.id === p.cp_id);
+  return cp ? cp.naam : '';
+}
+
+window.renderProjecten = function(){
+  const search = (document.getElementById('projectSearch')?.value || '').toLowerCase();
+  const statusFilter = document.getElementById('projectStatusFilter')?.value || 'alle';
+
+  let list = projecten.slice();
+  if (statusFilter !== 'alle') list = list.filter(p => (p.status||'actief') === statusFilter);
+  if (search) {
+    list = list.filter(p => {
+      const blob = `${p.nummer||''} ${p.naam||''} ${projectKlantNaam(p)} ${projectCpNaam(p)}`.toLowerCase();
+      return blob.includes(search);
+    });
+  }
+  list.sort((a,b) => (b.aangemaakt||'').localeCompare(a.aangemaakt||''));
+
+  // KPIs
+  const totaal = projecten.length;
+  const actief = projecten.filter(p => (p.status||'actief') === 'actief').length;
+  const afgerond = projecten.filter(p => p.status === 'afgerond').length;
+
+  document.getElementById('projecten-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Totaal projecten</div><div class="kpi-val">${totaal}</div></div>
+    <div class="kpi"><div class="kpi-label">Actief</div><div class="kpi-val">${actief}</div></div>
+    <div class="kpi"><div class="kpi-label">Afgerond</div><div class="kpi-val">${afgerond}</div></div>`;
+
+  const el = document.getElementById('projecten-lijst');
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink3)"><div style="font-size:32px;margin-bottom:8px">📁</div><div style="font-size:14px">Geen projecten gevonden.</div><div style="font-size:12px;margin-top:6px">Klik <strong>+ Nieuw project</strong> om te beginnen.</div></div>';
+    return;
+  }
+
+  const header = `<div style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;padding:10px 16px;background:var(--cream);border-bottom:2px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:700">
+    <span>Nr</span><span>Project / Klant</span><span>Looptijd</span><span>Tarief</span><span>Status</span>
+  </div>`;
+
+  const rows = list.map(p => {
+    const klant = projectKlantNaam(p);
+    const cp = projectCpNaam(p);
+    const looptijd = (p.startdatum && p.einddatum)
+      ? `${formatDatum(p.startdatum)} → ${formatDatum(p.einddatum)}`
+      : (p.startdatum ? `vanaf ${formatDatum(p.startdatum)}` : '—');
+    let tariefLabel = '';
+    if (p.tarieftype === 'uur') tariefLabel = `${euro(p.tarief)}/u`;
+    else if (p.tarieftype === 'dag') tariefLabel = `${euro(p.tarief)}/d`;
+    else if (p.tarieftype === 'vast') tariefLabel = `${euro(p.totaal)} totaal`;
+    if (p.km_on) tariefLabel += ` +km`;
+    const statusColor = (p.status||'actief') === 'actief' ? 'var(--grn)' : 'var(--ink3)';
+    const statusBg = (p.status||'actief') === 'actief' ? 'var(--grn-l)' : 'var(--line)';
+
+    return `<div style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s" onclick="openProjectDetail('${p.id}')" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--acc);font-weight:600;background:var(--acc-l);padding:3px 10px;border-radius:20px;white-space:nowrap">${p.nummer||'—'}</span>
+      <div style="min-width:0">
+        <div style="font-weight:600;color:var(--ink);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.naam||'(geen naam)'}</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${klant}${cp?' · '+cp:''}</div>
+      </div>
+      <div style="font-size:12px;color:var(--ink2);white-space:nowrap">${looptijd}</div>
+      <div style="font-size:12px;color:var(--ink2);white-space:nowrap;font-weight:600">${tariefLabel}</div>
+      <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;background:${statusBg};color:${statusColor};white-space:nowrap">${(p.status||'actief').charAt(0).toUpperCase()+(p.status||'actief').slice(1)}</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = header + rows;
+}
+
+window.openProjectDetail = function(id) {
+  const p = projecten.find(x => x.id === id);
+  if (!p) return;
+  projectCurrentDetailId = id;
+  const klant = projectKlantNaam(p);
+  const cp = projectCpNaam(p);
+  const looptijd = (p.startdatum && p.einddatum)
+    ? `${formatDatum(p.startdatum)} → ${formatDatum(p.einddatum)}`
+    : (p.startdatum ? `vanaf ${formatDatum(p.startdatum)}` : '—');
+  let tariefInfo = '';
+  if (p.tarieftype === 'uur') tariefInfo = `€ ${(p.tarief||0).toFixed(2)} per uur`;
+  else if (p.tarieftype === 'dag') tariefInfo = `€ ${(p.tarief||0).toFixed(2)} per dag`;
+  else if (p.tarieftype === 'vast') tariefInfo = `Vast bedrag: € ${(p.totaal||0).toFixed(2)}`;
+  const kmInfo = p.km_on ? `Km-vergoeding: € ${(p.km_tarief||0.21).toFixed(2)} per km` : 'Geen km-vergoeding';
+  const verInfo = p.verantwoording_verplicht ? 'Verantwoording per urenpost verplicht' : 'Verantwoording per urenpost optioneel';
+
+  document.getElementById('projectenListView').style.display = 'none';
+  const detail = document.getElementById('projectenDetailView');
+  detail.style.display = 'block';
+  detail.innerHTML = `
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button onclick="closeProjectDetail()" style="background:var(--white);color:var(--ink2);border:1px solid var(--line2);border-radius:var(--rsm);padding:7px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">← Terug</button>
+        <div>
+          <div class="page-title">${p.naam||'(geen naam)'}</div>
+          <div class="page-sub"><span style="font-family:monospace;background:var(--acc-l);color:var(--acc);padding:2px 8px;border-radius:6px;margin-right:8px">${p.nummer}</span>${klant}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="openProjectModal('${p.id}')" style="background:var(--acc-l);color:var(--acc);border:1px solid var(--acc-m);border-radius:var(--rsm);padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Wijzigen</button>
+        <button onclick="deleteProject('${p.id}')" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rsm);padding:8px 14px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif">Verwijderen</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px">
+      <div class="card" style="padding:18px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Projectgegevens</div>
+        <div style="display:grid;gap:10px;font-size:13px">
+          <div><strong style="color:var(--ink3);font-weight:500">Klant:</strong> ${klant}</div>
+          <div><strong style="color:var(--ink3);font-weight:500">Contactpersoon:</strong> ${cp || '<span style="color:var(--ink3)">—</span>'}</div>
+          <div><strong style="color:var(--ink3);font-weight:500">Adres:</strong> ${p.adres || '<span style="color:var(--ink3);font-style:italic">(gebruikt klantadres)</span>'}</div>
+          <div><strong style="color:var(--ink3);font-weight:500">Looptijd:</strong> ${looptijd}</div>
+          <div><strong style="color:var(--ink3);font-weight:500">Status:</strong> ${(p.status||'actief').charAt(0).toUpperCase()+(p.status||'actief').slice(1)}</div>
+        </div>
+      </div>
+      <div class="card" style="padding:18px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Financieel & instellingen</div>
+        <div style="display:grid;gap:10px;font-size:13px">
+          <div><strong style="color:var(--ink3);font-weight:500">Tarief:</strong> ${tariefInfo}</div>
+          <div><strong style="color:var(--ink3);font-weight:500">Km:</strong> ${kmInfo}</div>
+          <div><strong style="color:var(--ink3);font-weight:500">Verantwoording:</strong> ${verInfo}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:18px;margin-top:14px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink3);font-weight:600;margin-bottom:12px">Geschreven uren</div>
+      <div style="text-align:center;padding:30px;color:var(--ink3);font-size:13px">
+        Uren-invoer voor dit project volgt in de volgende sessie (urenstaat-uitbreiding).
+      </div>
+    </div>
+  `;
+}
+
+window.closeProjectDetail = function() {
+  projectCurrentDetailId = null;
+  document.getElementById('projectenDetailView').style.display = 'none';
+  document.getElementById('projectenListView').style.display = 'block';
+  renderProjecten();
+}
+
+// ── PROJECT MODAL (nieuw / wijzigen) ────────────
+window.openProjectModal = async function(id) {
+  const isEdit = !!id;
+  const p = isEdit ? projecten.find(x => x.id === id) : null;
+
+  document.getElementById('projectModalTitle').textContent = isEdit ? 'Project wijzigen' : 'Nieuw project';
+  document.getElementById('proj-id').value = id || '';
+
+  // Vul klanten-dropdown vanuit CRM
+  await loadCRMContacten();
+  const klantSel = document.getElementById('proj-klant');
+  const sorted = crmContacten.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''));
+  klantSel.innerHTML = '<option value="">— Kies klant uit CRM —</option>' +
+    sorted.map(c => `<option value="${c.id}">${c.name||'(geen naam)'}</option>`).join('');
+
+  if (isEdit) {
+    document.getElementById('proj-nummer').value = p.nummer || '';
+    document.getElementById('proj-naam').value = p.naam || '';
+    klantSel.value = p.klant_crm_id || '';
+    onProjectKlantChange();
+    // Wacht heel kort zodat contactpersonen dropdown vult
+    setTimeout(() => {
+      document.getElementById('proj-cp').value = p.cp_id || '';
+    }, 50);
+    document.getElementById('proj-adres').value = p.adres || '';
+    document.getElementById('proj-start').value = p.startdatum || '';
+    document.getElementById('proj-eind').value = p.einddatum || '';
+    document.getElementById('proj-tarieftype').value = p.tarieftype || 'uur';
+    onProjectTarieftypeChange();
+    document.getElementById('proj-tarief').value = p.tarief || '';
+    document.getElementById('proj-totaal').value = p.totaal || '';
+    document.getElementById('proj-km-on').checked = !!p.km_on;
+    onProjectKmToggle();
+    document.getElementById('proj-km-tarief').value = p.km_tarief != null ? p.km_tarief : 0.21;
+    document.getElementById('proj-verantwoording').checked = !!p.verantwoording_verplicht;
+    document.getElementById('proj-status').value = p.status || 'actief';
+  } else {
+    document.getElementById('proj-nummer').value = '';
+    document.getElementById('proj-naam').value = '';
+    document.getElementById('proj-cp').innerHTML = '<option value="">— Kies eerst een klant —</option>';
+    document.getElementById('proj-adres').value = '';
+    document.getElementById('proj-start').value = '';
+    document.getElementById('proj-eind').value = '';
+    document.getElementById('proj-tarieftype').value = 'uur';
+    onProjectTarieftypeChange();
+    document.getElementById('proj-tarief').value = '';
+    document.getElementById('proj-totaal').value = '';
+    document.getElementById('proj-km-on').checked = false;
+    onProjectKmToggle();
+    document.getElementById('proj-km-tarief').value = 0.21;
+    document.getElementById('proj-verantwoording').checked = false;
+    document.getElementById('proj-status').value = 'actief';
+  }
+
+  document.getElementById('projectModal').classList.add('show');
+}
+
+window.closeProjectModal = function() {
+  document.getElementById('projectModal').classList.remove('show');
+}
+
+window.onProjectKlantChange = function() {
+  const klantId = document.getElementById('proj-klant').value;
+  const cpSel = document.getElementById('proj-cp');
+  if (!klantId) {
+    cpSel.innerHTML = '<option value="">— Kies eerst een klant —</option>';
+    return;
+  }
+  const klant = crmContacten.find(c => c.id === klantId);
+  const cps = klant && Array.isArray(klant.contactpersonen) ? klant.contactpersonen : [];
+  if (cps.length === 0) {
+    cpSel.innerHTML = '<option value="">— Geen contactpersonen bij deze klant —</option>';
+    return;
+  }
+  cpSel.innerHTML = '<option value="">— Geen contactpersoon —</option>' +
+    cps.map(cp => `<option value="${cp.id}">${cp.naam||'(geen naam)'}${cp.primair?' ★':''}</option>`).join('');
+  // Preselecteer primair
+  const prim = cps.find(cp => cp.primair);
+  if (prim) cpSel.value = prim.id;
+}
+
+window.onProjectTarieftypeChange = function() {
+  const t = document.getElementById('proj-tarieftype').value;
+  const label = document.getElementById('proj-tarief-label');
+  const totaalWrap = document.getElementById('proj-totaal-wrapper');
+  const tariefInput = document.getElementById('proj-tarief');
+  if (t === 'uur') { label.textContent = 'Uurtarief (€)'; totaalWrap.style.display='none'; tariefInput.parentElement.style.display=''; }
+  else if (t === 'dag') { label.textContent = 'Dagtarief (€)'; totaalWrap.style.display='none'; tariefInput.parentElement.style.display=''; }
+  else if (t === 'vast') { tariefInput.parentElement.style.display='none'; totaalWrap.style.display=''; }
+}
+
+window.onProjectKmToggle = function() {
+  const on = document.getElementById('proj-km-on').checked;
+  document.getElementById('proj-km-tarief-wrapper').style.display = on ? 'block' : 'none';
+}
+
+window.saveProject = async function() {
+  const id = document.getElementById('proj-id').value;
+  const naam = document.getElementById('proj-naam').value.trim();
+  const klantCrmId = document.getElementById('proj-klant').value;
+  const cpId = document.getElementById('proj-cp').value;
+  const adres = document.getElementById('proj-adres').value.trim();
+  const startdatum = document.getElementById('proj-start').value;
+  const einddatum = document.getElementById('proj-eind').value;
+  const tarieftype = document.getElementById('proj-tarieftype').value;
+  const tarief = parseFloat(document.getElementById('proj-tarief').value) || 0;
+  const totaal = parseFloat(document.getElementById('proj-totaal').value) || 0;
+  const km_on = document.getElementById('proj-km-on').checked;
+  const km_tarief = parseFloat(document.getElementById('proj-km-tarief').value) || 0.21;
+  const verantwoording = document.getElementById('proj-verantwoording').checked;
+  const status = document.getElementById('proj-status').value;
+
+  if (!naam) { toast('Projectnaam is verplicht','bad'); return; }
+  if (!klantCrmId) { toast('Kies een klant','bad'); return; }
+
+  const klant = crmContacten.find(c => c.id === klantCrmId);
+
+  try {
+    let projectId = id;
+    let nummer = document.getElementById('proj-nummer').value;
+
+    if (!id) {
+      // Nieuw project: genereer nummer
+      nummer = await getNextProjectnr();
+    }
+
+    const data = sanitize({
+      nummer,
+      naam,
+      klant_crm_id: klantCrmId,
+      klant_naam: klant ? klant.name : '',
+      cp_id: cpId || null,
+      adres,
+      startdatum,
+      einddatum,
+      tarieftype,
+      tarief: tarieftype === 'vast' ? 0 : tarief,
+      totaal: tarieftype === 'vast' ? totaal : 0,
+      km_on,
+      km_tarief: km_on ? km_tarief : 0,
+      verantwoording_verplicht: verantwoording,
+      status,
+      bijgewerkt: new Date().toISOString()
+    });
+
+    if (id) {
+      await setDoc(doc(db,'scm_projecten', id), data, {merge:true});
+      toast('Project bijgewerkt ✓','ok');
+    } else {
+      data.aangemaakt = new Date().toISOString();
+      const ref = await addDoc(collection(db,'scm_projecten'), data);
+      projectId = ref.id;
+      toast(`Project ${nummer} aangemaakt ✓`,'ok');
+    }
+    closeProjectModal();
+    await loadProjecten();
+    if (projectCurrentDetailId) openProjectDetail(projectId);
+    else renderProjecten();
+  } catch(e) {
+    console.error('saveProject error:', e);
+    toast('Fout bij opslaan: '+(e.message||e),'bad');
+  }
+}
+
+window.deleteProject = async function(id) {
+  const p = projecten.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`Project "${p.naam}" (${p.nummer}) verwijderen?\n\nDit kan niet ongedaan gemaakt worden.`)) return;
+  try {
+    await deleteDoc(doc(db,'scm_projecten', id));
+    toast('Project verwijderd','info');
+    projectCurrentDetailId = null;
+    await loadProjecten();
+    document.getElementById('projectenDetailView').style.display='none';
+    document.getElementById('projectenListView').style.display='block';
+    renderProjecten();
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
+}
+
+// Maak nieuw project met prefill vanuit offerte
+window.maakProjectVanOfferte = async function(offerteId) {
+  const off = offertes.find(o => o.id === offerteId);
+  if (!off) { toast('Offerte niet gevonden','bad'); return; }
+
+  // Zoek klant in CRM: eerst op crm_contact_id, anders op naam
+  await loadCRMContacten();
+  let klantCrm = null;
+  if (off.crm_contact_id) klantCrm = crmContacten.find(c => c.id === off.crm_contact_id);
+  if (!klantCrm && off.klant_naam) klantCrm = crmContacten.find(c => (c.name||'').toLowerCase() === (off.klant_naam||'').toLowerCase());
+
+  // Open modal
+  await openProjectModal();
+  // Prefill
+  document.getElementById('proj-naam').value = off.titel || '';
+  if (klantCrm) {
+    document.getElementById('proj-klant').value = klantCrm.id;
+    onProjectKlantChange();
+  }
+  // Tariefstructuur
+  const tt = off.template_type === 'interim' ? 'dag' : (off.template_type === 'vast' ? 'vast' : 'uur');
+  document.getElementById('proj-tarieftype').value = tt;
+  onProjectTarieftypeChange();
+  if (tt === 'uur' && off.uurtarief_excl) document.getElementById('proj-tarief').value = off.uurtarief_excl;
+  else if (tt === 'dag' && off.uurtarief_excl) document.getElementById('proj-tarief').value = off.uurtarief_excl;
+  else if (tt === 'vast' && off.totaal_excl) document.getElementById('proj-totaal').value = off.totaal_excl;
+  // Km
+  if (off.kmtarief_excl && !off.km_nvt) {
+    document.getElementById('proj-km-on').checked = true;
+    document.getElementById('proj-km-tarief').value = off.kmtarief_excl;
+    onProjectKmToggle();
+  }
+  toast('Prefill vanuit offerte '+off.nummer,'info');
+}
+
 async function loadTemplates(){
   const snap=await getDocs(collection(db,'scm_offerte_templates'));
   templates=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -562,6 +1110,7 @@ async function init(){
     await loadTemplates();
     await loadOffertes();
     await loadCRMContacten();
+    await loadProjecten();
     badge.className='sync-badge';
     badgeText.textContent='Live';
     renderDashboard();
@@ -593,6 +1142,13 @@ window.showPage=function(name,btn){
   // Op mobiel: sluit drawer na keuze
   if(window.innerWidth <= 768) closeNav();
   if(name==='dashboard')renderDashboard();
+  else if(name==='klanten')renderKlantenLijst();
+  else if(name==='projecten'){
+    projectCurrentDetailId = null;
+    document.getElementById('projectenListView').style.display='block';
+    document.getElementById('projectenDetailView').style.display='none';
+    renderProjecten();
+  }
   else if(name==='templates')renderTemplates();
   else if(name==='offertes')renderOffertes();
 };
@@ -632,9 +1188,67 @@ function renderDashboard(){
 function euro(n){return'€ '+Number(n||0).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function formatDatum(iso){if(!iso)return'–';const d=new Date(iso);return d.getDate()+'-'+(d.getMonth()+1)+'-'+d.getFullYear();}
 
-// ── KLANTEN ───────────────────────────────────
-// ── CRM/klant modals verwijderd — gedeelde CRM zit in RvdL beheer ──
+// ── KLANTEN LIJST ─────────────────────────────
+window.renderKlantenLijst = function(){
+  const search = (document.getElementById('klantSearch')?.value || '').toLowerCase();
 
+  // Filter alleen klanten met een SCM-klantnr (niet legacy scm_klanten zonder klantnr)
+  let list = klanten.slice();
+  if (search) {
+    list = list.filter(k => {
+      const blob = ((k.klantnr||'') + ' ' + (k.name||'') + ' ' + (k.contact||'') + ' ' + (k.email||'') + ' ' + (k.phone||'')).toLowerCase();
+      return blob.includes(search);
+    });
+  }
+  // Sorteer op klantnr (SCM-100001, SCM-100002, ...)
+  list.sort((a,b) => (a.klantnr||'').localeCompare(b.klantnr||'', undefined, {numeric:true}));
+
+  // KPIs
+  const totaal = klanten.length;
+  const metKlantnr = klanten.filter(k => k.klantnr && k.klantnr.startsWith('SCM-')).length;
+  const zonderKlantnr = totaal - metKlantnr;
+  const totOff = offertes.length;
+
+  document.getElementById('klanten-kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Totaal klanten</div><div class="kpi-val">${totaal}</div></div>
+    <div class="kpi"><div class="kpi-label">Met SCM-nummer</div><div class="kpi-val">${metKlantnr}</div></div>
+    <div class="kpi"><div class="kpi-label">Totaal offertes</div><div class="kpi-val">${totOff}</div></div>`;
+
+  const el = document.getElementById('klanten-lijst');
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink3)"><div style="font-size:32px;margin-bottom:8px">🏢</div><div style="font-size:14px">Geen klanten gevonden.</div><div style="font-size:12px;color:var(--ink3);margin-top:6px">Maak leads klant via <strong>RvdL beheer → CRM → Maak klant SCM</strong>.</div></div>';
+    return;
+  }
+
+  const header = `<div class="klant-list-header" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:10px 16px;background:var(--cream);border-bottom:2px solid var(--line);font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);font-weight:700">
+    <span>Nr</span>
+    <span>Bedrijf / Contactpersoon</span>
+    <span class="klant-offertes-header">Offertes</span>
+    <span></span>
+  </div>`;
+
+  const rows = list.map(k => {
+    const klantOffertes = offertes.filter(o => o.klant_id === k.id || (o.crm_contact_id && k.crm_contact_id && o.crm_contact_id === k.crm_contact_id));
+    const nr = klantOffertes.length;
+    const laatst = klantOffertes.length ? klantOffertes.sort((a,b)=>new Date(b.datum)-new Date(a.datum))[0].datum : null;
+    const laatstStr = laatst ? formatDatum(laatst) : '–';
+
+    return `<div class="klant-row" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--acc);font-weight:600;background:var(--acc-l);padding:3px 10px;border-radius:20px;white-space:nowrap">${k.klantnr||'—'}</span>
+      <div style="min-width:0">
+        <div style="font-weight:600;color:var(--ink);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.name||'(geen naam)'}</div>
+        <div class="klant-contact" style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.contact || '<span style=&quot;font-style:italic&quot;>Geen contactpersoon</span>'}${k.email ? ' · '+k.email : ''}</div>
+      </div>
+      <div class="klant-offertes" style="font-size:12px;color:var(--ink2);text-align:right;white-space:nowrap">
+        <div style="font-weight:600">${nr} offerte${nr===1?'':'s'}</div>
+        <div style="font-size:11px;color:var(--ink3)">laatst: ${laatstStr}</div>
+      </div>
+      <span style="color:var(--ink3);font-size:14px">›</span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = header + rows;
+}
 
 // ── TEMPLATES ─────────────────────────────────
 function renderTemplates(){
@@ -728,6 +1342,7 @@ function renderOffertes(){
       <td style="text-align:right;font-family:'DM Mono',monospace">${o.is_interim||o.template_type==='interim'?'<span style="color:var(--ink3);font-style:italic">interim</span>':euro(o.totaal_excl||0)}</td>
       <td style="text-align:right">
         <a href="scm-offerte.html?id=${o.id}" target="_blank" class="btn-small">🖨 Openen</a>
+        <button class="btn-small" onclick="maakProjectVanOfferte('${o.id}')" title="Maak nieuw project met deze offerte-gegevens">📁 Maak project</button>
         <button class="btn-small danger" onclick="deleteOfferte('${o.id}')">✕</button>
       </td>
     </tr>`).join('')+'</tbody>';
