@@ -272,7 +272,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v68-post-wijzig</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v69-crm-leidend</span>
     </div>
     <div class="topbar-right">
       <a href="start.html" title="Terug naar startscherm">🏠 Start</a>
@@ -766,8 +766,14 @@ window.toast=toast;
 let klanten=[], templates=[], offertes=[], crmContacten=[], projecten=[], consultants=[];
 
 async function loadKlanten(){
-  const snap=await getDocs(collection(db,'scm_klanten'));
-  klanten=snap.docs.map(d=>({id:d.id,...d.data()}));
+  // Legacy: laad oude scm_klanten collectie voor opruim-sectie
+  try {
+    const snap=await getDocs(collection(db,'scm_klanten'));
+    klanten=snap.docs.map(d=>({id:d.id,...d.data()}));
+  } catch(e) {
+    console.warn('Legacy scm_klanten laden gefaald:',e);
+    klanten=[];
+  }
 }
 
 // Laad alle contacten uit gedeelde CRM (voor offerte-dropdown)
@@ -1752,7 +1758,11 @@ window.showPage=function(name,btn){
   // Op mobiel: sluit drawer na keuze
   if(window.innerWidth <= 768) closeNav();
   if(name==='dashboard')renderDashboard();
-  else if(name==='klanten')renderKlantenLijst();
+  else if(name==='klanten'){
+    // Herlaad CRM data en legacy scm_klanten om verse status te tonen
+    Promise.all([loadCRMContacten(), loadKlanten()]).then(() => renderKlantenLijst());
+    renderKlantenLijst();
+  }
   else if(name==='projecten'){
     projectCurrentDetailId = null;
     document.getElementById('projectenListView').style.display='block';
@@ -1803,31 +1813,47 @@ function formatDatum(iso){if(!iso)return'–';const d=new Date(iso);return d.get
 window.renderKlantenLijst = function(){
   const search = (document.getElementById('klantSearch')?.value || '').toLowerCase();
 
-  // Filter alleen klanten met een SCM-klantnr (niet legacy scm_klanten zonder klantnr)
-  let list = klanten.slice();
+  // NIEUW: Klantenlijst komt uit crm_gedeeld waar is_scm_klant = true
+  // crmContacten wordt geladen door loadCRMContacten (bij init)
+  let list = (crmContacten||[]).filter(c => c.is_scm_klant === true).slice();
+
   if (search) {
     list = list.filter(k => {
-      const blob = ((k.klantnr||'') + ' ' + (k.name||'') + ' ' + (k.contact||'') + ' ' + (k.email||'') + ' ' + (k.phone||'')).toLowerCase();
+      const blob = ((k.scm_klantnr||'') + ' ' + (k.name||'') + ' ' + (k.contact||'') + ' ' + (k.email||'') + ' ' + (k.phone||'')).toLowerCase();
       return blob.includes(search);
     });
   }
-  // Sorteer op klantnr (SCM-100001, SCM-100002, ...)
-  list.sort((a,b) => (a.klantnr||'').localeCompare(b.klantnr||'', undefined, {numeric:true}));
+  // Sorteer op klantnr (SCM-001, SCM-002, ...)
+  list.sort((a,b) => (a.scm_klantnr||'zzz').localeCompare(b.scm_klantnr||'zzz', undefined, {numeric:true}));
 
   // KPIs
-  const totaal = klanten.length;
-  const metKlantnr = klanten.filter(k => k.klantnr && k.klantnr.startsWith('SCM-')).length;
-  const zonderKlantnr = totaal - metKlantnr;
+  const scmKlanten = (crmContacten||[]).filter(c => c.is_scm_klant === true);
+  const totaal = scmKlanten.length;
+  const metNr = scmKlanten.filter(k => k.scm_klantnr && k.scm_klantnr.startsWith('SCM-')).length;
+  const zonderNr = totaal - metNr;
   const totOff = offertes.length;
 
+  // Legacy scm_klanten records die niet meer in CRM als SCM-klant staan
+  const crmSet = new Set(scmKlanten.map(k => k.id));
+  const legacyOrphans = (klanten||[]).filter(l => !crmSet.has(l.crm_contact_id));
+
+  const opruimBanner = legacyOrphans.length > 0
+    ? `<div style="background:#fdf3e8;border:1px solid #f0d9a8;border-radius:var(--rsm);padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="font-size:13px;color:#7a3f00">
+          <strong>🧹 Opruimen:</strong> Er staan nog <strong>${legacyOrphans.length}</strong> oude klant${legacyOrphans.length===1?'':'en'} in de legacy <code>scm_klanten</code> collectie die niet meer in CRM als SCM-klant zijn gemarkeerd.
+        </div>
+        <button onclick="toonLegacyOpruimen()" style="background:var(--amb);color:#fff;border:none;border-radius:var(--rxs);padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">Bekijk & opruimen</button>
+      </div>`
+    : '';
+
   document.getElementById('klanten-kpis').innerHTML = `
-    <div class="kpi"><div class="kpi-label">Totaal klanten</div><div class="kpi-val">${totaal}</div></div>
-    <div class="kpi"><div class="kpi-label">Met SCM-nummer</div><div class="kpi-val">${metKlantnr}</div></div>
+    <div class="kpi"><div class="kpi-label">SCM-klanten totaal</div><div class="kpi-val">${totaal}</div></div>
+    <div class="kpi"><div class="kpi-label">Met SCM-nummer</div><div class="kpi-val">${metNr}${zonderNr?` <span style="font-size:12px;color:var(--amb)">(${zonderNr} zonder)</span>`:''}</div></div>
     <div class="kpi"><div class="kpi-label">Totaal offertes</div><div class="kpi-val">${totOff}</div></div>`;
 
   const el = document.getElementById('klanten-lijst');
   if (!list.length) {
-    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink3)"><div style="font-size:32px;margin-bottom:8px">🏢</div><div style="font-size:14px">Geen klanten gevonden.</div><div style="font-size:12px;color:var(--ink3);margin-top:6px">Maak leads klant via <strong>RvdL beheer → CRM → Maak klant SCM</strong>.</div></div>';
+    el.innerHTML = opruimBanner + '<div style="padding:40px;text-align:center;color:var(--ink3)"><div style="font-size:32px;margin-bottom:8px">🏢</div><div style="font-size:14px">Geen SCM-klanten gevonden.</div><div style="font-size:12px;color:var(--ink3);margin-top:6px">Ga naar <strong>CRM</strong> en vink bij een contact <strong>"Klant SCM"</strong> aan.</div></div>';
     return;
   }
 
@@ -1839,16 +1865,20 @@ window.renderKlantenLijst = function(){
   </div>`;
 
   const rows = list.map(k => {
-    const klantOffertes = offertes.filter(o => o.klant_id === k.id || (o.crm_contact_id && k.crm_contact_id && o.crm_contact_id === k.crm_contact_id));
+    const klantOffertes = offertes.filter(o => o.crm_contact_id === k.id);
     const nr = klantOffertes.length;
     const laatst = klantOffertes.length ? klantOffertes.sort((a,b)=>new Date(b.datum)-new Date(a.datum))[0].datum : null;
     const laatstStr = laatst ? formatDatum(laatst) : '–';
+    const klantnrDisplay = k.scm_klantnr
+      ? `<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--acc);font-weight:600;background:var(--acc-l);padding:3px 10px;border-radius:20px;white-space:nowrap">${k.scm_klantnr}</span>`
+      : `<span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--amb);font-weight:600;background:var(--amb-l);padding:3px 10px;border-radius:20px;white-space:nowrap" title="Nog geen klantnr toegewezen">geen nr</span>`;
+    const primair = primaireContactpersoon(k);
 
     return `<div class="klant-row" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''">
-      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--acc);font-weight:600;background:var(--acc-l);padding:3px 10px;border-radius:20px;white-space:nowrap">${k.klantnr||'—'}</span>
+      ${klantnrDisplay}
       <div style="min-width:0">
         <div style="font-weight:600;color:var(--ink);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.name||'(geen naam)'}</div>
-        <div class="klant-contact" style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.contact || '<span style=&quot;font-style:italic&quot;>Geen contactpersoon</span>'}${k.email ? ' · '+k.email : ''}</div>
+        <div class="klant-contact" style="font-size:12px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${primair ? primair.naam : '<span style="font-style:italic">Geen contactpersoon</span>'}${primair && primair.mail ? ' · '+primair.mail : ''}</div>
       </div>
       <div class="klant-offertes" style="font-size:12px;color:var(--ink2);text-align:right;white-space:nowrap">
         <div style="font-weight:600">${nr} offerte${nr===1?'':'s'}</div>
@@ -1858,7 +1888,78 @@ window.renderKlantenLijst = function(){
     </div>`;
   }).join('');
 
-  el.innerHTML = header + rows;
+  el.innerHTML = opruimBanner + header + rows;
+}
+
+// Helper: pak eerste contactpersoon uit crm_gedeeld record
+function primaireContactpersoon(crmKlant) {
+  if (!crmKlant) return null;
+  const cps = Array.isArray(crmKlant.contactpersonen) ? crmKlant.contactpersonen : [];
+  if (!cps.length) return null;
+  return cps[0];
+}
+
+// Toon legacy scm_klanten records met verwijder-knop
+window.toonLegacyOpruimen = function() {
+  const crmSet = new Set((crmContacten||[]).filter(c => c.is_scm_klant === true).map(k => k.id));
+  const orphans = (klanten||[]).filter(l => !crmSet.has(l.crm_contact_id));
+
+  if (!orphans.length) { toast('Geen opruimen nodig','ok'); return; }
+
+  const html = `<div style="padding:20px 20px 10px">
+    <div style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin-bottom:6px">Legacy scm_klanten opruimen</div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:14px">
+      Deze records staan nog in de oude <code>scm_klanten</code> collectie maar het onderliggende CRM-contact heeft geen <strong>Klant SCM</strong> vinkje meer. Ze zijn overblijfselen van tests of oude migraties.
+    </div>
+    ${orphans.map(o => `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--rxs);margin-bottom:8px;background:var(--cream)">
+        <div style="min-width:0;flex:1">
+          <div style="font-weight:600;font-size:13px;color:var(--ink)">${o.name||'(geen naam)'}</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:2px">
+            ${o.klantnr ? `<code>${o.klantnr}</code> · ` : ''}
+            ID: <code style="font-size:10px">${o.id}</code>
+            ${o.crm_contact_id ? ` · CRM-koppeling: <code style="font-size:10px">${o.crm_contact_id}</code>` : ' · <span style="color:var(--red)">geen CRM-koppeling</span>'}
+          </div>
+        </div>
+        <button onclick="verwijderLegacyKlant('${o.id}','${(o.name||'').replace(/'/g, "\\'")}')" style="background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rxs);padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">✕ Verwijder</button>
+      </div>
+    `).join('')}
+  </div>`;
+
+  // Toon in een simpele modal
+  let modal = document.getElementById('legacyOpruimModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'legacyOpruimModal';
+    modal.className = 'modal';
+    modal.innerHTML = `<div class="modal-body" style="max-width:560px">
+      <div class="modal-header">
+        <div class="modal-title">Opruimen</div>
+        <button class="modal-close" onclick="document.getElementById('legacyOpruimModal').classList.remove('show')">&times;</button>
+      </div>
+      <div class="modal-content" id="legacyOpruimContent"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="document.getElementById('legacyOpruimModal').classList.remove('show')">Sluiten</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+  }
+  document.getElementById('legacyOpruimContent').innerHTML = html;
+  modal.classList.add('show');
+}
+
+window.verwijderLegacyKlant = async function(id, naam) {
+  if (!confirm(`"${naam}" definitief verwijderen uit scm_klanten?\n\nDit heeft geen invloed op CRM.`)) return;
+  try {
+    await deleteDoc(doc(db,'scm_klanten', id));
+    toast('Verwijderd ✓','ok');
+    await loadKlanten();
+    renderKlantenLijst();
+    // Refresh de modal-inhoud
+    toonLegacyOpruimen();
+  } catch(e) {
+    toast('Fout: '+e.message,'bad');
+  }
 }
 
 // ── TEMPLATES ─────────────────────────────────
