@@ -343,7 +343,7 @@ html,body{
 
   <div class="footer">
     <span>Ordinatio Groep</span>
-    <span class="footer-version">v70-mobile</span>
+    <span class="footer-version">v73-layout-fix</span>
   </div>
 </div>
 
@@ -515,6 +515,22 @@ onSnapshot(doc(db,'dagstaat','data'), snap => {
     combineAndRender();
   }
 })();
+
+// Auto-refresh SCM data als je terug op de tab komt
+// (dagstaat/RvdL heeft al een live listener, SCM niet)
+async function refreshScmData() {
+  try {
+    const snap = await getDocs(collection(db,'scm_urenstaten'));
+    scmPostsCache = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    combineAndRender();
+  } catch(e) {
+    console.warn('SCM refresh mislukt:', e);
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refreshScmData();
+});
+window.addEventListener('focus', refreshScmData);
 
 (async () => {
   try {

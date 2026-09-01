@@ -151,7 +151,7 @@ body.scm-mode .tab.on::after{background:var(--scm)}
 
 /* ═══ DATE STRIP ═══ */
 .date-strip{
-  display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+  display:grid;grid-template-columns:44px 1fr 44px;gap:8px;
   margin-bottom:16px;align-items:stretch;
 }
 .date-nav{
@@ -165,23 +165,23 @@ body.scm-mode .tab.on::after{background:var(--scm)}
 
 .date-current{
   background:var(--surface);border:1px solid var(--line);
-  border-radius:var(--r-sm);padding:12px 16px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  cursor:pointer;
+  border-radius:var(--r-sm);padding:10px 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  cursor:pointer;min-width:0;
 }
-.date-left{display:flex;align-items:center;gap:12px;min-width:0}
+.date-left{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
 .date-big{
   font-family:'Fraunces',serif;font-weight:500;
-  font-size:32px;line-height:1;color:var(--ink);
+  font-size:28px;line-height:1;color:var(--ink);flex-shrink:0;
 }
-.date-txt{min-width:0}
-.date-weekday{font-size:13px;font-weight:600;color:var(--rvdl)}
+.date-txt{min-width:0;flex:1;overflow:hidden}
+.date-weekday{font-size:12px;font-weight:600;color:var(--rvdl);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body.scm-mode .date-weekday{color:var(--scm)}
-.date-month{font-size:11px;color:var(--ink-3);margin-top:1px}
+.date-month{font-size:11px;color:var(--ink-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .date-badge{
   font-size:10px;font-weight:600;
   background:var(--surface-2);color:var(--ink-3);
-  padding:4px 10px;border-radius:20px;white-space:nowrap;
+  padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;
 }
 .date-input-hidden{
   position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;
@@ -191,16 +191,21 @@ body.scm-mode .date-weekday{color:var(--scm)}
 .day-total{
   background:var(--surface);border:1px solid var(--line);
   border-radius:var(--r);padding:14px 16px;margin-bottom:14px;
-  display:flex;justify-content:space-between;align-items:center;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
 }
+.day-total-info{min-width:0;flex:1;overflow:hidden}
 .day-total-label{
   font-size:11px;font-weight:600;color:var(--ink-3);
   text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;
 }
-.day-total-sub{font-size:12px;color:var(--ink-2)}
+.day-total-sub{
+  font-size:12px;color:var(--ink-2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 .day-total-val{
   font-family:'JetBrains Mono',monospace;
   font-size:24px;font-weight:600;color:var(--ink);
+  flex-shrink:0;
 }
 
 /* ═══ FORM CARD (blok) ═══ */
@@ -246,7 +251,8 @@ body.scm-mode .date-weekday{color:var(--scm)}
   color:var(--ink);font-family:inherit;font-size:15px;
   outline:none;transition:border-color .12s;
   -webkit-appearance:none;appearance:none;
-  min-height:46px;
+  min-height:46px;width:100%;
+  text-overflow:ellipsis;
 }
 .field input[type="time"],.field input[type="number"]{
   font-family:'JetBrains Mono',monospace;font-weight:600;font-size:16px;
@@ -503,7 +509,7 @@ body.scm-mode .save-btn{background:var(--scm)}
     <input type="date" id="hiddenDate" class="date-input-hidden" onchange="setDate(this.value)">
 
     <div class="day-total" id="dayTotalCard" style="display:none">
-      <div>
+      <div class="day-total-info">
         <div class="day-total-label">Totaal vandaag</div>
         <div class="day-total-sub" id="dayTotalSub">–</div>
       </div>
@@ -540,7 +546,7 @@ body.scm-mode .save-btn{background:var(--scm)}
   <!-- SCM SCREEN CONTAINER (wordt via JS gevuld) -->
   <div id="scmScreen" style="display:none"></div>
 
-  <div class="version-footer">v72-dark</div>
+  <div class="version-footer">v73-layout-fix</div>
 </div>
 
 <script type="module">
