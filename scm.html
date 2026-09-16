@@ -305,6 +305,9 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
       <button class="nav-item" onclick="showPage('offertes',this)">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>Offertes
       </button>
+      <button class="nav-item" onclick="showPage('facturen',this)">
+        <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>Facturen
+      </button>
       <button class="nav-item" onclick="showPage('projecten',this)">
         <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Projecten
       </button>
@@ -370,6 +373,33 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="card">
           <div class="card-header"><span class="card-title">Alle offertes</span></div>
           <table class="data-table" id="offertes-table"></table>
+        </div>
+      </div>
+
+      <!-- FACTUREN -->
+      <div class="page" id="page-facturen">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Facturen</div>
+            <div class="page-sub">Uit SCM-VAR en losse diensten · nummering gebeurt hier</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-secondary" onclick="openAfzenderModal()">Afzendergegevens</button>
+            <button class="btn-primary" onclick="openFactuurModal()">+ Losse factuur</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Alle facturen</span>
+            <select id="fac-filter" onchange="renderFacturen()" style="font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;border:1px solid var(--line2);border-radius:var(--rsm);background:var(--cream)">
+              <option value="">Alle statussen</option>
+              <option value="concept">Concept</option>
+              <option value="definitief">Definitief</option>
+              <option value="verzonden">Verzonden</option>
+              <option value="betaald">Betaald</option>
+            </select>
+          </div>
+          <table class="data-table" id="facturen-table"></table>
         </div>
       </div>
 
@@ -632,6 +662,68 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
   </div>
 </div>
 
+<div class="modal" id="factuurModal">
+  <div class="modal-body" style="max-width:720px">
+    <div class="modal-header">
+      <div class="modal-title">Losse factuur</div>
+      <button class="modal-close" onclick="closeFactuurModal()">&times;</button>
+    </div>
+    <div class="modal-content">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>Klant (CRM) *</label><select id="fac-klant" onchange="onFactuurKlantChange()"></select></div>
+        <div class="field"><label>Type</label><select id="fac-type"><option value="dienst">Dienst</option><option value="uren">Uren</option><option value="module">Module</option><option value="abonnement">Abonnement</option></select></div>
+      </div>
+      <div class="field"><label>Klantnaam op de factuur *</label><input type="text" id="fac-klantnaam"></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+        <div class="field"><label>Adres</label><input type="text" id="fac-adres" placeholder="Straat 1, 1234 AB Plaats"></div>
+        <div class="field"><label>E-mail</label><input type="email" id="fac-email"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="field"><label>Periode van</label><input type="date" id="fac-van"></div>
+        <div class="field"><label>Periode tot</label><input type="date" id="fac-tot"></div>
+        <div class="field"><label>Btw %</label><input type="number" id="fac-btw" value="21" step="1" min="0"></div>
+      </div>
+      <div class="field">
+        <label>Regels *</label>
+        <table class="data-table" id="fac-regels"><thead><tr><th>Omschrijving</th><th style="width:70px">Aantal</th><th style="width:90px">Eenheid</th><th style="width:110px">Prijs</th><th style="width:36px"></th></tr></thead><tbody></tbody></table>
+        <button class="btn-small" style="margin-top:8px" onclick="voegFactuurRegelToe()">+ Regel</button>
+      </div>
+      <div class="field"><label>Opmerking (op de factuur)</label><textarea id="fac-opmerking" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeFactuurModal()">Annuleren</button>
+      <button class="btn-primary" onclick="saveLosseFactuur()">Bewaren als concept</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="afzenderModal">
+  <div class="modal-body">
+    <div class="modal-header">
+      <div class="modal-title">Afzendergegevens</div>
+      <button class="modal-close" onclick="closeAfzenderModal()">&times;</button>
+    </div>
+    <div class="modal-content">
+      <p style="font-size:13px;color:var(--ink3);margin:0 0 14px">Komt bovenaan elke factuur. Eén keer invullen.</p>
+      <div class="field"><label>Naam</label><input type="text" id="afz-naam" placeholder="Supply Chain Meneer"></div>
+      <div class="field"><label>Adres</label><input type="text" id="afz-adres" placeholder="Straat 1, 1234 AB Plaats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>KvK</label><input type="text" id="afz-kvk"></div>
+        <div class="field"><label>Btw-nummer</label><input type="text" id="afz-btw"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field"><label>IBAN</label><input type="text" id="afz-iban"></div>
+        <div class="field"><label>Betaaltermijn (dagen)</label><input type="number" id="afz-termijn" value="14" min="0"></div>
+      </div>
+      <div class="field"><label>E-mail</label><input type="email" id="afz-email"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeAfzenderModal()">Annuleren</button>
+      <button class="btn-primary" onclick="saveAfzender()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="offerteModal">
   <div class="modal-body" style="max-width:640px">
     <div class="modal-header">
@@ -705,7 +797,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
 
 <script type="module">
 import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,doc,setDoc,getDoc,collection,getDocs,addDoc,deleteDoc,updateDoc,query,orderBy}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,setDoc,getDoc,collection,getDocs,addDoc,deleteDoc,updateDoc,query,orderBy,runTransaction}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={
   apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",
@@ -1804,6 +1896,7 @@ window.showPage=function(name,btn){
     document.getElementById('projectenDetailView').style.display='none';
     renderProjecten();
   }
+  else if(name==='facturen'){loadFacturen().then(renderFacturen);}
   else if(name==='templates')renderTemplates();
   else if(name==='offertes')renderOffertes();
   else if(name==='consultants')renderConsultants();
@@ -2477,6 +2570,234 @@ window.deleteOfferte=async function(id){
     toast('Verwijderd','info');
   }catch(e){toast('Fout: '+e.message,'bad');}
 };
+// ── FACTUREN ─────────────────────────────────
+// Centrale facturenopslag (collectie scm_facturen). SCM-VAR schrijft hier
+// conceptfacturen in (bron 'scm-var'); losse diensten worden hier met de hand
+// ingevoerd (bron 'erp'). Nummeren en definitief maken gebeurt uitsluitend
+// hier: één teller per jaar in scm_factuur_counter, in een transactie, zodat
+// nummers over alle bronnen heen opeenvolgend en uniek zijn.
+let facturen=[], afzender=null;
+const FACTUUR_STATUS={concept:'amber',definitief:'blue',verzonden:'blue',betaald:'green'};
+
+async function loadFacturen(){
+  try{
+    const snap=await getDocs(collection(db,'scm_facturen'));
+    facturen=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.aangemaakt_op||'').localeCompare(a.aangemaakt_op||''));
+  }catch(e){
+    console.warn('scm_facturen laden gefaald:',e);
+    facturen=[];
+    toast('Facturen laden mislukt: '+e.message,'bad');
+  }
+  if(!afzender){
+    try{const s=await getDoc(doc(db,'scm_instellingen','factuur'));afzender=s.exists()?s.data():{};}catch(e){afzender={};}
+  }
+}
+
+function factuurPeriode(f){
+  if(!f.periode||!f.periode.van)return'–';
+  const d=new Date(f.periode.van+'T00:00:00');
+  return d.toLocaleDateString('nl-NL',{month:'long',year:'numeric'});
+}
+
+window.renderFacturen=function(){
+  const tbl=document.getElementById('facturen-table');
+  const filter=(document.getElementById('fac-filter')||{}).value||'';
+  const lijst=facturen.filter(f=>!filter||f.status===filter);
+  if(lijst.length===0){
+    tbl.innerHTML='<tr><td class="empty">Geen facturen'+(filter?' met deze status':'')+'. Facturen uit SCM-VAR verschijnen hier na "Naar ERP"; losse diensten via "+ Losse factuur".</td></tr>';
+    return;
+  }
+  tbl.innerHTML='<thead><tr><th>Nummer</th><th>Klant</th><th>Periode</th><th>Bron</th><th>Status</th><th style="text-align:right">Excl. btw</th><th></th></tr></thead><tbody>'+
+    lijst.map(f=>`<tr>
+      <td><strong>${f.factuurnummer||'<span style="color:var(--ink3)">concept</span>'}</strong></td>
+      <td>${esc(f.klant&&f.klant.naam||'–')}<div style="font-size:11px;color:var(--ink3)">${f.type||''}</div></td>
+      <td>${factuurPeriode(f)}</td>
+      <td style="font-size:12px;color:var(--ink3)">${esc(f.bron||'–')}</td>
+      <td><span class="badge ${FACTUUR_STATUS[f.status]||'amber'}">${f.status||'concept'}</span></td>
+      <td style="text-align:right;font-family:'DM Mono',monospace">${euro(f.totaal_excl)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        ${f.status==='concept'?`<button class="btn-small" onclick="maakDefinitief('${f.id}')" title="Factuurnummer toekennen">✓ Definitief</button>`:''}
+        ${f.status==='definitief'?`<button class="btn-small" onclick="zetFactuurStatus('${f.id}','verzonden')">📤 Verzonden</button>`:''}
+        ${f.status==='verzonden'?`<button class="btn-small" onclick="zetFactuurStatus('${f.id}','betaald')">💶 Betaald</button>`:''}
+        <button class="btn-small" onclick="printFactuur('${f.id}')">🖨 Afdrukken</button>
+        ${f.status==='concept'&&f.bron==='erp'?`<button class="btn-small danger" onclick="verwijderFactuurConcept('${f.id}')">✕</button>`:''}
+      </td>
+    </tr>`).join('')+'</tbody>';
+};
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+// Nummer toekennen: de teller en de factuur in één transactie, zodat twee
+// tabbladen tegelijk nooit hetzelfde nummer uitdelen.
+window.maakDefinitief=async function(id){
+  const f=facturen.find(x=>x.id===id);
+  if(!f||f.status!=='concept'){toast('Alleen een concept kan definitief worden','bad');return;}
+  if(!confirm('Factuur voor '+(f.klant&&f.klant.naam||'?')+' definitief maken en een nummer toekennen? Dit is niet terug te draaien.'))return;
+  try{
+    const nummer=await runTransaction(db,async(tx)=>{
+      const jaar=new Date().getFullYear();
+      const counterRef=doc(db,'scm_factuur_counter',String(jaar));
+      const factuurRef=doc(db,'scm_facturen',id);
+      const [cSnap,fSnap]=await Promise.all([tx.get(counterRef),tx.get(factuurRef)]);
+      if(!fSnap.exists()||fSnap.data().status!=='concept')throw new Error('Factuur is geen concept meer');
+      const volgend=(cSnap.exists()?(cSnap.data().counter||0):0)+1;
+      const nummer='SCM-'+jaar+'-'+String(volgend).padStart(3,'0');
+      tx.set(counterRef,{counter:volgend,jaar});
+      tx.update(factuurRef,{status:'definitief',factuurnummer:nummer,definitief_op:new Date().toISOString()});
+      return nummer;
+    });
+    toast('Factuurnummer '+nummer+' toegekend','ok');
+    await loadFacturen();renderFacturen();
+  }catch(e){toast('Definitief maken mislukt: '+e.message,'bad');}
+};
+
+window.zetFactuurStatus=async function(id,status){
+  try{
+    const velden={status};
+    if(status==='verzonden')velden.verzonden_op=new Date().toISOString();
+    if(status==='betaald')velden.betaald_op=new Date().toISOString();
+    await updateDoc(doc(db,'scm_facturen',id),velden);
+    toast('Status: '+status,'ok');
+    await loadFacturen();renderFacturen();
+  }catch(e){toast('Status wijzigen mislukt: '+e.message,'bad');}
+};
+
+window.verwijderFactuurConcept=async function(id){
+  if(!confirm('Dit concept verwijderen?'))return;
+  try{await deleteDoc(doc(db,'scm_facturen',id));await loadFacturen();renderFacturen();toast('Concept verwijderd','ok');}
+  catch(e){toast('Verwijderen mislukt: '+e.message,'bad');}
+};
+
+// ── Losse factuur ──
+window.openFactuurModal=function(){
+  const sel=document.getElementById('fac-klant');
+  const klanten=(crmContacten||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  sel.innerHTML='<option value="">— kies uit het CRM —</option>'+klanten.map(k=>`<option value="${k.id}">${esc(k.name||'')}</option>`).join('');
+  ['fac-klantnaam','fac-adres','fac-email','fac-van','fac-tot','fac-opmerking'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('fac-btw').value='21';
+  document.getElementById('fac-type').value='dienst';
+  document.querySelector('#fac-regels tbody').innerHTML='';
+  voegFactuurRegelToe();
+  document.getElementById('factuurModal').classList.add('show');
+};
+window.closeFactuurModal=function(){document.getElementById('factuurModal').classList.remove('show');};
+window.onFactuurKlantChange=function(){
+  const k=(crmContacten||[]).find(x=>x.id===document.getElementById('fac-klant').value);
+  if(!k)return;
+  document.getElementById('fac-klantnaam').value=k.name||'';
+  document.getElementById('fac-adres').value=[k.address,k.city].filter(Boolean).join(', ');
+  document.getElementById('fac-email').value=k.email||k.mail||'';
+};
+window.voegFactuurRegelToe=function(){
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td><input type="text" class="fr-oms" placeholder="Omschrijving" style="width:100%"></td>'+
+    '<td><input type="number" class="fr-aantal" value="1" step="0.5" min="0" style="width:100%"></td>'+
+    '<td><input type="text" class="fr-eenheid" value="stuk" style="width:100%"></td>'+
+    '<td><input type="number" class="fr-prijs" step="0.01" min="0" placeholder="0,00" style="width:100%"></td>'+
+    '<td><button class="btn-small danger" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  document.querySelector('#fac-regels tbody').appendChild(tr);
+};
+window.saveLosseFactuur=async function(){
+  const naam=document.getElementById('fac-klantnaam').value.trim();
+  if(!naam){toast('Vul de klantnaam in','bad');return;}
+  const btwPct=Number(document.getElementById('fac-btw').value)||0;
+  const regels=[...document.querySelectorAll('#fac-regels tbody tr')].map(tr=>{
+    const aantal=Number(tr.querySelector('.fr-aantal').value)||0;
+    const prijs=Number(tr.querySelector('.fr-prijs').value)||0;
+    return {omschrijving:tr.querySelector('.fr-oms').value.trim(),aantal,eenheid:tr.querySelector('.fr-eenheid').value.trim()||'stuk',
+      bedrag_per_eenheid:prijs,bedrag:Math.round(aantal*prijs*100)/100,btw_pct:btwPct,keten:null,contract:null};
+  }).filter(r=>r.omschrijving);
+  if(regels.length===0){toast('Voeg minstens één regel toe','bad');return;}
+  const totaalExcl=Math.round(regels.reduce((s,r)=>s+r.bedrag*100,0))/100;
+  const btw=Math.round(totaalExcl*btwPct)/100;
+  const van=document.getElementById('fac-van').value, tot=document.getElementById('fac-tot').value;
+  const klantId=document.getElementById('fac-klant').value||null;
+  const docData={
+    schema_versie:1, bron:'erp', bron_referentie:null,
+    type:document.getElementById('fac-type').value,
+    klant:{naam, scm_klant_id:klantId, adres:document.getElementById('fac-adres').value.trim()||null, email:document.getElementById('fac-email').value.trim()||null, kvk:null},
+    periode:van&&tot?{van,tot}:null,
+    regels, totaal_excl:totaalExcl, btw, totaal_incl:Math.round((totaalExcl+btw)*100)/100,
+    status:'concept', factuurnummer:null,
+    opmerking:document.getElementById('fac-opmerking').value.trim()||null,
+    aangemaakt_op:new Date().toISOString(), aangemaakt_door:'erp', definitief_op:null
+  };
+  try{
+    await addDoc(collection(db,'scm_facturen'),docData);
+    closeFactuurModal();toast('Concept bewaard','ok');
+    await loadFacturen();renderFacturen();
+  }catch(e){toast('Bewaren mislukt: '+e.message,'bad');}
+};
+
+// ── Afzender ──
+window.openAfzenderModal=function(){
+  const a=afzender||{};
+  document.getElementById('afz-naam').value=a.naam||'';
+  document.getElementById('afz-adres').value=a.adres||'';
+  document.getElementById('afz-kvk').value=a.kvk||'';
+  document.getElementById('afz-btw').value=a.btw||'';
+  document.getElementById('afz-iban').value=a.iban||'';
+  document.getElementById('afz-termijn').value=a.termijn||14;
+  document.getElementById('afz-email').value=a.email||'';
+  document.getElementById('afzenderModal').classList.add('show');
+};
+window.closeAfzenderModal=function(){document.getElementById('afzenderModal').classList.remove('show');};
+window.saveAfzender=async function(){
+  afzender={
+    naam:document.getElementById('afz-naam').value.trim(),adres:document.getElementById('afz-adres').value.trim(),
+    kvk:document.getElementById('afz-kvk').value.trim(),btw:document.getElementById('afz-btw').value.trim(),
+    iban:document.getElementById('afz-iban').value.trim(),termijn:Number(document.getElementById('afz-termijn').value)||14,
+    email:document.getElementById('afz-email').value.trim()
+  };
+  try{await setDoc(doc(db,'scm_instellingen','factuur'),afzender);closeAfzenderModal();toast('Afzender opgeslagen','ok');}
+  catch(e){toast('Opslaan mislukt: '+e.message,'bad');}
+};
+
+// ── Afdrukken: vaste opmaak in een nieuw venster ──
+window.printFactuur=function(id){
+  const f=facturen.find(x=>x.id===id);if(!f)return;
+  const a=afzender||{};
+  const datum=f.definitief_op?new Date(f.definitief_op):new Date();
+  const verval=new Date(datum.getTime()+(a.termijn||14)*86400000);
+  const nl=d=>d.toLocaleDateString('nl-NL');
+  const regels=(f.regels||[]).map(r=>`<tr><td>${esc(r.omschrijving)}${r.contract?`<div class="sub">${esc(r.contract)}</div>`:''}</td><td class="n">${r.aantal}</td><td>${esc(r.eenheid||'')}</td><td class="n">${euro(r.bedrag_per_eenheid)}</td><td class="n">${euro(r.bedrag)}</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><title>Factuur ${esc(f.factuurnummer||'concept')}</title>
+<style>
+body{font-family:'DM Sans',Arial,sans-serif;color:#1c2a44;margin:0;padding:40px;font-size:13px}
+.kop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px}
+.merk{font-size:22px;font-weight:700;color:#0f1e3d}.merk small{display:block;font-size:11px;letter-spacing:.14em;color:#e8862b;font-weight:600}
+.afz{font-size:12px;color:#5b6785;line-height:1.5;text-align:right}
+h1{font-size:26px;margin:0 0 4px;font-weight:600}.concept{color:#c0392b;font-weight:700;letter-spacing:.1em}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0 32px}
+.meta div{line-height:1.6}.meta b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5b6785}
+table{width:100%;border-collapse:collapse}th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5b6785;padding:8px 6px;border-bottom:2px solid #0f1e3d}
+td{padding:9px 6px;border-bottom:1px solid #e2dbcb;vertical-align:top}.n{text-align:right;white-space:nowrap}.sub{font-size:11px;color:#5b6785;margin-top:2px}
+tfoot td{border:0;padding:6px}tfoot .tot td{font-weight:700;font-size:15px;border-top:2px solid #0f1e3d}
+.voet{margin-top:40px;font-size:12px;color:#5b6785;line-height:1.6}
+@media print{body{padding:0}}
+</style></head><body>
+<div class="kop"><div class="merk">${esc(a.naam||'Supply Chain Meneer')}<small>SCM-VAR</small></div>
+<div class="afz">${[a.adres,a.email,a.kvk?'KvK '+a.kvk:'',a.btw?'Btw '+a.btw:'',a.iban?'IBAN '+a.iban:''].filter(Boolean).map(esc).join('<br>')}</div></div>
+<h1>Factuur ${f.factuurnummer?esc(f.factuurnummer):'<span class="concept">CONCEPT</span>'}</h1>
+<div class="meta">
+<div><b>Aan</b>${esc(f.klant&&f.klant.naam||'')}<br>${esc(f.klant&&f.klant.adres||'')}${f.klant&&f.klant.email?'<br>'+esc(f.klant.email):''}${f.klant&&f.klant.kvk?'<br>KvK '+esc(f.klant.kvk):''}</div>
+<div><b>Factuurdatum</b>${nl(datum)}<br><b>Vervaldatum</b>${nl(verval)}${f.periode?`<br><b>Periode</b>${nl(new Date(f.periode.van+'T00:00:00'))} – ${nl(new Date(f.periode.tot+'T00:00:00'))}`:''}${f.bron_referentie?`<br><b>Referentie</b>${esc(f.bron_referentie)}`:''}</div>
+</div>
+<table><thead><tr><th>Omschrijving</th><th class="n">Aantal</th><th>Eenheid</th><th class="n">Prijs</th><th class="n">Bedrag</th></tr></thead>
+<tbody>${regels}</tbody>
+<tfoot><tr><td colspan="4" class="n">Subtotaal excl. btw</td><td class="n">${euro(f.totaal_excl)}</td></tr>
+<tr><td colspan="4" class="n">Btw ${(f.regels&&f.regels[0]&&f.regels[0].btw_pct)||21}%</td><td class="n">${euro(f.btw)}</td></tr>
+<tr class="tot"><td colspan="4" class="n">Totaal</td><td class="n">${euro(f.totaal_incl)}</td></tr></tfoot></table>
+${f.opmerking?`<p class="voet">${esc(f.opmerking)}</p>`:''}
+<p class="voet">Gelieve het totaalbedrag vóór ${nl(verval)} over te maken${a.iban?' op '+esc(a.iban):''} onder vermelding van ${esc(f.factuurnummer||'het factuurnummer')}.</p>
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`;
+  const w=window.open('','_blank');
+  if(!w){toast('Pop-up geblokkeerd; sta pop-ups toe voor deze pagina','bad');return;}
+  w.document.open();w.document.write(html);w.document.close();
+};
+
 </script>
 </body>
 </html>
