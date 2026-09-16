@@ -312,7 +312,10 @@ if (window !== window.top) {
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{requireAuth}from'./erp-auth.js';
+// Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
+requireAuth(()=>{});
 import{getFirestore,doc,getDoc,deleteDoc,updateDoc,collection,addDoc,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{getStorage,ref as storageRef,uploadBytes,getDownloadURL,deleteObject}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
@@ -325,7 +328,7 @@ const FB={
   appId:"1:841107130686:web:f91211f83a8e031746846f"
 };
 
-const app = initializeApp(FB);
+const app = (getApps().length?getApp():initializeApp(FB));
 const db = getFirestore(app);
 const storage = getStorage(app);
 

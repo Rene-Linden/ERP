@@ -488,7 +488,10 @@ if (window !== window.top) {
 <div id="printArea"></div>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{requireAuth}from'./erp-auth.js';
+// Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
+requireAuth(()=>{});
 import{getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,onSnapshot,collection,addDoc,query,orderBy,where,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={
@@ -501,7 +504,7 @@ const FB={
 };
 
 emailjs.init('LVecJZWPqdswbZbga');
-const fbApp = initializeApp(FB);
+const fbApp = (getApps().length?getApp():initializeApp(FB));
 const db = getFirestore(fbApp);
 
 const MO = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];

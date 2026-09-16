@@ -465,7 +465,10 @@ html,body{
   </div>
 </div>
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{requireAuth}from'./erp-auth.js';
+// Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
+requireAuth(()=>{});
 import{getFirestore,doc,getDoc,deleteDoc,updateDoc,onSnapshot,collection,addDoc,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={
@@ -478,7 +481,7 @@ const FB={
 };
 
 emailjs.init('LVecJZWPqdswbZbga');
-const app = initializeApp(FB);
+const app = (getApps().length?getApp():initializeApp(FB));
 const db = getFirestore(app);
 
 const MO = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];

@@ -550,11 +550,14 @@ body.scm-mode .save-btn{background:var(--scm)}
 </div>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{requireAuth}from'./erp-auth.js';
+// Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
+requireAuth(()=>{});
 import{getFirestore,doc,setDoc,getDoc,onSnapshot,collection,addDoc,query,orderBy,getDocs,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
-const fbApp=initializeApp(FB);
+const fbApp=getApps().length?getApp():initializeApp(FB);
 const db=getFirestore(fbApp);
 
 const MO=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];

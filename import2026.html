@@ -63,11 +63,14 @@ tfoot td:first-child{text-align:left}
 </div>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{requireAuth}from'./erp-auth.js';
+// Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
+requireAuth(()=>{});
 import{getFirestore,collection,addDoc,getDocs,deleteDoc,doc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
-const db=getFirestore(initializeApp(FB));
+const db=getFirestore((getApps().length?getApp():initializeApp(FB)));
 
 const facturen=[
   {nummer:'ORDGR-2026001',klant:'Sitech Nederland B.V.',spec:{maand:0,jaar:2026},datum:'2026-01-31',uren:141.75,tarief:115,km:1860,kmTarief:0.21,extraKosten:[],btwPct:21,omschrijving:'Interim Operationeel Manager',verstuurd_datum:'2026-01-31T12:00:00.000Z',status:'verstuurd',regels:[]},
