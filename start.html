@@ -184,13 +184,47 @@ body{
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
     <div class="login-title">Ordinatio Groep</div>
-    <div class="login-sub">Log in om verder te gaan</div>
-    <div class="login-field">
-      <label>Wachtwoord</label>
-      <input type="password" id="loginPwd" placeholder="••••••••" onkeypress="if(event.key==='Enter') doLogin()" autofocus>
-    </div>
-    <button class="login-btn" onclick="doLogin()">Inloggen</button>
-    <div class="login-error" id="loginError">Onjuist wachtwoord</div>
+
+    <!-- Stap 1: e-mail en wachtwoord -->
+    <form id="stapInloggen" onsubmit="return doLogin(event)">
+      <div class="login-sub">Log in om verder te gaan</div>
+      <div class="login-field">
+        <label>E-mailadres</label>
+        <input type="email" id="loginEmail" autocomplete="username" autofocus required>
+      </div>
+      <div class="login-field">
+        <label>Wachtwoord</label>
+        <input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button class="login-btn" type="submit" id="loginKnop">Inloggen</button>
+      <div class="login-error" id="loginError"></div>
+      <div style="text-align:center;margin-top:14px"><a href="#" onclick="return wachtwoordVergeten()" style="font-size:12px;color:#666">Wachtwoord vergeten of nog niet ingesteld?</a></div>
+    </form>
+
+    <!-- Stap 2: code uit de authenticator-app -->
+    <form id="stapCode" style="display:none" onsubmit="return doCode(event)">
+      <div class="login-sub">Voer de code uit je authenticator-app in</div>
+      <div class="login-field">
+        <label>Code</label>
+        <input type="text" id="loginCode" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123 456" required>
+      </div>
+      <button class="login-btn" type="submit">Bevestigen</button>
+      <div class="login-error" id="codeError"></div>
+      <div style="text-align:center;margin-top:14px"><a href="#" onclick="return terugNaarInloggen()" style="font-size:12px;color:#666">Terug</a></div>
+    </form>
+
+    <!-- Stap 3 (eenmalig): authenticator-app koppelen -->
+    <form id="stapInschrijven" style="display:none" onsubmit="return doInschrijven(event)">
+      <div class="login-sub">Koppel een authenticator-app (Microsoft Authenticator, Google Authenticator, Authy…): scan de code of voer de sleutel handmatig in, en vul daarna de eerste code in.</div>
+      <div id="qr" style="display:flex;justify-content:center;margin:12px 0"></div>
+      <div style="font-size:11px;color:#666;text-align:center;word-break:break-all;margin-bottom:14px">Sleutel: <code id="sleutel"></code></div>
+      <div class="login-field">
+        <label>Code uit de app</label>
+        <input type="text" id="inschrijfCode" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="123 456" required>
+      </div>
+      <button class="login-btn" type="submit">Koppelen en doorgaan</button>
+      <div class="login-error" id="inschrijfError"></div>
+    </form>
   </div>
 </div>
 
@@ -227,49 +261,111 @@ body{
   </div>
 </div>
 
-<script>
-// Gedeeld authenticatie-systeem: één keer inloggen op start,
-// werkt automatisch voor RvdL en SCM modules via sessionStorage.
-const AUTH_KEY = 'ordinatio_auth_v1';
-const DEFAULT_PWD = 'ordinatio2024';
-function getPwd() {
-  return localStorage.getItem('ordinatio_admin_pwd') || DEFAULT_PWD;
-}
-function isLoggedIn() {
-  try { return sessionStorage.getItem(AUTH_KEY) === '1'; } catch(e) { return false; }
-}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script type="module">
+// Authenticatie via Firebase Authentication (Identity Platform): e-mail +
+// wachtwoord, verplichte tweede factor via een authenticator-app. Zie erp-auth.js.
+// Eén keer inloggen hier geldt voor admin.html en scm.html (zelfde origin).
+import { auth, inloggen, bevestigCode, startInschrijving, rondInschrijvingAf, heeftTweedeFactor, wachtwoordVergeten as stuurReset, logout, foutTekst } from './erp-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+let resolver = null;        // tussen stap 1 en 2
+let inschrijfSecret = null; // tussen inloggen en koppelen
+
+const el = (id) => document.getElementById(id);
+const toon = (stap) => {
+  for (const id of ['stapInloggen', 'stapCode', 'stapInschrijven']) el(id).style.display = id === stap ? 'block' : 'none';
+  const veld = { stapInloggen: 'loginEmail', stapCode: 'loginCode', stapInschrijven: 'inschrijfCode' }[stap];
+  setTimeout(() => el(veld) && el(veld).focus(), 50);
+};
+const fout = (id, tekst) => { const e = el(id); e.textContent = tekst || ''; e.classList.toggle('show', !!tekst); };
+
 function showLoggedInState() {
-  document.getElementById('loginOverlay').style.display = 'none';
-  document.getElementById('mainWrap').style.display = 'block';
-  setTimeout(() => { document.getElementById('loginPwd').value = ''; }, 100);
-}
-function doLogin() {
-  const pwd = document.getElementById('loginPwd').value;
-  if (pwd === getPwd()) {
-    try { sessionStorage.setItem(AUTH_KEY, '1'); } catch(e) {}
-    document.getElementById('loginError').classList.remove('show');
-    showLoggedInState();
-  } else {
-    document.getElementById('loginError').classList.add('show');
-    document.getElementById('loginPwd').select();
-  }
-}
-function doLogout() {
-  try {
-    sessionStorage.removeItem(AUTH_KEY);
-    sessionStorage.removeItem('ordinatio_tenant');
-  } catch(e) {}
-  location.reload();
-}
-function kiesTenant(id) {
-  try { sessionStorage.setItem('ordinatio_tenant', id); } catch(e) {}
-  return true;
+  el('loginOverlay').style.display = 'none';
+  el('mainWrap').style.display = 'block';
+  // Kwam de gebruiker van een andere pagina? Daar weer heen.
+  const naar = new URLSearchParams(location.search).get('naar');
+  if (naar && /^[a-z0-9_-]+\.html/i.test(naar)) location.replace(naar);
 }
 
-// Bij laden: check of al ingelogd
-if (isLoggedIn()) {
-  showLoggedInState();
+async function naInloggen(user) {
+  if (heeftTweedeFactor(user)) { showLoggedInState(); return; }
+  // Eerste keer: authenticator-app koppelen, verplicht.
+  try {
+    const { secret, uri, sleutel } = await startInschrijving(user);
+    inschrijfSecret = secret;
+    el('qr').innerHTML = '';
+    new QRCode(el('qr'), { text: uri, width: 180, height: 180 });
+    el('sleutel').textContent = sleutel;
+    toon('stapInschrijven');
+  } catch (e) {
+    fout('loginError', 'Koppelen voorbereiden mislukt: ' + foutTekst(e));
+    toon('stapInloggen');
+  }
 }
+
+window.doLogin = async function (event) {
+  event.preventDefault();
+  fout('loginError', '');
+  el('loginKnop').disabled = true;
+  try {
+    const r = await inloggen(el('loginEmail').value.trim(), el('loginPwd').value);
+    el('loginPwd').value = '';
+    if (r.status === 'mfa') { resolver = r.resolver; toon('stapCode'); }
+    else await naInloggen(r.user);
+  } catch (e) {
+    fout('loginError', foutTekst(e));
+  } finally {
+    el('loginKnop').disabled = false;
+  }
+  return false;
+};
+
+window.doCode = async function (event) {
+  event.preventDefault();
+  fout('codeError', '');
+  try {
+    const user = await bevestigCode(resolver, el('loginCode').value);
+    el('loginCode').value = '';
+    await naInloggen(user);
+  } catch (e) {
+    fout('codeError', foutTekst(e));
+  }
+  return false;
+};
+
+window.doInschrijven = async function (event) {
+  event.preventDefault();
+  fout('inschrijfError', '');
+  try {
+    await rondInschrijvingAf(auth.currentUser, inschrijfSecret, el('inschrijfCode').value);
+    inschrijfSecret = null;
+    showLoggedInState();
+  } catch (e) {
+    fout('inschrijfError', foutTekst(e));
+  }
+  return false;
+};
+
+window.terugNaarInloggen = function () { resolver = null; toon('stapInloggen'); return false; };
+
+window.wachtwoordVergeten = async function () {
+  const email = el('loginEmail').value.trim();
+  if (!email) { fout('loginError', 'Vul eerst je e-mailadres in'); return false; }
+  try { await stuurReset(email); fout('loginError', 'E-mail verstuurd — volg de link om een wachtwoord in te stellen.'); }
+  catch (e) { fout('loginError', foutTekst(e)); }
+  return false;
+};
+
+window.doLogout = function () { logout(); };
+window.kiesTenant = function (id) { try { sessionStorage.setItem('ordinatio_tenant', id); } catch (e) {} return true; };
+
+// Bij laden: bestaande sessie? Dan meteen door (na koppeling van de tweede factor).
+onAuthStateChanged(auth, (user) => {
+  if (user && heeftTweedeFactor(user)) showLoggedInState();
+  else if (user) naInloggen(user);
+  else toon('stapInloggen');
+});
 </script>
 
 </body>

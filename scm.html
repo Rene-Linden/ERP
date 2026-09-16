@@ -252,13 +252,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
     <div class="login-title">Supply Chain Meneer</div>
-    <div class="login-sub">Beheer omgeving</div>
-    <div class="login-field">
-      <label>Wachtwoord</label>
-      <input type="password" id="loginPwd" placeholder="••••••••" onkeypress="if(event.key==='Enter') doLogin()">
-    </div>
-    <button class="login-btn" onclick="doLogin()">Inloggen</button>
-    <div class="login-error" id="loginError">Onjuist wachtwoord</div>
+    <div class="login-sub">Sessie controleren… Zonder sessie ga je naar het inlogscherm.</div>
   </div>
 </div>
 
@@ -796,7 +790,8 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{requireAuth,logout as erpLogout}from'./erp-auth.js';
 import{getFirestore,doc,setDoc,getDoc,collection,getDocs,addDoc,deleteDoc,updateDoc,query,orderBy,runTransaction}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={
@@ -807,44 +802,18 @@ const FB={
   messagingSenderId:"841107130686",
   appId:"1:841107130686:web:f91211f83a8e031746846f"
 };
-const fbApp=initializeApp(FB);
+const fbApp=getApps().length?getApp():initializeApp(FB);
 const db=getFirestore(fbApp);
 
 // ── LOGIN ─────────────────────────────────────
-const PK='scm_admin_pwd';
-const AK='scm_auth_v1';
-const SHARED_AUTH_KEY='ordinatio_auth_v1'; // gedeeld met start.html + admin.html
-const DEFAULT_PWD='ordinatio2024';
-const getPwd=()=>localStorage.getItem(PK)||DEFAULT_PWD;
-
-function isAuthed(){
-  try {
-    return sessionStorage.getItem(AK)==='1' || sessionStorage.getItem(SHARED_AUTH_KEY)==='1';
-  } catch(e){ return false; }
-}
-
-window.doLogin=function(){
-  const pwd=document.getElementById('loginPwd').value;
-  if(pwd===getPwd()){
-    sessionStorage.setItem(AK,'1');
-    sessionStorage.setItem(SHARED_AUTH_KEY,'1'); // ook gedeelde sessie opzetten
-    document.getElementById('loginOverlay').style.display='none';
-    document.getElementById('adminWrap').style.display='flex';
-    init();
-  } else {
-    document.getElementById('loginError').classList.add('show');
-  }
-};
-window.doLogout=function(){
-  sessionStorage.removeItem(AK);
-  sessionStorage.removeItem(SHARED_AUTH_KEY); // ook gedeelde sessie afmelden
-  location.reload();
-};
-if(isAuthed()){
+// Firebase Authentication via erp-auth.js. Inloggen gebeurt op start.html;
+// zonder sessie met tweede factor stuurt requireAuth daarheen.
+window.doLogout=function(){ erpLogout(); };
+requireAuth(()=>{
   document.getElementById('loginOverlay').style.display='none';
   document.getElementById('adminWrap').style.display='flex';
   init();
-}
+});
 
 // ── TOAST ─────────────────────────────────────
 function toast(msg, type='info'){

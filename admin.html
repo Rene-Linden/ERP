@@ -503,9 +503,7 @@ select.edit-input{cursor:pointer}
       <div class="login-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></div>
       <div><div class="login-title">René van der Linden beheer</div><div class="login-sub">Ordinatio Groep</div></div>
     </div>
-    <div class="login-err" id="loginErr">Wachtwoord onjuist</div>
-    <div class="login-field"><label>Wachtwoord</label><input type="password" id="loginPwd" placeholder="••••••••"></div>
-    <button class="login-btn" onclick="doLogin()">Inloggen</button>
+    <div class="login-sub" style="margin-top:8px">Sessie controleren…</div>
   </div>
 </div>
 
@@ -1131,11 +1129,7 @@ select.edit-input{cursor:pointer}
           <div class="card-header"><span class="card-title">Beveiliging</span></div>
           <div class="card-body">
             <div class="setting-row">
-              <div><div class="setting-label">Beheer wachtwoord</div><div class="setting-sub">Wachtwoord voor deze pagina</div></div>
-              <div style="display:flex;align-items:center">
-                <input type="password" class="setting-input" id="newPwd" placeholder="Nieuw wachtwoord">
-                <button class="save-setting-btn" onclick="savePwd()">Opslaan</button>
-              </div>
+              <div><div class="setting-label">Inloggen</div><div class="setting-sub">Via start.html met e-mail, wachtwoord en authenticator-app (Firebase Authentication). Wachtwoord wijzigen: "Wachtwoord vergeten" op het inlogscherm.</div></div>
             </div>
           </div>
         </div>
@@ -1535,18 +1529,17 @@ select.edit-input{cursor:pointer}
 <div id="cpMoveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px"></div>
 
 <script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{requireAuth,logout as erpLogout}from'./erp-auth.js';
 import{getFirestore,doc,setDoc,updateDoc,getDoc,onSnapshot,collection,query,orderBy,getDocs,addDoc,deleteDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import{getStorage,ref as storageRef,uploadBytes,getDownloadURL,deleteObject}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
-const fbApp=initializeApp(FB);
+const fbApp=getApps().length?getApp():initializeApp(FB);
 const db=getFirestore(fbApp);
 const storage=getStorage(fbApp);
 
-const PK='dgs_admin_pwd';
 const CK='dgs_clients_v1';
-const DEFAULT_PWD='ordinatio2024';
 const MO=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
 const MOS=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
 const DY=['zo','ma','di','wo','do','vr','za'];
@@ -1628,7 +1621,6 @@ function cc(n){const c=findClient(n);return c?c.color:'#8a8a84'}
 function rate(n){const c=findClient(n);return c?c.rate:0}
 function isoD(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)}
 function euro(n){return'€ '+n.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}
-function getPwd(){return localStorage.getItem(PK)||DEFAULT_PWD}
 
 function setSyncStatus(s,t){const b=document.getElementById('syncBadge');b.className=`sync-badge ${s}`;document.getElementById('syncBadgeText').textContent=t;}
 
@@ -1648,62 +1640,9 @@ onSnapshot(doc(db,'dagstaat','data'),(snap)=>{
   }
 },(err)=>{setSyncStatus('offline','Offline');});
 
-// AUTH
-const AUTH_KEY = 'dgs_auth_v1';
-const SHARED_AUTH_KEY = 'ordinatio_auth_v1'; // gedeeld met start.html + scm.html
-
-function isAuthed() {
-  try {
-    // Ingelogd als óf de admin-specifieke óf de gedeelde sessie actief is
-    return sessionStorage.getItem(AUTH_KEY) === '1' || sessionStorage.getItem(SHARED_AUTH_KEY) === '1';
-  } catch(e) { return false; }
-}
-
-function setAuthed(on) {
-  try {
-    if (on) {
-      sessionStorage.setItem(AUTH_KEY, '1');
-      sessionStorage.setItem(SHARED_AUTH_KEY, '1'); // ook gedeelde sessie opzetten
-    } else {
-      sessionStorage.removeItem(AUTH_KEY);
-      sessionStorage.removeItem(SHARED_AUTH_KEY);
-    }
-  } catch(e){}
-}
-
-window.doLogin=function(){
-  const pwd=document.getElementById('loginPwd').value;
-  if(pwd===getPwd()){
-    setAuthed(true);
-    document.getElementById('loginWrap').style.display='none';
-    document.getElementById('adminWrap').classList.add('on');
-    // Laad klanten uit Firebase (async, met migratie-fallback)
-    loadClientsFromFirebase().then(()=>{
-      renderDashboard();renderInstellingen();
-      // Als we nu op de klanten-pagina zitten, herrender
-      if(document.querySelector('#page-klanten.on')) renderKlanten();
-    });
-  }else{
-    document.getElementById('loginErr').style.display='block';
-    document.getElementById('loginPwd').value='';
-  }
-}
-
-window.doLogout=function(){
-  setAuthed(false);
-  sessionStorage.removeItem('admin_from_scm');
-  document.getElementById('adminWrap').classList.remove('on');
-  document.getElementById('loginWrap').style.display='flex';
-  document.getElementById('loginPwd').value='';
-}
-
-window.savePwd=function(){
-  const v=document.getElementById('newPwd').value.trim();
-  if(!v){showToast('Voer een wachtwoord in','bad');return;}
-  localStorage.setItem(PK,v);
-  document.getElementById('newPwd').value='';
-  showToast('Wachtwoord opgeslagen ✓','ok');
-}
+// AUTH — Firebase Authentication via erp-auth.js. Inloggen gebeurt op
+// start.html; hier alleen: is er een sessie met tweede factor, dan verder.
+window.doLogout=function(){ erpLogout(); }
 
 // NAVIGATION
 window.toggleNav=function(){
@@ -4408,11 +4347,9 @@ async function initGoogleAuth() {
       const d = snap.data();
       googleAuthState.user_email = d.user_email || null;
       googleAuthState.label_resource = d.label_resource || null;
-      // Access tokens uit Firestore zijn vaak verlopen na herstart, dus alleen gebruiken als binnen expiry
-      if (d.access_token && d.expires_at && Date.now() < d.expires_at) {
-        googleAuthState.access_token = d.access_token;
-        googleAuthState.expires_at = d.expires_at;
-      }
+      // Het access token wordt bewust niet meer uit Firestore gelezen of erin
+      // gezet: het hoort alleen in het geheugen van deze pagina. Een nieuw
+      // token vraagt GIS stil op via de token client.
     }
   } catch(e) { console.warn('google_oauth ophalen mislukt:', e); }
 
@@ -4452,9 +4389,8 @@ async function initGoogleAuth() {
 
 async function persistGoogleAuthState() {
   try {
+    // Alleen wie gekoppeld is en welk label; nooit het token zelf.
     await setDoc(doc(db, 'google_oauth', 'main'), {
-      access_token: googleAuthState.access_token,
-      expires_at: googleAuthState.expires_at,
       user_email: googleAuthState.user_email,
       label_resource: googleAuthState.label_resource,
       bijgewerkt: new Date().toISOString()
@@ -8459,13 +8395,12 @@ async function populeerJaarSelectors() {
 
 window.showToast=function(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
 
-document.getElementById('loginPwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 // Populeer jaar selectors bij laden
 populeerJaarSelectors();
 
-// Auto-login als sessie al actief is (bijv. terugkomen van contract.html)
-if (isAuthed()) {
+// Zonder geldige sessie stuurt requireAuth door naar start.html.
+requireAuth(() => {
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('adminWrap').classList.add('on');
   loadClientsFromFirebase().then(()=>{
@@ -8475,7 +8410,7 @@ if (isAuthed()) {
     // Hash-navigatie: bijv. admin.html#crm opent direct CRM-tab
     handleHashNavigation();
   });
-}
+});
 
 // Als de hash verandert tijdens de sessie, ook naar de juiste pagina navigeren
 window.addEventListener('hashchange', handleHashNavigation);
