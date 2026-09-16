@@ -213,6 +213,21 @@ body{
       <div style="text-align:center;margin-top:14px"><a href="#" onclick="return terugNaarInloggen()" style="font-size:12px;color:#666">Terug</a></div>
     </form>
 
+    <!-- Wachtwoord instellen via de link uit de e-mail -->
+    <form id="stapWachtwoord" style="display:none" onsubmit="return doNieuwWachtwoord(event)">
+      <div class="login-sub">Nieuw wachtwoord voor <strong id="resetEmail"></strong></div>
+      <div class="login-field">
+        <label>Nieuw wachtwoord</label>
+        <input type="password" id="nieuwPwd" autocomplete="new-password" minlength="8" required>
+      </div>
+      <div class="login-field">
+        <label>Nog een keer</label>
+        <input type="password" id="nieuwPwd2" autocomplete="new-password" minlength="8" required>
+      </div>
+      <button class="login-btn" type="submit">Wachtwoord opslaan</button>
+      <div class="login-error" id="wachtwoordError"></div>
+    </form>
+
     <!-- Stap 3 (eenmalig): authenticator-app koppelen -->
     <form id="stapInschrijven" style="display:none" onsubmit="return doInschrijven(event)">
       <div class="login-sub">Koppel een authenticator-app (Microsoft Authenticator, Google Authenticator, Authy…): scan de code of voer de sleutel handmatig in, en vul daarna de eerste code in.</div>
@@ -266,7 +281,7 @@ body{
 // Authenticatie via Firebase Authentication (Identity Platform): e-mail +
 // wachtwoord, verplichte tweede factor via een authenticator-app. Zie erp-auth.js.
 // Eén keer inloggen hier geldt voor admin.html en scm.html (zelfde origin).
-import { auth, inloggen, bevestigCode, startInschrijving, rondInschrijvingAf, heeftTweedeFactor, wachtwoordVergeten as stuurReset, logout, foutTekst } from './erp-auth.js';
+import { auth, inloggen, bevestigCode, startInschrijving, rondInschrijvingAf, heeftTweedeFactor, wachtwoordVergeten as stuurReset, controleerResetCode, nieuwWachtwoord, logout, foutTekst } from './erp-auth.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 let resolver = null;        // tussen stap 1 en 2
@@ -274,8 +289,8 @@ let inschrijfSecret = null; // tussen inloggen en koppelen
 
 const el = (id) => document.getElementById(id);
 const toon = (stap) => {
-  for (const id of ['stapInloggen', 'stapCode', 'stapInschrijven']) el(id).style.display = id === stap ? 'block' : 'none';
-  const veld = { stapInloggen: 'loginEmail', stapCode: 'loginCode', stapInschrijven: 'inschrijfCode' }[stap];
+  for (const id of ['stapInloggen', 'stapCode', 'stapInschrijven', 'stapWachtwoord']) el(id).style.display = id === stap ? 'block' : 'none';
+  const veld = { stapInloggen: 'loginEmail', stapCode: 'loginCode', stapInschrijven: 'inschrijfCode', stapWachtwoord: 'nieuwPwd' }[stap];
   setTimeout(() => el(veld) && el(veld).focus(), 50);
 };
 const fout = (id, tekst) => { const e = el(id); e.textContent = tekst || ''; e.classList.toggle('show', !!tekst); };
@@ -357,15 +372,42 @@ window.wachtwoordVergeten = async function () {
   return false;
 };
 
+// Wachtwoord instellen: de link uit de e-mail komt hier binnen met mode=resetPassword&oobCode=…
+const resetParams = new URLSearchParams(location.search);
+const oobCode = resetParams.get('mode') === 'resetPassword' ? resetParams.get('oobCode') : null;
+
+window.doNieuwWachtwoord = async function (event) {
+  event.preventDefault();
+  fout('wachtwoordError', '');
+  const pw = el('nieuwPwd').value;
+  if (pw !== el('nieuwPwd2').value) { fout('wachtwoordError', 'De wachtwoorden zijn niet gelijk'); return false; }
+  try {
+    await nieuwWachtwoord(oobCode, pw);
+    history.replaceState(null, '', location.pathname);
+    el('loginEmail').value = el('resetEmail').textContent;
+    fout('loginError', 'Wachtwoord opgeslagen. Log nu in.');
+    toon('stapInloggen');
+  } catch (e) {
+    fout('wachtwoordError', foutTekst(e));
+  }
+  return false;
+};
+
 window.doLogout = function () { logout(); };
 window.kiesTenant = function (id) { try { sessionStorage.setItem('ordinatio_tenant', id); } catch (e) {} return true; };
 
 // Bij laden: bestaande sessie? Dan meteen door (na koppeling van de tweede factor).
-onAuthStateChanged(auth, (user) => {
-  if (user && heeftTweedeFactor(user)) showLoggedInState();
-  else if (user) naInloggen(user);
-  else toon('stapInloggen');
-});
+if (oobCode) {
+  controleerResetCode(oobCode)
+    .then((email) => { el('resetEmail').textContent = email; toon('stapWachtwoord'); })
+    .catch((e) => { fout('loginError', foutTekst(e)); toon('stapInloggen'); });
+} else {
+  onAuthStateChanged(auth, (user) => {
+    if (user && heeftTweedeFactor(user)) showLoggedInState();
+    else if (user) naInloggen(user);
+    else toon('stapInloggen');
+  });
+}
 </script>
 
 </body>

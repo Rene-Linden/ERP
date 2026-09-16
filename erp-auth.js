@@ -14,6 +14,7 @@ import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
   multiFactor, TotpMultiFactorGenerator, getMultiFactorResolver,
   sendPasswordResetEmail, setPersistence, browserLocalPersistence,
+  verifyPasswordResetCode, confirmPasswordReset,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 export const FB = {
@@ -101,8 +102,18 @@ export async function rondInschrijvingAf(user, secret, code) {
   await multiFactor(user).enroll(assertion, NAAM_TWEEDE_FACTOR);
 }
 
+/** De resetmail linkt naar start.html (zie de Identity Platform-config); die pagina handelt het af. */
 export function wachtwoordVergeten(email) {
   return sendPasswordResetEmail(auth, email);
+}
+
+/** Controleert de code uit de resetlink en geeft het e-mailadres terug. */
+export function controleerResetCode(oobCode) {
+  return verifyPasswordResetCode(auth, oobCode);
+}
+
+export function nieuwWachtwoord(oobCode, wachtwoord) {
+  return confirmPasswordReset(auth, oobCode, wachtwoord);
 }
 
 /** Leesbare tekst bij Firebase-foutcodes. */
@@ -119,6 +130,9 @@ export function foutTekst(e) {
     case 'auth/requires-recent-login': return 'Log opnieuw in om dit te doen';
     case 'auth/unverified-email': return 'E-mailadres is nog niet geverifieerd';
     case 'auth/network-request-failed': return 'Geen verbinding';
+    case 'auth/expired-action-code': return 'De link is verlopen; vraag een nieuwe aan';
+    case 'auth/invalid-action-code': return 'De link is ongeldig of al gebruikt; vraag een nieuwe aan';
+    case 'auth/weak-password': return 'Kies een langer wachtwoord (minimaal 6 tekens)';
     default: return (e && e.message) || 'Er ging iets mis';
   }
 }
