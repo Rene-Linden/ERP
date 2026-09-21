@@ -246,7 +246,7 @@ body{
 <div class="wrap" id="mainWrap" style="display:none">
   <div class="brand">
     <div class="brand-title">Ordinatio Groep</div>
-    <div class="brand-sub">Kies een organisatie om verder te gaan</div>
+    <div class="brand-sub">Kies waar je wilt beginnen</div>
   </div>
 
   <div class="tiles">
@@ -264,6 +264,19 @@ body{
       </div>
       <div class="tile-name">Supply Chain Meneer</div>
       <div class="tile-sub">Supply Chain diensten</div>
+    </a>
+
+    <a href="admin.html" onclick="openCRM()" class="tile">
+      <div class="tile-logo" style="background:#1a1a18;border-radius:8px">
+        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#f8f7f4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="tile-name">CRM</div>
+      <div class="tile-sub">Leads &amp; klanten, contactpersonen, gesprekken</div>
     </a>
   </div>
 
@@ -395,6 +408,13 @@ window.doNieuwWachtwoord = async function (event) {
 
 window.doLogout = function () { logout(); };
 window.kiesTenant = function (id) { try { sessionStorage.setItem('ordinatio_tenant', id); } catch (e) {} return true; };
+window.openCRM = function () {
+  try {
+    sessionStorage.setItem('ordinatio_tenant', 'rvdl');
+    sessionStorage.setItem('ordinatio_start_page', 'crm');
+  } catch (e) {}
+  return true;
+};
 
 // Bij laden: bestaande sessie? Dan meteen door (na koppeling van de tweede factor).
 if (oobCode) {
