@@ -271,7 +271,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v74-switcher</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v75-nav-refine</span>
       <div class="module-switcher" role="tablist" aria-label="Module">
         <button type="button" data-module="crm" class="mod-btn" onclick="switchModule('crm')">CRM</button>
         <button type="button" data-module="rvdl" class="mod-btn" onclick="switchModule('rvdl')">RvdL</button>
@@ -287,25 +287,22 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
   <div class="admin-body">
     <div class="nav-overlay" id="navOverlay" onclick="closeNav()"></div>
     <nav class="nav" id="nav">
-      <div class="nav-section">Beheer</div>
+      <div class="nav-section">Overzicht</div>
+      <button class="nav-item on" onclick="showPage('dashboard',this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
+      </button>
+      <div class="nav-section">Proces</div>
       <button class="nav-item" onclick="showPage('klanten',this)">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Klanten
       </button>
       <button class="nav-item" onclick="showPage('consultants',this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>Consultants
       </button>
-      <button class="nav-item" onclick="showPage('templates',this)">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Offerte-templates
-      </button>
       <button class="nav-item" onclick="showPage('facturen',this)">
         <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>Facturen
       </button>
       <button class="nav-item" onclick="showPage('projecten',this)">
         <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Projecten
-      </button>
-      <div class="nav-section">Overzicht</div>
-      <button class="nav-item on" onclick="showPage('dashboard',this)">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
       </button>
     </nav>
 
@@ -343,21 +340,6 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
       </div>
 
       <!-- TEMPLATES -->
-      <div class="page" id="page-templates">
-        <div class="page-header">
-          <div>
-            <div class="page-title">Offerte-templates</div>
-            <div class="page-sub">Standaard offerte-types die je kunt gebruiken</div>
-          </div>
-          <button class="btn-primary" onclick="openTemplateModal()">+ Nieuwe template</button>
-        </div>
-        <div class="card">
-          <div class="card-header"><span class="card-title">Alle templates</span></div>
-          <table class="data-table" id="templates-table"></table>
-        </div>
-      </div>
-
-      <!-- OFFERTES -->
       <div class="page" id="page-offertes">
         <div class="page-header">
           <div>
@@ -622,38 +604,6 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
     <div class="modal-footer">
       <button class="btn-secondary" onclick="closeSnelWijzigen()">Annuleren</button>
       <button class="btn-primary" onclick="saveSnelWijzigen()">Opslaan</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="templateModal">
-  <div class="modal-body">
-    <div class="modal-header">
-      <div class="modal-title" id="templateModalTitle">Nieuwe template</div>
-      <button class="modal-close" onclick="closeTemplateModal()">&times;</button>
-    </div>
-    <div class="modal-content">
-      <input type="hidden" id="tpl-id">
-      <div class="field"><label>Naam template *</label><input type="text" id="tpl-name" placeholder="Bijv. Consultancy per uur"></div>
-      <div class="field">
-        <label>Prijsmodel *</label>
-        <select id="tpl-type">
-          <option value="uur">Per uur (tarief × uren)</option>
-          <option value="vast">Vaste prijs (één totaalbedrag)</option>
-          <option value="maand">Per maand (maandbedrag × maanden + evt. setup fee)</option>
-          <option value="interim">Interim / open-eind (tarief + km, geen totaal)</option>
-        </select>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="field"><label>Standaard tarief / prijs (€)</label><input type="number" step="0.01" id="tpl-tarief" placeholder="Bijv. 125"></div>
-        <div class="field"><label>Standaard km-tarief (€, alleen interim)</label><input type="number" step="0.01" id="tpl-kmtarief" placeholder="Bijv. 0.30"></div>
-      </div>
-      <div class="field"><label>Standaard omschrijving werkzaamheden</label><textarea id="tpl-omschrijving" placeholder="Optioneel. Wordt vooringevuld bij nieuwe offerte."></textarea></div>
-      <div class="field"><label>Standaard voorwaarden</label><textarea id="tpl-voorwaarden" placeholder="Optioneel. Bijv. betalingstermijn 14 dagen na factuur."></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-secondary" onclick="closeTemplateModal()">Annuleren</button>
-      <button class="btn-primary" onclick="saveTemplate()">Opslaan</button>
     </div>
   </div>
 </div>
@@ -1879,7 +1829,6 @@ window.showPage=function(name,btn){
     renderProjecten();
   }
   else if(name==='facturen'){loadFacturen().then(renderFacturen);}
-  else if(name==='templates')renderTemplates();
   else if(name==='offertes')renderOffertes();
   else if(name==='consultants')renderConsultants();
 };
@@ -2234,82 +2183,6 @@ window.verwijderLegacyKlant = async function(id, naam) {
 }
 
 // ── TEMPLATES ─────────────────────────────────
-function renderTemplates(){
-  const tbl=document.getElementById('templates-table');
-  if(templates.length===0){
-    tbl.innerHTML='<tr><td class="empty">Templates laden…</td></tr>';
-    return;
-  }
-  const typeLabel={uur:'Per uur',vast:'Vaste prijs',maand:'Per maand',interim:'Interim'};
-  tbl.innerHTML='<thead><tr><th>Naam</th><th>Prijsmodel</th><th>Standaard tarief</th><th></th></tr></thead><tbody>'+
-    templates.map(t=>`<tr>
-      <td><strong>${t.name||'–'}</strong></td>
-      <td><span class="badge blue">${typeLabel[t.type]||t.type}</span></td>
-      <td style="font-family:'DM Mono',monospace">${t.tarief>0?euro(t.tarief):'–'}</td>
-      <td style="text-align:right">
-        <button class="btn-small" onclick="editTemplate('${t.id}')">Wijzigen</button>
-        <button class="btn-small danger" onclick="deleteTemplate('${t.id}')">✕</button>
-      </td>
-    </tr>`).join('')+'</tbody>';
-}
-
-window.openTemplateModal=function(){
-  document.getElementById('templateModalTitle').textContent='Nieuwe template';
-  ['tpl-id','tpl-name','tpl-tarief','tpl-kmtarief','tpl-omschrijving','tpl-voorwaarden'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('tpl-type').value='uur';
-  document.getElementById('templateModal').classList.add('show');
-};
-window.editTemplate=function(id){
-  const t=templates.find(x=>x.id===id);
-  if(!t)return;
-  document.getElementById('templateModalTitle').textContent='Template wijzigen';
-  document.getElementById('tpl-id').value=t.id;
-  document.getElementById('tpl-name').value=t.name||'';
-  document.getElementById('tpl-type').value=t.type||'uur';
-  document.getElementById('tpl-tarief').value=t.tarief||'';
-  document.getElementById('tpl-kmtarief').value=t.kmTarief||'';
-  document.getElementById('tpl-omschrijving').value=t.omschrijving||'';
-  document.getElementById('tpl-voorwaarden').value=t.voorwaarden||'';
-  document.getElementById('templateModal').classList.add('show');
-};
-window.closeTemplateModal=function(){document.getElementById('templateModal').classList.remove('show');};
-
-window.saveTemplate=async function(){
-  const id=document.getElementById('tpl-id').value;
-  const data={
-    name:document.getElementById('tpl-name').value.trim(),
-    type:document.getElementById('tpl-type').value,
-    tarief:parseFloat(document.getElementById('tpl-tarief').value)||0,
-    kmTarief:parseFloat(document.getElementById('tpl-kmtarief').value)||0,
-    omschrijving:document.getElementById('tpl-omschrijving').value.trim(),
-    voorwaarden:document.getElementById('tpl-voorwaarden').value.trim()
-  };
-  if(!data.name){toast('Naam is verplicht','bad');return;}
-  try{
-    if(id){
-      await updateDoc(doc(db,'scm_offerte_templates',id),data);
-    } else {
-      await addDoc(collection(db,'scm_offerte_templates'),data);
-    }
-    await loadTemplates();
-    renderTemplates();
-    closeTemplateModal();
-    toast('Opgeslagen','ok');
-  }catch(e){toast('Fout: '+e.message,'bad');}
-};
-
-window.deleteTemplate=async function(id){
-  const t=templates.find(x=>x.id===id);
-  if(!confirm('Template "'+t.name+'" verwijderen?'))return;
-  try{
-    await deleteDoc(doc(db,'scm_offerte_templates',id));
-    await loadTemplates();
-    renderTemplates();
-    toast('Verwijderd','info');
-  }catch(e){toast('Fout: '+e.message,'bad');}
-};
-
-// ── OFFERTES ──────────────────────────────────
 function renderOffertes(){
   const tbl=document.getElementById('offertes-table');
   if(offertes.length===0){
