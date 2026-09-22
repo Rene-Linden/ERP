@@ -407,10 +407,18 @@ window.doNieuwWachtwoord = async function (event) {
 };
 
 window.doLogout = function () { logout(); };
-window.kiesTenant = function (id) { try { sessionStorage.setItem('ordinatio_tenant', id); } catch (e) {} return true; };
+window.kiesTenant = function (id) {
+  try {
+    sessionStorage.setItem('ordinatio_tenant', id);
+    // admin.html opent in de RvdL-module; de CRM-tegel zet dit hieronder op 'crm'
+    if (id === 'rvdl') sessionStorage.setItem('ordinatio_start_module', 'rvdl');
+  } catch (e) {}
+  return true;
+};
 window.openCRM = function () {
   try {
     sessionStorage.setItem('ordinatio_tenant', 'rvdl');
+    sessionStorage.setItem('ordinatio_start_module', 'crm');
     sessionStorage.setItem('ordinatio_start_page', 'crm');
   } catch (e) {}
   return true;
