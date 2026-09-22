@@ -271,7 +271,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v75-nav-refine</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v76-cleanup</span>
       <div class="module-switcher" role="tablist" aria-label="Module">
         <button type="button" data-module="crm" class="mod-btn" onclick="switchModule('crm')">CRM</button>
         <button type="button" data-module="rvdl" class="mod-btn" onclick="switchModule('rvdl')">RvdL</button>
@@ -279,7 +279,6 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
       </div>
     </div>
     <div class="topbar-right">
-      <a href="start.html" title="Terug naar startscherm">🏠 Start</a>
       <button class="logout-btn" onclick="doLogout()">Uitloggen</button>
     </div>
   </div>
@@ -339,7 +338,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         </div>
       </div>
 
-      <!-- TEMPLATES -->
+      <!-- OFFERTES -->
       <div class="page" id="page-offertes">
         <div class="page-header">
           <div>
@@ -678,8 +677,14 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
     </div>
     <div class="modal-content">
       <div class="field">
-        <label>Kies template *</label>
-        <select id="off-tpl" onchange="onTemplateSelect()"></select>
+        <label>Prijsmodel *</label>
+        <select id="off-prijsmodel" onchange="onPrijsmodelSelect()">
+          <option value="">Kies prijsmodel…</option>
+          <option value="uur">Per uur (tarief × uren)</option>
+          <option value="vast">Vaste prijs (één totaalbedrag)</option>
+          <option value="maand">Per maand (maandbedrag × maanden)</option>
+          <option value="interim">Interim / open-eind (tarief + km)</option>
+        </select>
       </div>
       <div class="field">
         <label>Kies klant *</label>
@@ -777,7 +782,7 @@ function toast(msg, type='info'){
 window.toast=toast;
 
 // ── DATA ──────────────────────────────────────
-let klanten=[], templates=[], offertes=[], crmContacten=[], projecten=[], consultants=[];
+let klanten=[], offertes=[], crmContacten=[], projecten=[], consultants=[];
 
 async function loadKlanten(){
   // Legacy: laad oude scm_klanten collectie voor opruim-sectie
@@ -1711,7 +1716,8 @@ window.maakProjectVanOfferte = async function(offerteId) {
     onProjectKlantChange();
   }
   // Tariefstructuur
-  const tt = off.template_type === 'interim' ? 'dag' : (off.template_type === 'vast' ? 'vast' : 'uur');
+  const model = off.prijsmodel || off.template_type;
+  const tt = model === 'interim' ? 'dag' : (model === 'vast' ? 'vast' : 'uur');
   document.getElementById('proj-tarieftype').value = tt;
   onProjectTarieftypeChange();
   if (tt === 'uur' && off.uurtarief_excl) document.getElementById('proj-tarief').value = off.uurtarief_excl;
@@ -1726,39 +1732,6 @@ window.maakProjectVanOfferte = async function(offerteId) {
   toast('Prefill vanuit offerte '+off.nummer,'info');
 }
 
-async function loadTemplates(){
-  const snap=await getDocs(collection(db,'scm_offerte_templates'));
-  templates=snap.docs.map(d=>({id:d.id,...d.data()}));
-  // Automatisch defaults maken als leeg
-  if(templates.length===0){
-    await seedDefaultTemplates();
-    const snap2=await getDocs(collection(db,'scm_offerte_templates'));
-    templates=snap2.docs.map(d=>({id:d.id,...d.data()}));
-    return;
-  }
-  // Migratie: voeg 'Interim (open-eind)' toe als hij ontbreekt
-  if(!templates.find(t=>t.type==='interim')){
-    await addDoc(collection(db,'scm_offerte_templates'),{
-      name:'Interim (open-eind)',
-      type:'interim',
-      tarief:125,
-      kmTarief:0.30,
-      omschrijving:'<p>Interim werkzaamheden op basis van een uurtarief. De duur en scope worden in gezamenlijk overleg bepaald.</p><p><strong>Werkzaamheden:</strong></p><ul><li>Beschrijf hier de opdracht</li></ul>',
-      voorwaarden:'Facturering per maand achteraf op basis van gewerkte uren. Betaling binnen 14 dagen na factuurdatum. Kilometervergoeding volgens overeenkomst.'
-    });
-    const snap3=await getDocs(collection(db,'scm_offerte_templates'));
-    templates=snap3.docs.map(d=>({id:d.id,...d.data()}));
-  }
-}
-async function seedDefaultTemplates(){
-  const defaults=[
-    {name:'Consultancy per uur',type:'uur',tarief:125,omschrijving:'Consultancy op afroepbasis, gefactureerd per gewerkt uur.',voorwaarden:'Betaling binnen 14 dagen na factuurdatum. Reiskosten volgens overeenkomst.'},
-    {name:'Project vaste prijs',type:'vast',tarief:0,omschrijving:'Uitvoering van het project tegen een vooraf overeengekomen totaalbedrag.',voorwaarden:'50% bij opdracht, 50% bij oplevering. Betaling binnen 14 dagen na factuurdatum.'},
-    {name:'Software per maand',type:'maand',tarief:0,omschrijving:'Software abonnement met maandelijkse licentiekosten.',voorwaarden:'Betaling maandelijks vooruit. Opzegtermijn 1 maand.'},
-    {name:'Interim (open-eind)',type:'interim',tarief:125,kmTarief:0.30,omschrijving:'<p>Interim werkzaamheden op basis van een uurtarief. De duur en scope worden in gezamenlijk overleg bepaald.</p><p><strong>Werkzaamheden:</strong></p><ul><li>Beschrijf hier de opdracht</li></ul>',voorwaarden:'Facturering per maand achteraf op basis van gewerkte uren. Betaling binnen 14 dagen na factuurdatum. Kilometervergoeding volgens overeenkomst.'}
-  ];
-  for(const t of defaults){await addDoc(collection(db,'scm_offerte_templates'),t);}
-}
 async function loadOffertes(){
   const q=query(collection(db,'scm_offertes'),orderBy('datum','desc'));
   const snap=await getDocs(q);
@@ -1770,7 +1743,6 @@ async function init(){
   const badgeText=document.getElementById('syncBadgeText');
   try{
     await loadKlanten();
-    await loadTemplates();
     await loadOffertes();
     await loadCRMContacten();
     await loadProjecten();
@@ -2182,7 +2154,6 @@ window.verwijderLegacyKlant = async function(id, naam) {
   }
 }
 
-// ── TEMPLATES ─────────────────────────────────
 function renderOffertes(){
   const tbl=document.getElementById('offertes-table');
   if(offertes.length===0){
@@ -2195,7 +2166,7 @@ function renderOffertes(){
       <td>${o.klant_naam||'–'}</td>
       <td>${o.titel||'–'}</td>
       <td>${formatDatum(o.datum)}</td>
-      <td style="text-align:right;font-family:'DM Mono',monospace">${o.is_interim||o.template_type==='interim'?'<span style="color:var(--ink3);font-style:italic">interim</span>':euro(o.totaal_excl||0)}</td>
+      <td style="text-align:right;font-family:'DM Mono',monospace">${o.is_interim||o.prijsmodel==='interim'||o.template_type==='interim'?'<span style="color:var(--ink3);font-style:italic">interim</span>':euro(o.totaal_excl||0)}</td>
       <td style="text-align:right">
         <a href="scm-offerte.html?id=${o.id}" target="_blank" class="btn-small">🖨 Openen</a>
         <button class="btn-small" onclick="maakProjectVanOfferte('${o.id}')" title="Maak nieuw project met deze offerte-gegevens">📁 Maak project</button>
@@ -2225,8 +2196,7 @@ window.openOfferteModal=async function(){
   await loadCRMContacten();
 
   // Vul dropdowns
-  const tplSel=document.getElementById('off-tpl');
-  tplSel.innerHTML='<option value="">Kies template…</option>'+templates.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('off-prijsmodel').value='';
   const klantSel=document.getElementById('off-klant');
   if(crmContacten.length===0){
     klantSel.innerHTML='<option value="">Geen contacten — maak eerst een lead of klant aan in CRM (via RvdL beheer)</option>';
@@ -2251,38 +2221,16 @@ window.openOfferteModal=async function(){
   document.getElementById('off-int-kmtarief').style.opacity='1';
   document.getElementById('off-btw').value=21;
   document.getElementById('off-geldig').value=30;
-  onTemplateSelect();
+  onPrijsmodelSelect();
   document.getElementById('offerteModal').classList.add('show');
 };
 window.closeOfferteModal=function(){document.getElementById('offerteModal').classList.remove('show');};
 
-window.onTemplateSelect=function(){
-  const tplId=document.getElementById('off-tpl').value;
-  const tpl=templates.find(x=>x.id===tplId);
+window.onPrijsmodelSelect=function(){
+  const model=document.getElementById('off-prijsmodel').value;
   ['off-fields-uur','off-fields-vast','off-fields-maand','off-fields-interim'].forEach(id=>document.getElementById(id).style.display='none');
-  if(!tpl)return;
-  if(tpl.type==='uur'){
-    document.getElementById('off-fields-uur').style.display='block';
-    document.getElementById('off-uurtarief').value=tpl.tarief||'';
-  } else if(tpl.type==='vast'){
-    document.getElementById('off-fields-vast').style.display='block';
-    document.getElementById('off-vastprijs').value=tpl.tarief||'';
-  } else if(tpl.type==='maand'){
-    document.getElementById('off-fields-maand').style.display='block';
-    document.getElementById('off-maandprijs').value=tpl.tarief||'';
-  } else if(tpl.type==='interim'){
-    document.getElementById('off-fields-interim').style.display='block';
-    document.getElementById('off-int-uurtarief').value=tpl.tarief||'';
-    document.getElementById('off-int-kmtarief').value=tpl.kmTarief||'';
-  }
-  // Omschrijving: laad template-content in editor (als leeg)
-  const editor=document.getElementById('off-omschrijving');
-  if(tpl.omschrijving && editor.innerHTML.trim()===''){
-    editor.innerHTML=tpl.omschrijving;
-  }
-  if(tpl.voorwaarden && !document.getElementById('off-voorwaarden').value){
-    document.getElementById('off-voorwaarden').value=tpl.voorwaarden;
-  }
+  if(!model)return;
+  document.getElementById('off-fields-'+model).style.display='block';
 };
 
 async function nextOfferteNummer(){
@@ -2296,13 +2244,12 @@ async function nextOfferteNummer(){
 }
 
 window.saveOfferte=async function(){
-  const tplId=document.getElementById('off-tpl').value;
+  const prijsmodel=document.getElementById('off-prijsmodel').value;
   const klantId=document.getElementById('off-klant').value;
   const titel=document.getElementById('off-titel').value.trim();
-  if(!tplId){toast('Kies een template','bad');return;}
+  if(!prijsmodel){toast('Kies een prijsmodel','bad');return;}
   if(!klantId){toast('Kies een contact','bad');return;}
   if(!titel){toast('Vul titel in','bad');return;}
-  const tpl=templates.find(x=>x.id===tplId);
   const btwPct=parseInt(document.getElementById('off-btw').value)||21;
   const geldig=parseInt(document.getElementById('off-geldig').value)||30;
 
@@ -2341,24 +2288,24 @@ window.saveOfferte=async function(){
 
   let regels=[],totaalExcl=0;
   let interimData=null; // Voor interim: aparte tarieven zonder totaal
-  if(tpl.type==='uur'){
+  if(prijsmodel==='uur'){
     const uurtarief=parseFloat(document.getElementById('off-uurtarief').value)||0;
     const uren=parseFloat(document.getElementById('off-uren').value)||0;
     const bedrag=uurtarief*uren;
     regels.push({omschrijving:`${uren} uur consultancy à ${euro(uurtarief)}/uur`,bedrag});
     totaalExcl=bedrag;
-  } else if(tpl.type==='vast'){
+  } else if(prijsmodel==='vast'){
     const vast=parseFloat(document.getElementById('off-vastprijs').value)||0;
     regels.push({omschrijving:`Vaste prijs voor ${titel}`,bedrag:vast});
     totaalExcl=vast;
-  } else if(tpl.type==='maand'){
+  } else if(prijsmodel==='maand'){
     const mp=parseFloat(document.getElementById('off-maandprijs').value)||0;
     const m=parseInt(document.getElementById('off-maanden').value)||0;
     const setup=parseFloat(document.getElementById('off-setup').value)||0;
     if(setup>0){regels.push({omschrijving:'Eenmalige setup fee',bedrag:setup});}
     regels.push({omschrijving:`${m} maanden × ${euro(mp)}/maand`,bedrag:mp*m});
     totaalExcl=setup+(mp*m);
-  } else if(tpl.type==='interim'){
+  } else if(prijsmodel==='interim'){
     // Interim: geen totaal, alleen tarieven
     const uurtarief=parseFloat(document.getElementById('off-int-uurtarief').value)||0;
     const kmNvt=document.getElementById('off-int-km-nvt').checked;
@@ -2384,10 +2331,8 @@ window.saveOfferte=async function(){
       crm_contact_id:crmContact?crmContact.id:null,
       klant_naam:klant.name,
       klant_data:{contact:klant.contact||'',email:klant.email||'',phone:klant.phone||'',address:klant.address||'',city:klant.city||'',kvk:klant.kvk||''},
-      template_id:tplId,
-      template_naam:tpl.name,
-      template_type:tpl.type,
-      is_interim:tpl.type==='interim',
+      prijsmodel,
+      is_interim:prijsmodel==='interim',
       omschrijving:document.getElementById('off-omschrijving').innerHTML,
       voorwaarden:document.getElementById('off-voorwaarden').value,
       regels,
