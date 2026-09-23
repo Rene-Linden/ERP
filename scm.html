@@ -57,6 +57,8 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
 .mod-btn{padding:6px 14px;border:1px solid var(--line2);background:transparent;color:var(--ink3);border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
 .mod-btn:hover:not(.active){background:var(--cream)}
 .mod-btn.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+.module-switcher-la{display:none}
+.nav-uitloggen{display:none}
 @media (max-width:640px){.module-switcher{gap:2px;margin-left:8px}.mod-btn{padding:5px 10px;font-size:12px}}
 .topbar-right a,.topbar-right button{text-decoration:none;background:var(--cream);border:1px solid var(--line2);border-radius:var(--rsm);padding:6px 14px;font-size:13px;color:var(--ink2);cursor:pointer;font-family:'DM Sans',sans-serif}
 .logout-btn{background:var(--red-l)!important;color:var(--red)!important;border-color:rgba(192,57,43,.25)!important}
@@ -180,7 +182,42 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
   }
 
   /* Hamburger zichtbaar */
-  .hamburger{display:inline-flex}
+  .hamburger{display:inline-flex;min-width:44px;min-height:44px;align-items:center;justify-content:center}
+
+  /* De topbar kan op 390px geen schakelaar én uitlogknop kwijt: allebei
+     naar de la. Zelfde oplossing als admin.html v136b. */
+  .topbar .module-switcher{display:none}
+  .topbar-right{display:none}
+
+  .module-switcher-la{
+    display:flex;
+    gap:6px;
+    padding:0 12px 12px;
+    margin-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  .module-switcher-la .mod-btn{flex:1;min-height:44px}
+
+  /* Uitloggen onderaan de la: daar zit je niet per ongeluk aan, en het
+     staat niet meer tussen de knoppen waar je de hele dag op tikt. */
+  .nav-uitloggen{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:calc(100% - 24px);
+    margin:18px 12px 10px;
+    min-height:44px;
+    border:1px solid rgba(192,57,43,.25);
+    border-radius:var(--rsm);
+    font-family:'DM Sans',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  /* Versietag blijft staan — je controleert er de build mee — maar
+     zonder achtervoegsel. */
+  .v-suffix{display:none}
 
   /* Nav wordt slide-in drawer */
   .nav{
@@ -282,7 +319,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v77-dashboard</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v78<span class="v-suffix">-topbar</span></span>
       <div class="module-switcher" role="tablist" aria-label="Module">
         <button type="button" data-module="crm" class="mod-btn" onclick="switchModule('crm')">CRM</button>
         <button type="button" data-module="rvdl" class="mod-btn" onclick="switchModule('rvdl')">RvdL</button>
@@ -297,6 +334,11 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
   <div class="admin-body">
     <div class="nav-overlay" id="navOverlay" onclick="closeNav()"></div>
     <nav class="nav" id="nav">
+      <div class="module-switcher module-switcher-la" role="tablist" aria-label="Module">
+        <button type="button" data-mod-btn="crm" class="mod-btn" onclick="switchModule('crm')">CRM</button>
+        <button type="button" data-mod-btn="rvdl" class="mod-btn" onclick="switchModule('rvdl')">RvdL</button>
+        <button type="button" data-mod-btn="scm" class="mod-btn active" onclick="switchModule('scm')">SCM</button>
+      </div>
       <div class="nav-section">Overzicht</div>
       <button class="nav-item on" onclick="showPage('dashboard',this)">
         <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard
@@ -314,6 +356,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
       <button class="nav-item" onclick="showPage('projecten',this)">
         <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Projecten
       </button>
+      <button class="logout-btn nav-uitloggen" onclick="doLogout()">Uitloggen</button>
     </nav>
 
     <main class="content">
@@ -1793,7 +1836,7 @@ window.closeNav=function(){
 
 // Module-switcher: CRM en RvdL wonen in admin.html, SCM is deze pagina
 window.switchModule = function(mod) {
-  if (mod === 'scm') return;
+  if (mod === 'scm') { closeNav(); return; }   // al hier; op desktop doet dit niets
   try {
     sessionStorage.setItem('ordinatio_current_module', mod);
     sessionStorage.setItem('ordinatio_start_module', mod);
