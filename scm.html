@@ -42,6 +42,17 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
 .sync-badge.syncing{background:var(--amb-l);color:var(--amb);border-color:rgba(184,92,0,.3)}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
 .topbar-right{display:flex;align-items:center;gap:6px}
+/* Compacte dashboardkaart — zelfde opzet als in admin.html (bewuste kopie:
+   beide bestanden hebben hun eigen stijlblok). */
+.dash-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media (max-width:1100px){.dash-grid-2{grid-template-columns:1fr}}
+.dash-card--compact .card-header{padding:10px 14px}
+.dash-card--compact .card-title{font-size:11px;letter-spacing:.6px}
+.dash-count{font-size:11px;color:var(--ink3);white-space:nowrap}
+.dash-alle{font-size:11px;color:var(--acc);cursor:pointer;text-decoration:none;white-space:nowrap}
+.dash-rij{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.dash-rij:last-child{border-bottom:none}
+.dash-leeg{padding:16px;text-align:center;color:var(--ink3);font-size:12.5px;font-style:italic}
 .module-switcher{display:inline-flex;gap:4px;margin-left:16px;vertical-align:middle}
 .mod-btn{padding:6px 14px;border:1px solid var(--line2);background:transparent;color:var(--ink3);border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
 .mod-btn:hover:not(.active){background:var(--cream)}
@@ -271,7 +282,7 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
         <div class="sync-dot"></div>
         <span id="syncBadgeText">Verbinden…</span>
       </div>
-      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v76-cleanup</span>
+      <span style="font-size:10px;color:var(--ink3);margin-left:8px;font-family:monospace" title="Versie van de app">v77-dashboard</span>
       <div class="module-switcher" role="tablist" aria-label="Module">
         <button type="button" data-module="crm" class="mod-btn" onclick="switchModule('crm')">CRM</button>
         <button type="button" data-module="rvdl" class="mod-btn" onclick="switchModule('rvdl')">RvdL</button>
@@ -315,6 +326,16 @@ body{background:var(--cream);color:var(--ink);font-family:'DM Sans',system-ui,sa
           </div>
         </div>
         <div class="kpi-grid" id="dashKpis"></div>
+        <div class="dash-grid-2">
+          <div class="card dash-card--compact">
+            <div class="card-header"><span class="card-title">📋 Projecten</span><span class="dash-count">—</span></div>
+            <div class="dash-leeg">Widgets volgen.</div>
+          </div>
+          <div class="card dash-card--compact">
+            <div class="card-header"><span class="card-title">🧾 Facturen</span><span class="dash-count">—</span></div>
+            <div class="dash-leeg">Widgets volgen.</div>
+          </div>
+        </div>
         <div class="card">
           <div class="card-header"><span class="card-title">Recente offertes</span></div>
           <table class="data-table" id="dash-recent-offertes"></table>
@@ -1776,7 +1797,7 @@ window.switchModule = function(mod) {
   try {
     sessionStorage.setItem('ordinatio_current_module', mod);
     sessionStorage.setItem('ordinatio_start_module', mod);
-    sessionStorage.setItem('ordinatio_start_page', mod === 'crm' ? 'crm' : 'dashboard');
+    sessionStorage.setItem('ordinatio_start_page', mod === 'crm' ? 'crm-dashboard' : 'dashboard');
   } catch (e) {}
   location.href = 'admin.html?from=scm';
 };
