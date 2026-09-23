@@ -6546,7 +6546,11 @@ async function renderDashAanvragen() {
     badge.title = `${open.length} openstaand, waarvan ${nieuw} nieuw`;
     badge.style.display = open.length ? 'inline-flex' : 'none';
   }
-  if (!open.length) { lijst.innerHTML = dashLeeg('Geen openstaande aanvragen.'); return; }
+  const voet = meer => `<div class="dash-rij" style="justify-content:space-between">
+      <span class="dash-count">${meer > 0 ? `nog ${meer} meer` : ''}</span>
+      <a class="dash-alle" onclick="dashNaarPagina('crm-aanvragen')">Alle aanvragen →</a>
+    </div>`;
+  if (!open.length) { lijst.innerHTML = dashLeeg('Geen openstaande aanvragen.') + voet(0); return; }
 
   const p = n => String(n).padStart(2, '0');
   const rijen = open.slice(0, DASH_MAX).map(a => {
@@ -6564,11 +6568,7 @@ async function renderDashAanvragen() {
       <div class="pijl" onclick="openAanvraagVanDashboard('${a.id}')">→</div>
     </div>`;
   }).join('');
-  const meer = open.length - DASH_MAX;
-  lijst.innerHTML = rijen + `<div class="dash-rij" style="justify-content:space-between">
-      <span class="dash-count">${meer > 0 ? `nog ${meer} meer` : ''}</span>
-      <a class="dash-alle" onclick="dashNaarPagina('crm-aanvragen')">Alle aanvragen →</a>
-    </div>`;
+  lijst.innerHTML = rijen + voet(open.length - DASH_MAX);
 }
 
 // Vanuit het dashboard naar het overzicht, meteen bij de aangeklikte aanvraag (aanvraagFocus staat bij de andere aanvraag-variabelen)
