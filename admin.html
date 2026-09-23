@@ -6512,7 +6512,9 @@ function saneerBlogHtml(html) {
         const veiligeLink = kind.tagName === 'A' && naam === 'href' && /^(https?:\/\/|mailto:|#)/i.test(a.value.trim());
         if (!veiligeLink) kind.removeAttribute(a.name);
       });
-      if (kind.tagName === 'A' && kind.getAttribute('href')) {
+      if (kind.tagName === 'A') {
+        // Link zonder veilige href (bv. javascript:) wordt gewone tekst
+        if (!kind.getAttribute('href')) { kind.replaceWith(...kind.childNodes); return; }
         kind.setAttribute('target', '_blank');
         kind.setAttribute('rel', 'noopener');
       }
