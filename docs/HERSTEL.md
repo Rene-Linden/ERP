@@ -1,8 +1,17 @@
 # Herstel: Firestore en Storage terugzetten
 
-Voor als er data weg of kapot is. Niet uitgeprobeerd; opgeschreven op
-25 september 2026 uit de documentatie van Google en de instellingen zoals ze
-die dag stonden. Lees eerst het hele stuk, dan pas uitvoeren.
+Voor als er data weg of kapot is. Lees eerst het hele stuk, dan pas
+uitvoeren.
+
+> **Getest op 25 september 2026 (Storage, met een wegwerpbestand):**
+> een download-link uit het CRM blijft werken na terugzetten uit **soft
+> delete** en na terugkopiëren uit de **back-upbucket**. Hij **breekt** na
+> terug-uploaden vanaf **de eigen schijf** (HTTP 403), en werkt weer zodra
+> het token uit `metadata.json` op het bestand is teruggezet. Zie
+> hoofdstuk 4.
+>
+> Het terugzetten van Firestore (hoofdstuk 2) is niet uitgeprobeerd; dat
+> deel komt uit de documentatie van Google.
 
 Project: `dagstaat-ordinatio`. Database: `(default)`, locatie `eur3`.
 Storage-bucket: `dagstaat-ordinatio.firebasestorage.app` (EUR4).
@@ -15,11 +24,17 @@ Nodig: `gcloud` en `firebase` (CLI), ingelogd als renevanderlinden@gmail.com.
 | Geplande Firestore-back-up | dagelijks, door Google, tijdstip wisselt per dag | 14 dagen |
 | Delete protection | op `(default)`: de database kan niet in één keer weg | — |
 | JSON-export (Instellingen → Alles exporteren) | een bestand op je eigen schijf | zo oud als het bestand |
-| Soft delete in Storage | verwijderde of overschreven bestanden | 7 dagen |
+| Soft delete in Storage | verwijderde of overschreven bestanden | 90 dagen |
+| Back-upbucket `gs://ordinatio-backup-storage` | project `ordinatio-backup-1` (eigen billing-account), europe-west4, wekelijks gevuld door Storage Transfer Service (taak `wekelijks-erp-storage`, zondag 01:00 UTC); verwijdert nooit iets; zelf ook 90 dagen soft delete | alles wat er ooit in stond |
+| Schijfkopie Storage | `C:\Users\rvand\Backups\erp-storage-2026-09-25\` (bestanden + `metadata.json` met de tokens) | 25 september 2026, eenmalig |
 
-Niet gedekt: bestanden in Storage ouder dan 7 dagen verwijderd, en het hele
-project. Rules zitten niet in een back-up; die staan in de website-repo in
-`crm-regels/firestore.rules`.
+Niet gedekt: het hele project `dagstaat-ordinatio` voor Firestore (de
+geplande back-ups staan in hetzelfde project). Rules zitten niet in een
+back-up; die staan in de website-repo in `crm-regels/firestore.rules`.
+
+`metadata.json` bevat de download-tokens van alle bestanden, ook van
+ondertekende contracten: wie het bestand heeft, kan alles downloaden. Nooit
+in een repo, chat of gedeelde map.
 
 ## 1. Eerst: stoppen en kijken
 
@@ -140,26 +155,49 @@ Download-links in Firestore (`pdf_url`, `url`, `html_url`, …) zien er zo uit:
 
 Zo'n link blijft alleen werken als **bucket, pad én token** gelijk zijn. Het
 token staat in de metadata van het bestand (`firebaseStorageDownloadTokens`).
+Moet Storage ooit naar een andere bucket of een ander project, dan breken
+alle links; bij opdrachten en offertes staat het pad ook in Firestore
+(`pdf_storage_path`), bij Ketenbrieven en afbeeldingen niet.
 
-- **Verwijderd of overschreven, minder dan 7 dagen geleden** (soft delete):
+Gemeten op 25 september 2026 met `test-herstel.txt` en een eigen token,
+steeds op de originele link:
 
-      gcloud storage ls --soft-deleted -a "gs://dagstaat-ordinatio.firebasestorage.app/<map>/**"
+| Route | Na verwijderen | Na terugzetten | Token behouden |
+|---|---|---|---|
+| Soft delete → `gcloud storage restore` | 403 | **200** | ja |
+| Transfer-taak naar back-upbucket, daarna `gcloud storage cp` terug | 403 | **200** | ja |
+| Download naar schijf, daarna upload | 403 | **403** — breekt | nee |
+| … plus token terugzetten uit de metadata | | **200** | ja |
+
+- **Verwijderd of overschreven, minder dan 90 dagen geleden** (soft delete):
+
+      gcloud storage ls --soft-deleted "gs://dagstaat-ordinatio.firebasestorage.app/<map>/**"
       gcloud storage restore "gs://dagstaat-ordinatio.firebasestorage.app/<pad>#<generation>"
 
-  Het bestand komt terug met dezelfde metadata: de link blijft werken.
+  (`-a` erbij heeft met `--soft-deleted` geen effect; die toont al alle
+  verwijderde versies.) Het bestand krijgt een nieuw generation-nummer,
+  maar dezelfde metadata: de link blijft werken.
 
-- **Uit een kopie in een andere bucket**: `gcloud storage cp` of `rsync` van
-  bucket naar bucket neemt de metadata mee; terugkopiëren naar hetzelfde pad
-  houdt de link heel.
+- **Uit de back-upbucket** (ouder dan 90 dagen, of als de bucket zelf weg
+  is): terugkopiëren naar hetzelfde pad; de metadata gaat mee.
 
-- **Uit een kopie op de eigen schijf**: een download bewaart het token
-  niet. Na terug-uploaden werkt de oude link niet, tenzij je het token per
-  bestand terugzet uit de bewaarde metadatalijst:
+      gcloud storage cp "gs://ordinatio-backup-storage/<pad>" "gs://dagstaat-ordinatio.firebasestorage.app/<pad>"
+      gcloud storage rsync -r gs://ordinatio-backup-storage gs://dagstaat-ordinatio.firebasestorage.app   # alles wat ontbreekt
 
+  De back-upbucket bevat ook bestanden die in het CRM bewust zijn
+  verwijderd (de taak verwijdert nooit). `rsync` zonder
+  `--delete-unmatched-destination-objects` zet die terug maar verwijdert
+  niets; dat is de bedoeling.
+
+- **Uit de kopie op de eigen schijf**: een download bewaart het token
+  niet, dus na terug-uploaden geeft de oude link 403. Zet het token per
+  bestand terug uit `metadata.json` (veld `custom_fields`):
+
+      gcloud storage cp "<bestand>" "gs://dagstaat-ordinatio.firebasestorage.app/<pad>"
       gcloud storage objects update "gs://dagstaat-ordinatio.firebasestorage.app/<pad>" \
-        --custom-metadata=firebaseStorageDownloadTokens=<token uit de lijst>
+        --custom-metadata=firebaseStorageDownloadTokens=<token uit metadata.json>
 
-  Zonder die lijst: bestanden terugzetten én in het CRM de koppeling
+  Zonder `metadata.json`: bestanden terugzetten én in het CRM de koppeling
   opnieuw maken (document opnieuw uploaden bij de relatie/opdracht).
 
 ## 5. Wat kost een herstel
