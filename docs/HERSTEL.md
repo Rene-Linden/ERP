@@ -26,7 +26,7 @@ Nodig: `gcloud` en `firebase` (CLI), ingelogd als renevanderlinden@gmail.com.
 | JSON-export (Instellingen → Alles exporteren) | een bestand op je eigen schijf | zo oud als het bestand |
 | Soft delete in Storage | verwijderde of overschreven bestanden | 90 dagen |
 | Back-upbucket `gs://ordinatio-backup-storage` | project `ordinatio-backup-1` (eigen billing-account), europe-west4, wekelijks gevuld door Storage Transfer Service (taak `wekelijks-erp-storage`, zondag 01:00 UTC); verwijdert nooit iets; zelf ook 90 dagen soft delete | alles wat er ooit in stond |
-| Schijfkopie Storage | `C:\Users\rvand\Backups\erp-storage-2026-09-25\` (bestanden + `metadata.json` met de tokens) | 25 september 2026, eenmalig |
+| Schijfkopie Storage | `<jouw back-upmap>\erp-storage-2026-09-25\` (bestanden + `metadata.json` met de tokens) | 25 september 2026, eenmalig |
 
 Niet gedekt: het hele project `dagstaat-ordinatio` voor Firestore (de
 geplande back-ups staan in hetzelfde project). Rules zitten niet in een
