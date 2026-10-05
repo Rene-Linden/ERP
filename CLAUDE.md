@@ -46,7 +46,24 @@ het CRM splitst met `nieuwsAlineas()`, gelijk aan `alineas()` in
 `supplychainmeneer/src/lib/inhoud.mjs`; wijzig ze samen. Geen HTML: opmaak
 zoals `<b>` komt op de site als tekst. Op de homepage ziet een bezoeker
 de eerste 5 regels in een kaart (gemeten 130–180 tekens, afhankelijk van de
-schermbreedte) met "Lees verder" naar het hele bericht op `/nieuws/`.
+schermbreedte) met "Lees verder" naar de eigen pagina van het bericht
+(`/nieuws/<slug>/`); het overzicht `/nieuws/` kapt op dezelfde manier af.
+
+### Adres van een nieuwsbericht (sinds v161)
+
+Elk bericht heeft een eigen pagina op `supplychainmeneer.nl/nieuws/<slug>/`.
+Veld `slug` in `site_nieuws`. Vóór het eerste opslaan is het adres een
+invulveld: het voorstel volgt de titel (`nieuwsSlugVan()`) tot René het zelf
+aanpast, bijvoorbeeld inkort (kort is beter om te plakken en te mailen:
+`nieuwe-website`, niet de hele titel). Wat hij typt wordt bij het verlaten
+van het veld netjes gemaakt (kleine letters, streepjes). Bij het **eerste
+opslaan** ligt het vast en verandert daarna nooit meer, ook niet als de
+titel verandert, zodat gedeelde links blijven werken; het venster zegt dat.
+Dubbel (ook met een concept): bij het voorstel `-2`, `-3`, …
+(`uniekeNieuwsSlug()`, na het opnieuw laden van de lijst); een zelf getypt
+adres dat al bestaat wordt geweigerd met een melding. Een bericht zonder
+slug krijgt er een bij de eerstvolgende keer opslaan. Niet zelf aanpassen in
+de Firestore-console: een gewijzigde slug breekt de links die al rondgaan.
 
 ### Afbeelding bij een nieuwsbericht (sinds v160)
 
@@ -73,7 +90,8 @@ Alt-tekst: één regel uitleg staat in het scherm (beschrijf wat er te zien is;
 staat er tekst in het beeld, typ die over). Leeg of een nietszeggend woord
 (`NB_ALT_NIETSZEGGEND`: "afbeelding", "foto", …) weigert het opslaan.
 
-Op de site: altijd **4:3, bijgesneden vanuit het midden**. De site haalt het
+Op de site: in de lijsten (homepage, `/nieuws/`) altijd **4:3, bijgesneden
+vanuit het midden**; op de eigen pagina van het bericht heel, niet bijgesneden. De site haalt het
 beeld bij de build op en maakt er zelf AVIF/WebP van; de bezoeker krijgt het
 origineel uit Storage nooit te zien. Lukt dat niet (weg, onleesbaar, groter
 dan 5 MB), dan verschijnt het bericht zonder beeld. Details:
