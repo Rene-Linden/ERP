@@ -5,7 +5,32 @@ staat in `admin.html`; de versie staat rechtsboven (`v158-…`) en gaat bij
 elke wijziging één omhoog. De Firestore-regels staan niet in deze repo, maar
 in `supplychainmeneer/crm-regels/` (lees daar `LEESMIJ.md` vóór elke
 wijziging: `firebase deploy --only firestore:rules` vervangt de héle
-ruleset).
+ruleset). Daar staan sinds 5 oktober 2026 ook de **Storage-regels**
+(`crm-regels/storage.rules`, de volledige ruleset van de bucket
+`dagstaat-ordinatio.firebasestorage.app`); `firebase deploy --only storage`
+vervangt die ook in zijn geheel. Kort: de CRM-mappen (`contracten/`,
+`contracten-los/`, `urenstaten-oud/`, `crm-documenten/`, `crm-opdrachten/`,
+`crm-offertes/`, `campagne-bijlagen/`) alleen voor de eigenaar; openbaar
+leesbaar alleen `blog-afbeeldingen/`, `ketenbrieven/` en
+`nieuwsbrief-images/`. Een opgeslagen download-link (met token) werkt buiten
+de regels om; zo opent het CRM bestanden en zo werkt de CV-link in
+campagnemails. Een nieuwe map in Storage heeft een eigen `match` nodig, anders
+wordt alles geweigerd.
+
+## Openstaand: klanten kunnen een urenspecificatie niet accorderen
+
+Gevonden op 5 oktober 2026, nog niet opgelost. `verstuur.html` mailt de klant
+een link naar `accordeer.html?id=<spec>` (akkoord of niet akkoord). Maar
+sinds 16 september (`4f6a38a`) stuurt `accordeer.html` iedereen zonder
+sessie naar het inlogscherm, en sinds de strengere Firestore-regels mag
+alleen de eigenaar `specs` lezen en schrijven. Een klant komt dus niet
+verder dan het inlogscherm. Er is sinds 31 augustus geen specificatie
+verstuurd, dus nog niemand heeft het gemerkt; **de eerstvolgende wel**.
+Tot het opgelost is: handmatig akkoord in het CRM (Urenstaten), of de
+specificatie als PDF mailen. Een oplossing vraagt een klein, eigen
+toegangspad voor alleen die ene spec (bijvoorbeeld een moeilijk te raden
+token in de link en een Firestore-regel die precies `akkoord`/`afgekeurd`
+op dat ene document toestaat), niet het weghalen van de inlogeis.
 
 ## Nieuwsberichten (CRM → Nieuwsberichten)
 
