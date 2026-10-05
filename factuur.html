@@ -493,6 +493,7 @@ import{requireAuth}from'./erp-auth.js';
 // Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
 requireAuth(()=>{});
 import{getFirestore,doc,getDoc,setDoc,updateDoc,deleteDoc,onSnapshot,collection,addDoc,query,orderBy,where,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{verwerkAntwoorden}from'./accorderen.js';
 
 const FB={
   apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",
@@ -557,6 +558,7 @@ function loadClients() {
 
 async function loadAccoordedSpecs() {
   try {
+    try { await verwerkAntwoorden(db); } catch (e) { console.warn('Antwoorden van klanten niet verwerkt:', e); }
     const q = query(collection(db,'specs'), orderBy('verstuurd_datum','desc'));
     const snap = await getDocs(q);
     specs = snap.docs

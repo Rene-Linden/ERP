@@ -17,20 +17,64 @@ de regels om; zo opent het CRM bestanden en zo werkt de CV-link in
 campagnemails. Een nieuwe map in Storage heeft een eigen `match` nodig, anders
 wordt alles geweigerd.
 
-## Openstaand: klanten kunnen een urenspecificatie niet accorderen
+## Accorderen via een link (v162, oktober 2026)
 
-Gevonden op 5 oktober 2026, nog niet opgelost. `verstuur.html` mailt de klant
-een link naar `accordeer.html?id=<spec>` (akkoord of niet akkoord). Maar
-sinds 16 september (`4f6a38a`) stuurt `accordeer.html` iedereen zonder
-sessie naar het inlogscherm, en sinds de strengere Firestore-regels mag
-alleen de eigenaar `specs` lezen en schrijven. Een klant komt dus niet
-verder dan het inlogscherm. Er is sinds 31 augustus geen specificatie
-verstuurd, dus nog niemand heeft het gemerkt; **de eerstvolgende wel**.
-Tot het opgelost is: handmatig akkoord in het CRM (Urenstaten), of de
-specificatie als PDF mailen. Een oplossing vraagt een klein, eigen
-toegangspad voor alleen die ene spec (bijvoorbeeld een moeilijk te raden
-token in de link en een Firestore-regel die precies `akkoord`/`afgekeurd`
-op dat ene document toestaat), niet het weghalen van de inlogeis.
+Een klant accordeert zijn urenspecificatie zonder in te loggen via
+`accordeer.html?t=<token>` (en `&actie=afkeuren` voor "niet akkoord"). Tot
+16 september stond in de link het document-id van `specs` en kon iedereen
+`specs` lezen; daarna eiste de pagina inloggen en kon geen klant er meer in.
+
+Opzet (`accorderen.js`):
+
+- `verstuur.html` maakt bij het versturen naast `specs/<id>` een document
+  `accorderingen/<token>`. Het token: 32 willekeurige bytes
+  (`crypto.getRandomValues`), 43 tekens, niet af te leiden uit klant,
+  periode of document-id. Het staat ook in `specs.accordering_token`.
+- In `accorderingen` staat alleen wat de klant moet zien: klant, maand, jaar,
+  urenregels (datum, start, eind, pauze), totaal. Geen e-mailadres, notitie
+  of km. `specs` blijft alleen voor de eigenaar.
+- De Firestore-regel (`supplychainmeneer/crm-regels/firestore.rules`): met
+  het token mag je dat ene document lezen en één keer `status` van `open`
+  naar `akkoord` of `afgekeurd` (met opmerking) zetten, met `beantwoord_op`
+  = de tijd van de server. Verder niets: geen ander veld, geen tweede keer,
+  niet na `geldig_tot`. Test: `crm-regels/test-accorderen.mjs`.
+- `geldig_tot`: `LINK_GELDIG_DAGEN` dagen na versturen (`null` = geen einde).
+- Het CRM zet het antwoord over naar `specs` (`verwerkAntwoorden()`) zodra
+  een pagina `specs` leest: Accordering en Urenstaten in `admin.html`,
+  `verstuur.html`, `factuur.html`, `hub.html`. Akkoord: `akkoord_methode:
+  'link'`, `akkoord_datum` = het moment van de server, en de
+  urenstaat-snapshot rekent het CRM zelf uit uit `specs` (vroeger stuurde de
+  browser van de klant hem mee). Tot René het CRM opent, staat het akkoord
+  dus alleen in `accorderingen`, met het juiste tijdstip.
+- Handmatig akkoord sluit de link (`status: 'gesloten'`); een specificatie
+  verwijderen in `verstuur.html` verwijdert ook de link. Afgekeurd is ook
+  definitief voor die link: na correctie opnieuw versturen (nieuwe link).
+- De link werkt 60 dagen (`LINK_GELDIG_DAGEN`, bovenin `accorderen.js`):
+  elk akkoord kwam tot nu toe binnen 6 dagen, en na twee maanden is de
+  specificatie gefactureerd. Een doorgestuurde mail geeft de ontvanger
+  dezelfde mogelijkheden; bewust geaccepteerd (René, 5 oktober 2026):
+  doorsturen binnen het bedrijf van de klant is de normale route naar wie
+  tekent.
+- Oude links met `?id=` werken niet meer; de pagina zegt dan "ongeldig of
+  verlopen". Op 5 oktober 2026 stond er geen enkele specificatie open: alle
+  vijf waren geaccordeerd en gefactureerd.
+
+### De urenstaat-snapshot rekent het CRM uit, niet de klant — niet terugdraaien
+
+Bij een akkoord legt `specs.urenstaat_snapshot` vast welke uren er
+geaccordeerd zijn: per dag de netto minuten en km, en de totalen. Dat is wat
+René factureert en wat hij laat zien als er discussie komt. Tot oktober 2026
+rekende `accordeer.html` die snapshot uit **in de browser van de klant** en
+schreef hem zo weg: het bewijs van het akkoord kwam van de partij die er
+belang bij heeft, en kon met een aangepast verzoek elke inhoud krijgen.
+
+Nu schrijft de klant alleen `status` en (via de server) het tijdstip. Het CRM
+rekent de snapshot zelf uit uit `specs.regels` (`bouwSnapshot()` in
+`accorderen.js`, dezelfde berekening als het handmatig akkoord), op het
+moment dat het het antwoord overzet. De Firestore-regel laat de klant geen
+ander veld schrijven. Zet de berekening dus **nooit** terug naar
+`accordeer.html`, ook niet "om het simpeler te maken": dan wordt het bewijs
+weer door de klant aangeleverd.
 
 ## Nieuwsberichten (CRM → Nieuwsberichten)
 
