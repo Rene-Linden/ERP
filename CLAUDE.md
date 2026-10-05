@@ -52,12 +52,16 @@ schermbreedte) met "Lees verder" naar de eigen pagina van het bericht
 ### Adres van een nieuwsbericht (sinds v161)
 
 Elk bericht heeft een eigen pagina op `supplychainmeneer.nl/nieuws/<slug>/`.
-Veld `slug` in `site_nieuws`. Het CRM maakt hem uit de titel bij het **eerste
-opslaan** (`nieuwsSlugVan()`) en verandert hem daarna nooit meer, ook niet
-als de titel verandert, zodat gedeelde links blijven werken. Het venster
-toont het adres met die uitleg; bij een nieuw bericht verschijnt het terwijl
-je de titel typt. Dubbel (ook met een concept): `-2`, `-3`, …
-(`uniekeNieuwsSlug()`, na het opnieuw laden van de lijst). Een bericht zonder
+Veld `slug` in `site_nieuws`. Vóór het eerste opslaan is het adres een
+invulveld: het voorstel volgt de titel (`nieuwsSlugVan()`) tot René het zelf
+aanpast, bijvoorbeeld inkort (kort is beter om te plakken en te mailen:
+`nieuwe-website`, niet de hele titel). Wat hij typt wordt bij het verlaten
+van het veld netjes gemaakt (kleine letters, streepjes). Bij het **eerste
+opslaan** ligt het vast en verandert daarna nooit meer, ook niet als de
+titel verandert, zodat gedeelde links blijven werken; het venster zegt dat.
+Dubbel (ook met een concept): bij het voorstel `-2`, `-3`, …
+(`uniekeNieuwsSlug()`, na het opnieuw laden van de lijst); een zelf getypt
+adres dat al bestaat wordt geweigerd met een melding. Een bericht zonder
 slug krijgt er een bij de eerstvolgende keer opslaan. Niet zelf aanpassen in
 de Firestore-console: een gewijzigde slug breekt de links die al rondgaan.
 

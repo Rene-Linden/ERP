@@ -7738,16 +7738,24 @@ function nieuwsSlugVan(titel) {
 const NB_SLUG_GELDIG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 // Twee berichten nooit hetzelfde adres: bestaat de slug al (ook bij een
 // concept), dan -2, -3, … erachter. Kijkt in de zojuist opnieuw geladen lijst.
-function uniekeNieuwsSlug(titel, eigenId) {
-  const bezet = new Set(nieuwsberichten.filter(x => x.id !== eigenId && x.slug).map(x => x.slug));
-  const basis = nieuwsSlugVan(titel);
+function nieuwsSlugBezet(slug, eigenId) {
+  return nieuwsberichten.some(x => x.id !== eigenId && x.slug === slug);
+}
+function uniekeNieuwsSlug(basis, eigenId) {
   let slug = basis, n = 2;
-  while (bezet.has(slug)) slug = `${basis}-${n++}`;
+  while (nieuwsSlugBezet(slug, eigenId)) slug = `${basis}-${n++}`;
   return slug;
 }
-window.nbSlugVoorbeeld = function(titel) {
-  const el = document.getElementById('nb-slug-voorbeeld');
-  if (el) el.textContent = `/nieuws/${nieuwsSlugVan(titel)}/`;
+// Vóór het eerste opslaan is het adres een invulveld (v161): het voorstel
+// volgt de titel tot René het zelf aanpast (inkorten), daarna niet meer.
+let nbSlugZelf = false;
+window.nbSlugVolgTitel = function(titel) {
+  const el = document.getElementById('nb-slug');
+  if (el && !nbSlugZelf) el.value = nieuwsSlugVan(titel);
+};
+window.nbSlugGetypt = function() { nbSlugZelf = true; };
+window.nbSlugNetjes = function(el) {
+  if (el.value.trim()) el.value = nieuwsSlugVan(el.value);
 };
 let huidigBerichtId = null;
 
@@ -8011,10 +8019,15 @@ window.openNieuwsberichtModal = function(id) {
         </div>
         <div style="margin-bottom:12px">
           <label style="${labelStyle}" for="nb-titel">Titel *</label>
-          <input type="text" id="nb-titel" maxlength="200" value="${b ? escapeHtml(b.titel || '') : ''}" placeholder="Eén regel, geen punt aan het eind"${b && b.slug ? '' : ' oninput="nbSlugVoorbeeld(this.value)"'} style="${inputStyle}">
+          <input type="text" id="nb-titel" maxlength="200" value="${b ? escapeHtml(b.titel || '') : ''}" placeholder="Eén regel, geen punt aan het eind"${b && b.slug ? '' : ' oninput="nbSlugVolgTitel(this.value)"'} style="${inputStyle}">
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="${labelStyle}" for="nb-slug">Adres op de site</label>
           ${b && b.slug
-            ? `<div style="${hintStyle}">Adres op de site: <code>/nieuws/${escapeHtml(b.slug)}/</code>. Ligt vast sinds het eerste opslaan en verandert niet mee met de titel, zodat links die al gedeeld zijn blijven werken.</div>`
-            : `<div style="${hintStyle}">Adres op de site: <code id="nb-slug-voorbeeld">/nieuws/${escapeHtml(nieuwsSlugVan(b ? b.titel : ''))}/</code>. Wordt vastgezet bij Opslaan en verandert daarna niet meer mee met de titel, zodat gedeelde links blijven werken.</div>`}
+            ? `<div style="font-size:13px"><code>supplychainmeneer.nl/nieuws/${escapeHtml(b.slug)}/</code></div>
+               <div style="${hintStyle}">Ligt vast sinds het eerste opslaan en beweegt niet mee met de titel, zodat links die al gedeeld zijn blijven werken.</div>`
+            : `<div style="display:flex;align-items:center;gap:4px;font-size:13px"><code style="white-space:nowrap">/nieuws/</code><input type="text" id="nb-slug" maxlength="60" value="${b && b.titel ? escapeHtml(nieuwsSlugVan(b.titel)) : ''}" placeholder="volgt uit de titel" oninput="nbSlugGetypt()" onchange="nbSlugNetjes(this)" style="${inputStyle};font-family:monospace"><code>/</code></div>
+               <div style="${hintStyle}">Voorstel uit de titel; inkorten mag (kort is beter om te plakken en te mailen). Kleine letters, cijfers en streepjes. Ligt vast zodra je opslaat en beweegt daarna niet meer mee met de titel.</div>`}
         </div>
         <div style="margin-bottom:12px">
           <label style="${labelStyle}" for="nb-tekst">Tekst *</label>
@@ -8072,6 +8085,7 @@ window.openNieuwsberichtModal = function(id) {
   nbAfbVrijgeven();
   nbAfb = { url: b ? (b.afbeelding || '') : '', blob: null, voorbeeld: '', breed: 0, hoog: 0 };
   renderNbAfbeelding();
+  nbSlugZelf = false;
   el.style.display = 'flex';
   el.onclick = (e) => { if (e.target === el) closeNieuwsberichtModal(); };
   setTimeout(() => { const t = document.getElementById('nb-titel'); if (t) t.focus(); }, 50);
@@ -8095,7 +8109,7 @@ function nbFout(veldId, melding) {
 
 window.saveNieuwsbericht = async function() {
   const v = id => (document.getElementById(id) || {}).value || '';
-  ['nb-datum', 'nb-titel', 'nb-tekst', 'nb-link', 'nb-alt'].forEach(id => {
+  ['nb-datum', 'nb-titel', 'nb-slug', 'nb-tekst', 'nb-link', 'nb-alt'].forEach(id => {
     const e = document.getElementById(id);
     if (e) e.style.borderColor = 'var(--line2)';
   });
@@ -8134,8 +8148,16 @@ window.saveNieuwsbericht = async function() {
   // is vergeven ook meetelt.
   let slug = bestaand && NB_SLUG_GELDIG.test(bestaand.slug || '') ? bestaand.slug : '';
   if (!slug) {
-    try { await loadNieuwsberichten(); } catch (e) { return nbFout('nb-titel', 'Kon de lijst niet controleren op dubbele adressen: ' + (e.message || e)); }
-    slug = uniekeNieuwsSlug(titel, huidigBerichtId);
+    const veld = document.getElementById('nb-slug');
+    const zelf = veld && veld.value.trim() && nbSlugZelf;
+    const gewenst = nieuwsSlugVan(veld && veld.value.trim() ? veld.value : titel);
+    try { await loadNieuwsberichten(); } catch (e) { return nbFout('nb-slug', 'Kon de lijst niet controleren op dubbele adressen: ' + (e.message || e)); }
+    // Zelf ingetypt en al in gebruik: niet stilletjes -2 erachter, maar melden.
+    if (zelf && nieuwsSlugBezet(gewenst, huidigBerichtId)) {
+      if (veld) veld.value = gewenst;
+      return nbFout('nb-slug', `Het adres /nieuws/${gewenst}/ is al van een ander bericht. Kies een ander.`);
+    }
+    slug = uniekeNieuwsSlug(gewenst, huidigBerichtId);
   }
   const data = {
     datum_iso: datumIso,
