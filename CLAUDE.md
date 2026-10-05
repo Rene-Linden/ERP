@@ -49,9 +49,32 @@ Opzet (`accorderen.js`):
 - Handmatig akkoord sluit de link (`status: 'gesloten'`); een specificatie
   verwijderen in `verstuur.html` verwijdert ook de link. Afgekeurd is ook
   definitief voor die link: na correctie opnieuw versturen (nieuwe link).
+- De link werkt 60 dagen (`LINK_GELDIG_DAGEN`, bovenin `accorderen.js`):
+  elk akkoord kwam tot nu toe binnen 6 dagen, en na twee maanden is de
+  specificatie gefactureerd. Een doorgestuurde mail geeft de ontvanger
+  dezelfde mogelijkheden; bewust geaccepteerd (René, 5 oktober 2026):
+  doorsturen binnen het bedrijf van de klant is de normale route naar wie
+  tekent.
 - Oude links met `?id=` werken niet meer; de pagina zegt dan "ongeldig of
   verlopen". Op 5 oktober 2026 stond er geen enkele specificatie open: alle
   vijf waren geaccordeerd en gefactureerd.
+
+### De urenstaat-snapshot rekent het CRM uit, niet de klant — niet terugdraaien
+
+Bij een akkoord legt `specs.urenstaat_snapshot` vast welke uren er
+geaccordeerd zijn: per dag de netto minuten en km, en de totalen. Dat is wat
+René factureert en wat hij laat zien als er discussie komt. Tot oktober 2026
+rekende `accordeer.html` die snapshot uit **in de browser van de klant** en
+schreef hem zo weg: het bewijs van het akkoord kwam van de partij die er
+belang bij heeft, en kon met een aangepast verzoek elke inhoud krijgen.
+
+Nu schrijft de klant alleen `status` en (via de server) het tijdstip. Het CRM
+rekent de snapshot zelf uit uit `specs.regels` (`bouwSnapshot()` in
+`accorderen.js`, dezelfde berekening als het handmatig akkoord), op het
+moment dat het het antwoord overzet. De Firestore-regel laat de klant geen
+ander veld schrijven. Zet de berekening dus **nooit** terug naar
+`accordeer.html`, ook niet "om het simpeler te maken": dan wordt het bewijs
+weer door de klant aangeleverd.
 
 ## Nieuwsberichten (CRM → Nieuwsberichten)
 

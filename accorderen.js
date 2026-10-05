@@ -22,8 +22,10 @@
 
 import{doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,getDocs,serverTimestamp,Timestamp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-// Hoe lang een link werkt, in dagen na versturen. null = geen einde.
-// Keuze van René (zie CLAUDE.md, "Accorderen via een link").
+// ── HOE LANG EEN LINK WERKT ──────────────────────────────
+// 60 dagen na versturen (keuze René, 5 oktober 2026): tot dan kwam elk
+// akkoord binnen 6 dagen, en na twee maanden is de specificatie gefactureerd.
+// null = geen einde.
 export const LINK_GELDIG_DAGEN = 60;
 
 const LINK_BASIS = 'https://rene-linden.github.io/ERP/accordeer.html';
