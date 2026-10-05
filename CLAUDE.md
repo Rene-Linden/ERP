@@ -54,6 +54,32 @@ origineel uit Storage nooit te zien. Lukt dat niet (weg, onleesbaar, groter
 dan 5 MB), dan verschijnt het bericht zonder beeld. Details:
 `supplychainmeneer/CLAUDE.md`, "Afbeelding bij een nieuwsbericht".
 
+**Nog te doen: de eerste upload nalopen.** Uploaden is niet van begin tot
+eind getest (daarvoor moet je ingelogd zijn); verkleinen, voorvertoning en de
+controle op de alt-tekst wel. René test het op een bericht dat als
+**concept** staat:
+
+1. Rechtsboven staat `v160-nieuws-afbeelding`. Staat er nog v159: de browser
+   heeft de oude pagina; Ctrl+F5.
+2. Afbeelding kiezen, alt invullen, Opslaan. Verwacht: "Afbeelding
+   uploaden…", dan "Bericht opgeslagen ✓", en in de lijst een klein beeld
+   rechts bij het bericht.
+3. Gaat het mis, dan staat de reden in de rode balk in het venster. Met
+   `storage/unauthorized` erin: niet (meer) ingelogd, of de Storage-regel
+   voor `blog-afbeeldingen/` is veranderd (`supplychainmeneer/crm-regels/storage.rules`).
+   Anders: F12 → Console, de regel die begint met "Nieuwsbericht opslaan
+   mislukt". Het bericht is dan niet opgeslagen; een half geüpload beeld
+   ruimt het CRM zelf op.
+4. Controleren in de Firebase-console (Storage, `blog-afbeeldingen/`): er
+   staat één bestand `nieuws-<tijd>-<titel>.jpg` van een paar honderd kB.
+5. Weghalen en opslaan: het bestand verdwijnt uit Storage. Blijft het staan,
+   dan staat er in de console "Oude nieuwsafbeelding niet verwijderd"; het
+   bericht is wel goed opgeslagen, het bestand kan met de hand weg.
+6. Op de site (pas na publiceren en de eerstvolgende build, of de handknop
+   in GitHub Actions): geen beeld bij het bericht? Dan staat in de log van
+   die run een regel `nieuwsbericht <document-id>: <reden>; verschijnt
+   zonder afbeelding`.
+
 ## Tekstballon (CRM → Tekstballon)
 
 De tekst bij de mascotte op supplychainmeneer.nl. Collectie `site_ballon`,
