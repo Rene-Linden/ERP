@@ -20,8 +20,65 @@ een eigen `<p>`; één losse Enter niet (die wordt een spatie). Het overzicht in
 het CRM splitst met `nieuwsAlineas()`, gelijk aan `alineas()` in
 `supplychainmeneer/src/lib/inhoud.mjs`; wijzig ze samen. Geen HTML: opmaak
 zoals `<b>` komt op de site als tekst. Op de homepage ziet een bezoeker
-ongeveer de eerste 250 tekens (5 regels in een kaart) met "Lees verder" naar
-het hele bericht op `/nieuws/`.
+de eerste 5 regels in een kaart (gemeten 130–180 tekens, afhankelijk van de
+schermbreedte) met "Lees verder" naar het hele bericht op `/nieuws/`.
+
+### Afbeelding bij een nieuwsbericht (sinds v160)
+
+Optioneel. Twee velden in `site_nieuws`, allebei `null` als er geen beeld is:
+
+| Veld | Betekenis |
+|---|---|
+| `afbeelding` | Download-adres (`getDownloadURL`) van het bestand in Storage |
+| `afbeelding_alt` | Wat er op het beeld staat. Verplicht zodra er een afbeelding is |
+
+Toevoegen: in het venster van het bericht "Afbeelding kiezen" (JPG, PNG of
+WebP, **tot 20 MB**). De browser verkleint de foto meteen (`nbVerklein()`:
+lange zijde hooguit 2000 px, JPEG, EXIF-stand rechtgezet, transparantie wit;
+een telefoonfoto wordt ~400 kB) en toont een voorvertoning in 4:3. Uploaden
+gebeurt pas bij Opslaan, naar `blog-afbeeldingen/nieuws-<tijd>-<titel>.jpg`
+(die map heeft al een Storage-regel: lezen openbaar, schrijven ingelogd; een
+eigen map zou een wijziging van de Storage-regels vragen). Annuleren laat
+dus niets achter in Storage. Weghalen: "Afbeelding weghalen" en Opslaan.
+Bij vervangen, weghalen of het bericht verwijderen ruimt het CRM het oude
+bestand op, maar alleen bestanden met `nieuws-` in de naam (`nbAfbPad()`),
+nooit een blogcover.
+
+Alt-tekst: één regel uitleg staat in het scherm (beschrijf wat er te zien is;
+staat er tekst in het beeld, typ die over). Leeg of een nietszeggend woord
+(`NB_ALT_NIETSZEGGEND`: "afbeelding", "foto", …) weigert het opslaan.
+
+Op de site: altijd **4:3, bijgesneden vanuit het midden**. De site haalt het
+beeld bij de build op en maakt er zelf AVIF/WebP van; de bezoeker krijgt het
+origineel uit Storage nooit te zien. Lukt dat niet (weg, onleesbaar, groter
+dan 5 MB), dan verschijnt het bericht zonder beeld. Details:
+`supplychainmeneer/CLAUDE.md`, "Afbeelding bij een nieuwsbericht".
+
+**Nog te doen: de eerste upload nalopen.** Uploaden is niet van begin tot
+eind getest (daarvoor moet je ingelogd zijn); verkleinen, voorvertoning en de
+controle op de alt-tekst wel. René test het op een bericht dat als
+**concept** staat:
+
+1. Rechtsboven staat `v160-nieuws-afbeelding`. Staat er nog v159: de browser
+   heeft de oude pagina; Ctrl+F5.
+2. Afbeelding kiezen, alt invullen, Opslaan. Verwacht: "Afbeelding
+   uploaden…", dan "Bericht opgeslagen ✓", en in de lijst een klein beeld
+   rechts bij het bericht.
+3. Gaat het mis, dan staat de reden in de rode balk in het venster. Met
+   `storage/unauthorized` erin: niet (meer) ingelogd, of de Storage-regel
+   voor `blog-afbeeldingen/` is veranderd (`supplychainmeneer/crm-regels/storage.rules`).
+   Anders: F12 → Console, de regel die begint met "Nieuwsbericht opslaan
+   mislukt". Het bericht is dan niet opgeslagen; een half geüpload beeld
+   ruimt het CRM zelf op.
+4. Controleren in de Firebase-console (Storage, `blog-afbeeldingen/`): er
+   staat één bestand `nieuws-<tijd>-<titel>.jpg` van een paar honderd kB.
+5. Weghalen en opslaan: het bestand verdwijnt uit Storage. Blijft het staan,
+   dan staat er in de console "Oude nieuwsafbeelding niet verwijderd"; het
+   bericht is wel goed opgeslagen, het bestand kan met de hand weg.
+6. Op de site (pas na publiceren en de eerstvolgende build, of de handknop
+   in GitHub Actions): geen beeld bij het bericht? Dan staat in de log van
+   die run een regel `nieuwsbericht <document-id>: <reden>; verschijnt
+   zonder afbeelding`.
 
 ## Tekstballon (CRM → Tekstballon)
 
