@@ -188,11 +188,12 @@ tbody tr:hover td{background:var(--cream)}
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>emailjs.init('LVecJZWPqdswbZbga');</script>
 <script type="module">
+// Pagina voor de klant: zonder inloggen. Leest alleen accorderingen/<token>
+// (zie accorderen.js en de Firestore-regel in supplychainmeneer/crm-regels/):
+// de klant ziet zijn eigen specificatie en kan één keer akkoord geven of
+// afkeuren, met de tijd van de server. Niets anders.
 import{initializeApp,getApps,getApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{requireAuth}from'./erp-auth.js';
-// Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
-requireAuth(()=>{});
-import{getFirestore,doc,getDoc,updateDoc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{getFirestore,doc,getDoc,updateDoc,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
 const fbApp=(getApps().length?getApp():initializeApp(FB));
@@ -209,52 +210,74 @@ function bMins(b){return Math.max(0,(tMins(b.end)-tMins(b.start))-(parseInt(b.br
 function isoD(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d)}
 function showState(id){document.querySelectorAll('.state').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on')}
 
-// Get spec ID from URL
+// Het token uit de link (?t=…). Een oude link met ?id= (vóór oktober 2026)
+// werkt niet meer: die gaf het document-id prijs; dan de foutmelding.
 const params=new URLSearchParams(window.location.search);
-const specId=params.get('id');
+const token=params.get('t')||'';
 const actie=params.get('actie');
+const ref=/^[A-Za-z0-9_-]{40,}$/.test(token)?doc(db,'accorderingen',token):null;
+
 let specData=null;
 
+function datumTijd(ts){
+  const d=ts&&ts.toDate?ts.toDate():new Date();
+  return `${d.getDate()} ${MOS[d.getMonth()]} ${d.getFullYear()} om ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+}
+
+function toonAlBeantwoord(a){
+  const el=document.getElementById('stateAlready');
+  const kop=el.querySelector('div[style*="Fraunces"]');
+  const tekst=kop?kop.nextElementSibling:null;
+  if(a.status==='afgekeurd'){
+    if(kop)kop.textContent='Al beantwoord';
+    if(tekst)tekst.textContent='Op deze urenspecificatie is al gereageerd met een opmerking. René neemt contact met u op.';
+    document.getElementById('alreadyDetail').textContent=`Opmerking verstuurd op ${datumTijd(a.beantwoord_op)}`;
+  }else if(a.status==='gesloten'){
+    if(kop)kop.textContent='Afgehandeld';
+    if(tekst)tekst.textContent='Deze urenspecificatie is al afgehandeld. U hoeft niets meer te doen.';
+    document.getElementById('alreadyDetail').textContent=`${a.klant} · ${MO[a.maand]} ${a.jaar}`;
+  }else{
+    document.getElementById('alreadyDetail').textContent=`Geaccordeerd op ${datumTijd(a.beantwoord_op)}`;
+  }
+  showState('stateAlready');
+}
+
 async function loadSpec(){
-  if(!specId){showState('stateError');return;}
+  if(!ref){showState('stateError');return;}
   try{
-    const snap=await getDoc(doc(db,'specs',specId));
+    const snap=await getDoc(ref);
     if(!snap.exists()){showState('stateError');return;}
     specData=snap.data();
+    if(specData.status!=='open'){toonAlBeantwoord(specData);return;}
 
-    // Already approved?
-    if(specData.akkoord){
-      const d=new Date(specData.akkoord_datum);
-      document.getElementById('alreadyDetail').textContent=`Geaccordeerd op ${d.getDate()} ${MOS[d.getMonth()]} ${d.getFullYear()} om ${p2(d.getHours())}:${p2(d.getMinutes())}`;
-      showState('stateAlready');return;
-    }
-
-    // Show content
     const maandStr=`${MO[specData.maand]} ${specData.jaar}`;
     document.getElementById('specTitle').textContent=`Urenspecificatie ${maandStr}`;
     document.getElementById('specSub').textContent=`Opgesteld door Rene van der Linden · Ordinatio Groep`;
     document.getElementById('metaKlant').textContent=specData.klant;
     document.getElementById('metaMaand').textContent=maandStr;
 
-    // Build table
     const rows=specData.regels||[];
     const totalMins=rows.reduce((s,r)=>s+bMins(r),0);
     document.getElementById('metaUren').textContent=m2s(totalMins);
     document.getElementById('totalUren').textContent=m2s(totalMins);
-
-    document.getElementById('specBody').innerHTML=rows.map(r=>{
+    // Alles via textContent: klant- en regelvelden nooit als HTML.
+    const body=document.getElementById('specBody');
+    body.textContent='';
+    rows.forEach(r=>{
       const d=isoD(r.date);
-      return`<tr>
-        <td><strong>${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]}</strong></td>
-        <td class="mono">${r.start}</td>
-        <td class="mono">${r.end}</td>
-        <td class="mono" style="color:var(--ink3)">${r.brk||0}min</td>
-        <td class="mono" style="text-align:right;font-weight:600;color:var(--acc)">${m2s(bMins(r))}</td>
-      </tr>`;
-    }).join('');
+      const tr=document.createElement('tr');
+      [[`${DY[d.getDay()]} ${d.getDate()} ${MOS[d.getMonth()]}`,''],[r.start,'mono'],[r.end,'mono'],[`${r.brk||0}min`,'mono'],[m2s(bMins(r)),'mono']].forEach(([t,c],i)=>{
+        const td=document.createElement('td');
+        if(c)td.className=c;
+        if(i===0){const b=document.createElement('strong');b.textContent=t;td.appendChild(b);}else td.textContent=t;
+        if(i===3)td.style.color='var(--ink3)';
+        if(i===4){td.style.textAlign='right';td.style.fontWeight='600';td.style.color='var(--acc)';}
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
 
     showState('stateContent');
-    // Direct afkeurformulier openen als link vanuit mail
     if(actie==='afkeuren'){
       setTimeout(()=>{
         document.getElementById('afkeurForm').classList.add('open');
@@ -262,130 +285,75 @@ async function loadSpec(){
         document.getElementById('afkeurForm').scrollIntoView({behavior:'smooth',block:'center'});
       },300);
     }
-  }catch(e){showState('stateError');}
+  }catch(e){console.error(e);showState('stateError');}
 }
 
 window.toggleAfkeurForm=function(){
   const form=document.getElementById('afkeurForm');
   form.classList.toggle('open');
-  if(form.classList.contains('open')){
-    document.getElementById('afkeurOpmerking').focus();
-  }
+  if(form.classList.contains('open'))document.getElementById('afkeurOpmerking').focus();
+};
+
+// Is er intussen al geantwoord (andere tab, dubbelklik)? Dan dat tonen.
+async function alBeantwoord(){
+  const vers=await getDoc(ref);
+  if(vers.exists()&&vers.data().status!=='open'){toonAlBeantwoord(vers.data());return true;}
+  return false;
 }
 
 window.stuurAfkeuring=async function(){
-  const opmerking=document.getElementById('afkeurOpmerking').value.trim();
+  const opmerking=document.getElementById('afkeurOpmerking').value.trim().slice(0,2000);
   if(!opmerking){
     document.getElementById('afkeurOpmerking').style.border='2px solid var(--red)';
     document.getElementById('afkeurOpmerking').focus();
     return;
   }
-
   const btn=document.getElementById('afkeurSubmit');
   btn.disabled=true;btn.textContent='Versturen…';
-
   try{
-    // Mark spec as afgekeurd in Firebase
-    await updateDoc(doc(db,'specs',specId),{
-      afgekeurd: true,
-      afgekeurd_datum: new Date().toISOString(),
-      afgekeurd_opmerking: opmerking
-    });
-
-    // Send email via EmailJS
-    const klant = specData.klant || '–';
-    const maand = specData.maand !== undefined
-      ? ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'][specData.maand]
-      : '–';
-    const jaar = specData.jaar || '';
-
-    await emailjs.send('service_rpek59r','template_afkeuring',{
-      to_email: 'info@renevanderlinden.com',
-      klant: klant,
-      maand: `${maand} ${jaar}`,
-      opmerking: opmerking,
-      spec_id: specId
-    });
-
-    document.getElementById('afgekeurdDetail').textContent=
-      `Afkeuring voor ${klant} — ${maand} ${jaar}`;
+    if(await alBeantwoord())return;
+    await updateDoc(ref,{status:'afgekeurd',beantwoord_op:serverTimestamp(),opmerking});
+    const maand=`${MO[specData.maand]} ${specData.jaar}`;
+    // Bericht aan René. Mislukt dat, dan staat de afkeuring toch vast; het
+    // CRM toont hem bij de eerstvolgende keer openen.
+    try{
+      await emailjs.send('service_rpek59r','template_afkeuring',{
+        to_email:'info@renevanderlinden.com',
+        klant:specData.klant||'–',
+        maand,
+        opmerking,
+        spec_id:specData.spec_id||''
+      });
+    }catch(e){console.warn('Mail aan René niet verstuurd:',e);}
+    document.getElementById('afgekeurdDetail').textContent=`Afkeuring voor ${specData.klant} — ${maand}`;
     showState('stateAfgekeurd');
-
   }catch(e){
     btn.disabled=false;
     btn.textContent='Afkeuring versturen naar René';
-    alert('Er ging iets mis: '+e.message+'. Probeer opnieuw of neem direct contact op.');
+    alert('Er ging iets mis. Probeer het opnieuw of neem direct contact op met René.');
     console.error(e);
   }
-}
+};
 
 window.geefAkkoord=async function(){
-  if(!specData||!specId)return;
-  // Extra check - reload from Firebase to make sure not already approved
-  const freshSnap=await getDoc(doc(db,'specs',specId));
-  if(freshSnap.exists()&&freshSnap.data().akkoord){
-    const d=new Date(freshSnap.data().akkoord_datum);
-    document.getElementById('alreadyDetail').textContent=`Geaccordeerd op ${d.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]} ${d.getFullYear()}`;
-    showState('stateAlready');
-    return;
-  }
+  if(!specData||!ref)return;
   const btn=document.getElementById('akkoordBtn');
-  btn.disabled=true;
-  btn.textContent='Verwerken…';
+  btn.disabled=true;btn.textContent='Verwerken…';
   try{
-    const now=new Date();
-
-    // Bouw urenstaat-snapshot: alle dagen van de maand, met netto uren + km per dag
-    // Aggregeer eventuele meerdere blokken per dag tot één regel.
-    const urenPerDag = {};
-    if (Array.isArray(specData.regels)) {
-      specData.regels.forEach(r => {
-        if (!urenPerDag[r.date]) {
-          urenPerDag[r.date] = { date: r.date, mins: 0, km: 0 };
-        }
-        urenPerDag[r.date].mins += bMins(r);
-        urenPerDag[r.date].km += (parseInt(r.km) || 0);
-      });
-    }
-    // Genereer alle dagen van de maand (ook lege dagen)
-    const jaar = specData.jaar;
-    const maand = specData.maand; // 0-indexed
-    const aantalDagen = new Date(jaar, maand+1, 0).getDate();
-    const urenstaatRegels = [];
-    for (let d=1; d<=aantalDagen; d++) {
-      const iso = `${jaar}-${String(maand+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const found = urenPerDag[iso];
-      urenstaatRegels.push({
-        date: iso,
-        mins: found ? found.mins : 0,
-        km: found ? found.km : 0
-      });
-    }
-    const totaalMins = urenstaatRegels.reduce((s,r)=>s+r.mins, 0);
-    const totaalKm = urenstaatRegels.reduce((s,r)=>s+r.km, 0);
-
-    await updateDoc(doc(db,'specs',specId),{
-      akkoord:true,
-      akkoord_datum:now.toISOString(),
-      akkoord_ip:'client',
-      // Urenstaat-snapshot zoals vastgelegd op moment van akkoord
-      urenstaat_snapshot: {
-        regels: urenstaatRegels,
-        totaal_mins: totaalMins,
-        totaal_km: totaalKm,
-        akkoord_email: specData.email || '',
-        akkoord_datum: now.toISOString()
-      }
-    });
-    const maandStr=`${MO[specData.maand]} ${specData.jaar}`;
-    document.getElementById('successDetail').textContent=`${specData.klant} · ${maandStr} · ${new Date().toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}`;
+    if(await alBeantwoord())return;
+    // beantwoord_op: de tijd van de server, niet van deze computer. De regel
+    // in Firestore eist dat.
+    await updateDoc(ref,{status:'akkoord',beantwoord_op:serverTimestamp()});
+    const vast=(await getDoc(ref)).data();
+    document.getElementById('successDetail').textContent=`${specData.klant} · ${MO[specData.maand]} ${specData.jaar} · ${datumTijd(vast.beantwoord_op)}`;
     showState('stateSuccess');
   }catch(e){
     btn.disabled=false;
     btn.innerHTML='<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round"><polyline points="20 6 9 17 4 12"/></svg> Akkoord met urenspecificatie';
-    alert('Fout bij verwerken. Probeer opnieuw.');
+    alert('Fout bij verwerken. Probeer het opnieuw.');
+    console.error(e);
   }
-}
+};
 
 loadSpec();
 </script>

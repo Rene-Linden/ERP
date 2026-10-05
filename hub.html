@@ -353,6 +353,7 @@ import{requireAuth}from'./erp-auth.js';
 // Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
 requireAuth(()=>{});
 import{getFirestore,doc,onSnapshot,collection,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{verwerkAntwoorden}from'./accorderen.js';
 
 const FB={apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",authDomain:"dagstaat-ordinatio.firebaseapp.com",projectId:"dagstaat-ordinatio",storageBucket:"dagstaat-ordinatio.firebasestorage.app",messagingSenderId:"841107130686",appId:"1:841107130686:web:f91211f83a8e031746846f"};
 const fbApp=getApps().length?getApp():initializeApp(FB);
@@ -537,6 +538,7 @@ window.addEventListener('focus', refreshScmData);
 
 (async () => {
   try {
+    try { await verwerkAntwoorden(db); } catch (e) { console.warn('Antwoorden van klanten niet verwerkt:', e); }
     const specsSnap = await getDocs(query(collection(db,'specs'), orderBy('verstuurd_datum','desc')));
     const specs = specsSnap.docs.map(d => ({id:d.id, ...d.data()}));
     const wacht = specs.filter(s => !s.akkoord).length;

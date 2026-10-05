@@ -470,6 +470,7 @@ import{requireAuth}from'./erp-auth.js';
 // Zonder sessie (inloggen op start.html, met authenticator-app) terug naar start.html.
 requireAuth(()=>{});
 import{getFirestore,doc,getDoc,deleteDoc,updateDoc,onSnapshot,collection,addDoc,query,orderBy,getDocs}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import{maakAccordering,accordeerLinks,verwijderAccordering,verwerkAntwoorden}from'./accorderen.js';
 
 const FB={
   apiKey:"AIzaSyBW4shtJ-2UlPMg1tHs3GUrNhfg6ocKxjY",
@@ -753,8 +754,11 @@ async function doSend() {
     });
 
     const specDocId = specRef.id;
-    const akkoordLink = `https://rene-linden.github.io/ERP/accordeer.html?id=${specDocId}`;
-    const afkeurLink = `https://rene-linden.github.io/ERP/accordeer.html?id=${specDocId}&actie=afkeuren`;
+    // Link voor de klant: een eigen, onraadbaar token (accorderen.js), niet
+    // het document-id. Zonder accordering geen mail.
+    const token = await maakAccordering(db, specDocId, { klant, maand, jaar, regels, totaal_mins: totalMins });
+    await updateDoc(doc(db,'specs',specDocId), { accordering_token: token });
+    const { akkoord: akkoordLink, afkeuren: afkeurLink } = accordeerLinks(token);
 
     // Build email table (ALLEEN tabel + optionele noot — geen Niet akkoord-knop!
     // De knop staat in de EmailJS-template zelf via {{afkeur_link}})
@@ -813,6 +817,7 @@ async function loadHistory() {
   const el = document.getElementById('historyList');
   el.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><div class="empty-text">Laden…</div></div>';
   try {
+    try { await verwerkAntwoorden(db); } catch (e) { console.warn('Antwoorden van klanten niet verwerkt:', e); }
     const q = query(collection(db,'specs'), orderBy('verstuurd_datum','desc'));
     const snap = await getDocs(q);
 
@@ -891,6 +896,8 @@ async function loadHistory() {
 
           if (action === 'delete') {
             if (!confirm('Specificatie definitief verwijderen?')) return;
+            const weg = await getDoc(doc(db,'specs',specId));
+            if (weg.exists() && weg.data().accordering_token) await verwijderAccordering(db, weg.data().accordering_token);
             await deleteDoc(doc(db,'specs',specId));
             toast('Verwijderd', 'info');
             loadHistory();
