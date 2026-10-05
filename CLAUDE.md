@@ -59,6 +59,45 @@ Opzet (`accorderen.js`):
   verlopen". Op 5 oktober 2026 stond er geen enkele specificatie open: alle
   vijf waren geaccordeerd en gefactureerd.
 
+### Nog te doen: René loopt het pad één keer zelf na
+
+Uitgerold op 5 oktober 2026. In productie getest zonder inloggen (met
+testdocumenten, daarna verwijderd): lezen en accorderen met het eigen token,
+ook via de echte pagina; geweigerd zonder token, met een verzonnen of verlopen
+token, met een eigen tijd, met een extra veld, en een tweede keer. Niet te
+testen zonder inloggen, dus voor René:
+
+1. **CRM rechtsboven `v162-accorderen`.** Anders Ctrl+F5.
+2. **Een document openen** op een klantkaart. Moet gewoon openen. Fout
+   `storage/unauthorized` of een lege pagina: Storage-regels; terugzetten kan
+   (zie `supplychainmeneer/crm-regels/LEESMIJ.md`).
+3. **Een document uploaden** op een klantkaart. Melding "Geen rechten voor
+   Firebase Storage": eerst opnieuw inloggen; blijft het, dan de regels.
+4. **Een nieuwsafbeelding uploaden** op een bericht dat als concept staat.
+   Zelfde betekenis bij een fout.
+5. **Eén echte specificatie naar jezelf** (Verstuur, eigen e-mailadres): de
+   melding "Verstuurd naar …" en de mail komt binnen met de knoppen. Komt er
+   een foutmelding vóór het versturen, dan is de link niet aangemaakt en is
+   er ook geen mail weg.
+6. **De link openen in een venster waar je niet bent ingelogd** (privévenster).
+   Je ziet de specificatie, geen inlogscherm. "Ongeldig of verlopen": de link
+   klopt niet met wat er in `accorderingen` staat. Een inlogscherm: de
+   browser heeft de oude pagina; Ctrl+F5.
+7. **Akkoord geven.** "Akkoord ontvangen" met datum en tijd. Link opnieuw
+   openen: "Al geaccordeerd op <datum> om <tijd>".
+8. **Terugzien in het CRM** (Accordering, of de geschiedenis in Verstuur):
+   de specificatie staat op akkoord met **het tijdstip van stap 7**, niet het
+   moment waarop je het CRM opende. Staat hij nog op "Wacht": F12 → Console,
+   regel "Antwoorden van klanten niet verwerkt".
+9. **Opruimen:** de testspecificatie verwijderen in de geschiedenis van
+   Verstuur (de link gaat mee), zodat hij niet bij de facturen komt.
+
+**Als het misgaat staat er niets vast.** Handmatig accorderen in het CRM
+(Accordering → "Handmatig akkoord") werkt zoals altijd, met een notitie, en
+sluit de link. Let op: die knop wordt pas actief **3 werkdagen** na het
+versturen; tot dan kan de specificatie ook als PDF of in een gewone mail
+akkoord krijgen. Terugzetten van de regels: `LEESMIJ.md` in `crm-regels/`.
+
 ### De urenstaat-snapshot rekent het CRM uit, niet de klant — niet terugdraaien
 
 Bij een akkoord legt `specs.urenstaat_snapshot` vast welke uren er
