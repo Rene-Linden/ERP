@@ -7,6 +7,22 @@ in `supplychainmeneer/crm-regels/` (lees daar `LEESMIJ.md` vóór elke
 wijziging: `firebase deploy --only firestore:rules` vervangt de héle
 ruleset).
 
+## Nieuwsberichten (CRM → Nieuwsberichten)
+
+Collectie `site_nieuws`. `tekst` is platte tekst van **maximaal 1000 tekens**
+(`maxlength` en controle in `saveNieuwsbericht`; de Firestore-regels
+controleren geen lengte), met een teller. Richtlijn: twee tot drie alinea's.
+Nieuws is kort en gedateerd; een langer, inhoudelijk verhaal hoort in de
+blog. Houd dat onderscheid vast.
+
+**Witregel = nieuwe alinea.** Een lege regel in het tekstvak wordt op de site
+een eigen `<p>`; één losse Enter niet (die wordt een spatie). Het overzicht in
+het CRM splitst met `nieuwsAlineas()`, gelijk aan `alineas()` in
+`supplychainmeneer/src/lib/inhoud.mjs`; wijzig ze samen. Geen HTML: opmaak
+zoals `<b>` komt op de site als tekst. Op de homepage ziet een bezoeker
+ongeveer de eerste 250 tekens (5 regels in een kaart) met "Lees verder" naar
+het hele bericht op `/nieuws/`.
+
 ## Tekstballon (CRM → Tekstballon)
 
 De tekst bij de mascotte op supplychainmeneer.nl. Collectie `site_ballon`,
