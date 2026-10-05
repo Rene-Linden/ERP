@@ -20,8 +20,39 @@ een eigen `<p>`; één losse Enter niet (die wordt een spatie). Het overzicht in
 het CRM splitst met `nieuwsAlineas()`, gelijk aan `alineas()` in
 `supplychainmeneer/src/lib/inhoud.mjs`; wijzig ze samen. Geen HTML: opmaak
 zoals `<b>` komt op de site als tekst. Op de homepage ziet een bezoeker
-ongeveer de eerste 250 tekens (5 regels in een kaart) met "Lees verder" naar
-het hele bericht op `/nieuws/`.
+de eerste 5 regels in een kaart (gemeten 130–180 tekens, afhankelijk van de
+schermbreedte) met "Lees verder" naar het hele bericht op `/nieuws/`.
+
+### Afbeelding bij een nieuwsbericht (sinds v160)
+
+Optioneel. Twee velden in `site_nieuws`, allebei `null` als er geen beeld is:
+
+| Veld | Betekenis |
+|---|---|
+| `afbeelding` | Download-adres (`getDownloadURL`) van het bestand in Storage |
+| `afbeelding_alt` | Wat er op het beeld staat. Verplicht zodra er een afbeelding is |
+
+Toevoegen: in het venster van het bericht "Afbeelding kiezen" (JPG, PNG of
+WebP, **tot 20 MB**). De browser verkleint de foto meteen (`nbVerklein()`:
+lange zijde hooguit 2000 px, JPEG, EXIF-stand rechtgezet, transparantie wit;
+een telefoonfoto wordt ~400 kB) en toont een voorvertoning in 4:3. Uploaden
+gebeurt pas bij Opslaan, naar `blog-afbeeldingen/nieuws-<tijd>-<titel>.jpg`
+(die map heeft al een Storage-regel: lezen openbaar, schrijven ingelogd; een
+eigen map zou een wijziging van de Storage-regels vragen). Annuleren laat
+dus niets achter in Storage. Weghalen: "Afbeelding weghalen" en Opslaan.
+Bij vervangen, weghalen of het bericht verwijderen ruimt het CRM het oude
+bestand op, maar alleen bestanden met `nieuws-` in de naam (`nbAfbPad()`),
+nooit een blogcover.
+
+Alt-tekst: één regel uitleg staat in het scherm (beschrijf wat er te zien is;
+staat er tekst in het beeld, typ die over). Leeg of een nietszeggend woord
+(`NB_ALT_NIETSZEGGEND`: "afbeelding", "foto", …) weigert het opslaan.
+
+Op de site: altijd **4:3, bijgesneden vanuit het midden**. De site haalt het
+beeld bij de build op en maakt er zelf AVIF/WebP van; de bezoeker krijgt het
+origineel uit Storage nooit te zien. Lukt dat niet (weg, onleesbaar, groter
+dan 5 MB), dan verschijnt het bericht zonder beeld. Details:
+`supplychainmeneer/CLAUDE.md`, "Afbeelding bij een nieuwsbericht".
 
 ## Tekstballon (CRM → Tekstballon)
 
