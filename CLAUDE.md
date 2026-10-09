@@ -304,11 +304,22 @@ versie toont; dan lijkt een fix niet te werken. De regel:
   verschil in nummer ontstaan. Nu: `dictaat.js` en `ballon-keuze.js`
   (allebei alleen in `admin.html`, nu `?v=163`).
 - **Een module die door meerdere pagina's wordt geïmporteerd** krijgt
-  **géén** versie. Eén pagina met een ander nummer laadt hetzelfde bestand
-  als een aparte module; bij `erp-auth.js` zou dat de inlogstatus dubbel
-  geven. Na een wijziging daar: op elke pagina die hem gebruikt een harde
-  ververssing (Ctrl+F5). Nu: `accorderen.js` (`admin.html`,
+  **géén** versie. Na een wijziging daar: op elke pagina die hem gebruikt
+  een harde ververssing (Ctrl+F5). Nu: `accorderen.js` (`admin.html`,
   `verstuur.html`, `factuur.html`, `hub.html`) en `erp-auth.js` (bijna
   alle pagina's).
+
+  De reden is onderhoud, niet dat het stukgaat. Verschillende nummers op
+  verschillende pagina's geven geen dubbele module: elke pagina laadt zijn
+  modules los. Dubbel laden kan alleen binnen één pagina, als hetzelfde
+  bestand daar onder twee adressen binnenkomt, bijvoorbeeld als
+  `accorderen.js` zelf `erp-auth.js` zou importeren met een ander nummer
+  dan de pagina gebruikt. Nu importeren beide alleen Firebase, dus dat
+  speelt niet. Wat overblijft: het nummer op vier of meer pagina's
+  bijhouden voor bestanden die zelden veranderen. Dat weegt niet op tegen
+  één keer Ctrl+F5 na een wijziging.
+
+  Gaat een van deze modules ooit een andere eigen module importeren, dan
+  moet deze afweging opnieuw bekeken worden.
 
 Gaat een module van één naar meerdere pagina's, dan haal je de versie weg.
