@@ -259,3 +259,41 @@ die nog moeten komen niet in de HTML staan. Een periode die om middernacht
 ingaat, verschijnt dus bij de eerstvolgende build. Wel openbaar: een regel
 met `actief == true` is via Firestore op te vragen, ook vóór zijn
 begindatum. Niets vertrouwelijks in een ballontekst.
+
+## Dicteren met de Spreek-knop (v163)
+
+De 🎤 Spreek-knop in "Gesprek toevoegen" gebruikt de spraakherkenning van de
+browser (`dictaat.js`). Tot v162 plakte elk resultaat zijn tekst achter het
+veld; Chrome op Android stuurt dezelfde tekst vaker (ook als definitief, en
+als herhaling met verlenging), dus kreeg René "heeft geen antwoord gehad
+heeft geen antwoord gehad …".
+
+Nu wordt de gedicteerde tekst bij **elk** resultaat opnieuw opgebouwd en
+vervangen: basis (wat er bij het starten stond, met opmaak, onaangeroerd) +
+alle definitieve resultaten + het tussentijdse. Dat staat in één `<span
+data-dictaat>` achteraan; bij stoppen blijft alleen de definitieve tekst over
+en wordt de span gewone tekst. Een stuk dat het einde van wat er al staat
+herhaalt (geheel of met verlenging) vervangt dat einde (`dictaatTekst()`).
+Tijdens een compositie van het toetsenbord wordt het veld niet aangeraakt.
+`continuous` blijft aan (geen pauzes tussen zinnen); stopt de browser zelf,
+dan start hij meteen opnieuw. **Nooit terug naar aanplakken.** Opslaan of
+sluiten tijdens het dictaat breekt het af; de definitieve tekst blijft.
+
+**Versie in het importpad.** `admin.html` importeert `dictaat.js?v=163` en
+`ballon-keuze.js?v=163`. Verhoog dat nummer (naar de versie van dat moment)
+bij elke wijziging aan zo'n bestand: anders toont de topbar de nieuwe versie
+terwijl de browser het oude .js-bestand uit zijn cache haalt.
+
+Bewuste grens: een losse herhaling van alleen de laatste woorden ("… waarom
+niet" gevolgd door "waarom niet") komt er wel twee keer in; die zou niet te
+onderscheiden zijn van iemand die echt iets herhaalt.
+
+**Modal boven het toetsenbord.** `volgToetsenbord(overlay, editor)` (bij
+`cursorInBeeld`) is de ene oplossing voor modals met een schrijfveld op de
+telefoon: blog-editor en beide gespreksvensters. Chrome op Android verkleint
+`vh`/`dvh` niet als het toetsenbord opengaat; de functie zet de hoogte van
+`visualViewport` op de overlay (klasse `modal-vv`), zodat kop en knoppenrij
+(met het vinkje "Tekst nog nakijken") in beeld blijven en alleen het midden
+scrolt. Een nieuwe modal met schrijfveld: deze functie gebruiken, niet een
+tweede variant schrijven. Opbouw van de modal: kop, midden met
+`overflow-y:auto;flex:1;min-height:0`, knoppenrij, in een flex-kolom.
