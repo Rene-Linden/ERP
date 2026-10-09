@@ -279,11 +279,6 @@ Tijdens een compositie van het toetsenbord wordt het veld niet aangeraakt.
 dan start hij meteen opnieuw. **Nooit terug naar aanplakken.** Opslaan of
 sluiten tijdens het dictaat breekt het af; de definitieve tekst blijft.
 
-**Versie in het importpad.** `admin.html` importeert `dictaat.js?v=163` en
-`ballon-keuze.js?v=163`. Verhoog dat nummer (naar de versie van dat moment)
-bij elke wijziging aan zo'n bestand: anders toont de topbar de nieuwe versie
-terwijl de browser het oude .js-bestand uit zijn cache haalt.
-
 Bewuste grens: een losse herhaling van alleen de laatste woorden ("… waarom
 niet" gevolgd door "waarom niet") komt er wel twee keer in; die zou niet te
 onderscheiden zijn van iemand die echt iets herhaalt.
@@ -297,3 +292,23 @@ telefoon: blog-editor en beide gespreksvensters. Chrome op Android verkleint
 scrolt. Een nieuwe modal met schrijfveld: deze functie gebruiken, niet een
 tweede variant schrijven. Opbouw van de modal: kop, midden met
 `overflow-y:auto;flex:1;min-height:0`, knoppenrij, in een flex-kolom.
+
+## Eigen .js-modules en de cache (v163)
+
+Een los .js-bestand kan uit de cache komen terwijl de topbar al de nieuwe
+versie toont; dan lijkt een fix niet te werken. De regel:
+
+- **Een module die door één pagina wordt geïmporteerd** krijgt
+  `?v=<versie>` in het importpad, en dat nummer gaat omhoog (naar de versie
+  van dat moment) bij elke wijziging aan dat bestand. Daar kan geen
+  verschil in nummer ontstaan. Nu: `dictaat.js` en `ballon-keuze.js`
+  (allebei alleen in `admin.html`, nu `?v=163`).
+- **Een module die door meerdere pagina's wordt geïmporteerd** krijgt
+  **géén** versie. Eén pagina met een ander nummer laadt hetzelfde bestand
+  als een aparte module; bij `erp-auth.js` zou dat de inlogstatus dubbel
+  geven. Na een wijziging daar: op elke pagina die hem gebruikt een harde
+  ververssing (Ctrl+F5). Nu: `accorderen.js` (`admin.html`,
+  `verstuur.html`, `factuur.html`, `hub.html`) en `erp-auth.js` (bijna
+  alle pagina's).
+
+Gaat een module van één naar meerdere pagina's, dan haal je de versie weg.
